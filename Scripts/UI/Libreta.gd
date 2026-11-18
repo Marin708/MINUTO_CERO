@@ -152,7 +152,11 @@ func _lecciones() -> void:
 
 func _mitos() -> void:
 	for m in _leer("mitos.json").get("mitos", []):
-		_contenido.add_child(_tarjeta("Mito: %s" % str(m["mito"]), ["Realidad: %s" % str(m["realidad"])]))
+		var decision := str(m.get("desbloqueo", ""))
+		if decision == "" or Estado.decision_resuelta(decision):
+			_contenido.add_child(_tarjeta("Mito: %s" % str(m["mito"]), ["Realidad: %s" % str(m["realidad"])]))
+		else:
+			_contenido.add_child(_tarjeta("Mito por descubrir", ["Se desbloquea al avanzar en el juego."]))
 
 
 func _memoria() -> void:

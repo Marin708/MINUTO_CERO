@@ -30,13 +30,8 @@ static func resolver(arbol: SceneTree, id: String) -> bool:
 				return false
 			continue   # cancelar no es una decisión: se vuelve a preguntar
 		var indice: int = orden[elegido]
-		var es_segura := indice == segura
-		var primero := Estado.registrar_decision(id, es_segura)
-		var titulo := "Ojo"
-		if es_segura:
-			titulo = "Muy bien" if primero else "Casi"
-		var reintentar: bool = await TarjetaRetro.mostrar(arbol, titulo, str(opciones[indice]), str(opciones[segura]), str(d["retro"]), not es_segura)
-		if es_segura:
+		var reintentar: bool = await Retroalimentacion.mostrar(id, indice)
+		if indice == segura:
 			return true
 		if not reintentar:
 			return false

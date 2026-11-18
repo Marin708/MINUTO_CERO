@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/TarjetaRetro.gd" id="1_tarjeta"]
+
+[node name="TarjetaRetro" type="CanvasLayer"]
+script = ExtResource("1_tarjeta")

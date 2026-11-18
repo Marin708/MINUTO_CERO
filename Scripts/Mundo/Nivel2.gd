@@ -181,7 +181,7 @@ func _fallar(que_hizo: String) -> void:
 	var opciones: Array = d["opciones"]
 	var hecho := que_hizo if que_hizo != "" else "Soltar la posición antes de que terminara el sismo"
 	Estado.registrar_decision("D8", false)
-	await TarjetaRetro.mostrar(get_tree(), "Ojo", hecho, str(opciones[0]), str(d["retro"]), true)
+	await Retroalimentacion.tarjeta("Ojo", hecho, str(opciones[0]), str(d["retro"]), true)
 	await esperar(0.4)
 	await Dialogo.mostrar_texto("", "Vamos a intentarlo otra vez. Cuando empiece, ve a la mesa y mantén E.")
 	# Se repite el sismo desde el principio (el primer intento ya quedó registrado)
@@ -205,7 +205,7 @@ func _terminar_bien() -> void:
 	for n in npcs:
 		n.asustado = false
 		n.interactuable = true
-	await TarjetaRetro.mostrar(get_tree(), "Muy bien" if primero else "Casi", str(opciones[0]), str(opciones[0]), str(d["retro"]), false)
+	await Retroalimentacion.tarjeta("Muy bien" if primero else "Casi", str(opciones[0]), str(opciones[0]), str(d["retro"]), false)
 	hud.marcar("D8")
 	_actualizar_iconos(0)
 	if _capa_iconos != null:

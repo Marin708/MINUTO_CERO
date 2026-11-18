@@ -1,41 +1,48 @@
 {
-	"version": 1,
-	"nota": "Mitos y realidades de la libreta (docs/DISENO_MAESTRO.md seccion 9).",
-	"mitos": [
-		{
-			"id": "m1",
-			"mito": "El marco de la puerta es el lugar más seguro.",
-			"realidad": "Las entidades de gestión del riesgo no lo recomiendan en construcciones actuales: agáchate, cúbrete y sujétate bajo un mueble resistente."
-		},
-		{
-			"id": "m2",
-			"mito": "El «triángulo de la vida» te salva.",
-			"realidad": "No es la primera recomendación de los organismos especializados."
-		},
-		{
-			"id": "m3",
-			"mito": "Hay que salir corriendo apenas empieza.",
-			"realidad": "Durante el movimiento, protégete. Sal con calma cuando termine y sea seguro."
-		},
-		{
-			"id": "m4",
-			"mito": "El ascensor es más rápido.",
-			"realidad": "No se usa durante ni después de un sismo."
-		},
-		{
-			"id": "m5",
-			"mito": "Si ya pasó lo fuerte, ya no hay peligro.",
-			"realidad": "Pueden venir réplicas."
-		},
-		{
-			"id": "m6",
-			"mito": "Se puede predecir cuándo temblará.",
-			"realidad": "No es posible; sí se pueden reducir sus efectos."
-		},
-		{
-			"id": "m7",
-			"mito": "Una cadena de mensajes es información confiable.",
-			"realidad": "Verifica en canales oficiales."
-		}
-	]
+ "version": 1,
+ "nota": "Mitos y realidades de la libreta (docs/DISENO_MAESTRO.md seccion 9). 'desbloqueo' es la decision que hay que resolver para ver el mito en la libreta.",
+ "mitos": [
+  {
+   "id": "m1",
+   "mito": "El marco de la puerta es el lugar más seguro.",
+   "realidad": "Las entidades de gestión del riesgo no lo recomiendan en construcciones actuales: agáchate, cúbrete y sujétate bajo un mueble resistente.",
+   "desbloqueo": "D8"
+  },
+  {
+   "id": "m2",
+   "mito": "El «triángulo de la vida» te salva.",
+   "realidad": "No es la primera recomendación de los organismos especializados.",
+   "desbloqueo": "D8"
+  },
+  {
+   "id": "m3",
+   "mito": "Hay que salir corriendo apenas empieza.",
+   "realidad": "Durante el movimiento, protégete. Sal con calma cuando termine y sea seguro.",
+   "desbloqueo": "D8"
+  },
+  {
+   "id": "m4",
+   "mito": "El ascensor es más rápido.",
+   "realidad": "No se usa durante ni después de un sismo.",
+   "desbloqueo": "D7"
+  },
+  {
+   "id": "m5",
+   "mito": "Si ya pasó lo fuerte, ya no hay peligro.",
+   "realidad": "Pueden venir réplicas.",
+   "desbloqueo": "D15"
+  },
+  {
+   "id": "m6",
+   "mito": "Se puede predecir cuándo temblará.",
+   "realidad": "No es posible; sí se pueden reducir sus efectos.",
+   "desbloqueo": "D14"
+  },
+  {
+   "id": "m7",
+   "mito": "Una cadena de mensajes es información confiable.",
+   "realidad": "Verifica en canales oficiales.",
+   "desbloqueo": "D14"
+  }
+ ]
 }

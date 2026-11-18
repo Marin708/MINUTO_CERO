@@ -25,6 +25,7 @@ func _ready() -> void:
 	Dialogo.respuesta_de_prueba = 0   # siempre la primera opción mostrada (la segura, porque en pruebas no se mezclan)
 	KitUI.seleccion_de_prueba = ["agua", "alimentos", "linterna", "pilas", "silbato", "botiquin", "medicinas", "documentos"]
 
+	await _prueba_tarjeta()
 	await _recorrido_completo()
 	await _teclas_de_depuracion()
 
@@ -66,6 +67,40 @@ func _escena() -> Node:
 
 func _es(nombre: String) -> Callable:
 	return func() -> bool: return _escena() != null and _escena().name == nombre
+
+
+func _prueba_tarjeta() -> void:
+	print("Tarjeta de retroalimentación")
+	Dialogo.respuesta_de_prueba = -99
+	Estado.nueva_partida()
+	var resultado := [null]
+	var tarea := func() -> void: resultado[0] = await Retroalimentacion.mostrar("D1", 1)
+	tarea.call()
+	await _hasta(func() -> bool: return _buscar_tarjeta() != null and _buscar_tarjeta()._fila_botones != null, 5.0)
+	var tarjeta: TarjetaRetro = _buscar_tarjeta()
+	_ok(tarjeta != null, "la tarjeta se abre desde Retroalimentacion.mostrar")
+	_ok(tarjeta._textos.size() == 4, "tiene Lo que hiciste, Lo recomendado, Por qué y una frase para recordar")
+	_ok(Estado.decision_resuelta("D1") and not Estado.primer_intento_de("D1") and Estado.cantidad_lecciones() == 1, "el primer intento (no seguro) queda en Estado y como lección")
+	var esc := InputEventAction.new()
+	esc.action = "PAUSA"
+	esc.pressed = true
+	Input.parse_input_event(esc)
+	await get_tree().process_frame
+	_ok(is_instance_valid(tarjeta) and not tarjeta._cerrando, "ESC no cierra la tarjeta")
+	tarjeta._mostrar_botones()
+	_ok(tarjeta._textos[0].visible_characters == -1 and tarjeta._fila_botones.get_child_count() == 2, "botones Intentar de nuevo y Entendido tras escribir el texto")
+	(tarjeta._fila_botones.get_child(0) as Button).pressed.emit()
+	await _hasta(func() -> bool: return resultado[0] != null, 3.0)
+	_ok(resultado[0] == true, "«Intentar de nuevo» devuelve true")
+	Estado.nueva_partida()
+	Dialogo.respuesta_de_prueba = 0
+
+
+func _buscar_tarjeta() -> TarjetaRetro:
+	for h in get_tree().root.get_children():
+		if h is TarjetaRetro:
+			return h
+	return null
 
 
 func _recorrido_completo() -> void:

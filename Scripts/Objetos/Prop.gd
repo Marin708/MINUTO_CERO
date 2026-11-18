@@ -82,6 +82,7 @@ var _rect_local := Rect2()   # lo que se ve del sprite, relativo a la base y ya 
 @onready var _cuerpo: StaticBody2D = $Cuerpo
 @onready var _forma: CollisionShape2D = $Cuerpo/Forma
 @onready var _zona: Area2D = $Zona
+var _interrogacion: Label
 
 
 func _ready() -> void:
@@ -123,8 +124,32 @@ func _ready() -> void:
 		$Zona/Forma.shape = circulo
 		$Zona/Forma.position = Vector2(0, -8)
 		add_to_group("interactuables")
+		_crear_interrogacion()
 	else:
 		_zona.queue_free()
+
+
+## El ícono «?» flota sobre los riesgos sin resolver y aparece cuando Sami está cerca.
+func _crear_interrogacion() -> void:
+	if etiqueta == "" or not etiqueta.begins_with("D") or tipo not in ["estante", "cuadro_cama", "gas_estufa", "repisa"]:
+		return
+	_interrogacion = EstiloUI.etiqueta("?", 18, EstiloUI.NARANJA)
+	_interrogacion.add_theme_color_override("font_outline_color", Color("0f2d38"))
+	_interrogacion.add_theme_constant_override("outline_size", 6)
+	_interrogacion.z_index = 90
+	_interrogacion.modulate.a = 0.0
+	add_child(_interrogacion)
+	_interrogacion.position = Vector2(-5, _rect_local.position.y - 22.0)
+
+
+func _process(_delta: float) -> void:
+	if _interrogacion == null:
+		return
+	var jugador := get_tree().get_first_node_in_group("player") as Node2D
+	var cerca := jugador != null and jugador.global_position.distance_to(global_position) < 120.0 and not asegurado
+	var objetivo := 1.0 if cerca else 0.0
+	_interrogacion.modulate.a = move_toward(_interrogacion.modulate.a, objetivo, 0.1)
+	_interrogacion.position.y = _rect_local.position.y - 22.0 + sin(Time.get_ticks_msec() / 1000.0 * 4.0) * 2.0
 
 
 ## true mientras Sami puede usarlo (los riesgos ya asegurados siguen respondiendo para repetir el mensaje).
