@@ -29,6 +29,8 @@ func _ready() -> void:
 	await _recorrido_completo()
 	await _teclas_de_depuracion()
 	await _sismo_en_tiempo_real()
+	await _replica_con_error()
+	await _finales_en_escena()
 
 	Dialogo.respuesta_de_prueba = -99
 	KitUI.seleccion_de_prueba = []
@@ -147,7 +149,9 @@ func _recorrido_completo() -> void:
 	await n3._peligro()
 	await n3._on_npc(n3.npc_de("tomas"))
 	_ok(Estado.lograda("D12") and Estado.lograda("D13") and Estado.lograda("D14"), "nivel 3: Doña Rosa, el cable y la información")
-	_ok(await _hasta(func() -> bool: return Estado.lograda("D15"), 30.0), "nivel 3: la réplica y D15")
+	Input.action_press("INTERACTUAR")   # en la réplica hay que mantener E (agacharse y proteger la cabeza)
+	_ok(await _hasta(func() -> bool: return Estado.lograda("D15"), 40.0), "nivel 3: la réplica y D15 (mantener E)")
+	Input.action_release("INTERACTUAR")
 	n3.jugador.global_position = n3.pos_zona("Zona_Llegada")
 	_ok(await _hasta(_es("Final"), 30.0), "llegada al punto de encuentro y paso al final")
 	_ok(Estado.decisiones.size() == 15, "las 15 decisiones están resueltas")
@@ -206,3 +210,54 @@ func _sismo_en_tiempo_real() -> void:
 	Input.action_release("INTERACTUAR")
 	_ok(await _hasta(func() -> bool: return n2.fase == Nivel2.Fase.DESPUES, 8.0), "después del sismo se pasa a D9, D10 y D11")
 	_ok(not Estado.primer_intento_de("D8") and Estado.intentos_de("D8") == 2, "D8: 2 intentos y la nota sigue siendo la del primero")
+
+
+## La réplica: primero sin mantener E (error), luego mantenerla.
+func _replica_con_error() -> void:
+	print("Réplica del nivel 3: error y reintento")
+	Dialogo.respuesta_de_prueba = 0
+	Estado.nueva_partida()
+	Depuracion.saltar_a_nivel(3)
+	await _hasta(_es("Nivel3"))
+	var n3: Nivel3 = _escena()
+	await _hasta(func() -> bool: return not n3.ocupado)
+	await _hasta(func() -> bool: return not Sismo.esta_activo(), 6.0)   # que no quede el sismo de la prueba anterior
+	Estado.registrar_decision("D14", true)   # la réplica llega después de D14
+	_ok(await _hasta(func() -> bool: return Sismo.esta_activo(), 15.0), "la réplica empieza con el sistema Sismo")
+	_ok(Sismo.intensidad < 1.0, "intensidad menor que la del nivel 2 (%.1f)" % Sismo.intensidad)
+	_ok(await _hasta(func() -> bool: return Estado.decision_resuelta("D15"), 15.0), "sin mantener E, D15 se marca como riesgosa")
+	_ok(not Estado.primer_intento_de("D15"), "el primer intento de D15 queda no seguro")
+	await _hasta(func() -> bool: return Sismo.fase == Sismo.Fase.AVISO, 15.0)
+	Input.action_press("INTERACTUAR")
+	_ok(await _hasta(func() -> bool: return Estado.lograda("D15"), 20.0), "en el reintento, mantener E logra D15")
+	Input.action_release("INTERACTUAR")
+	_ok(Estado.intentos_de("D15") == 2 and not Estado.primer_intento_de("D15"), "D15: 2 intentos, la nota es la del primero")
+
+
+## Construye la escena Final con cada final y comprueba su mensaje.
+func _finales_en_escena() -> void:
+	print("Finales en la escena Final")
+	var casos := {15: "preparado", 8: "encamino", 0: "reforzar"}
+	for seguras in casos:
+		Estado.forzar_resultado(seguras)
+		var escena: Final = (load("res://Scenes/Final/Final.tscn") as PackedScene).instantiate()
+		get_tree().root.add_child(escena)
+		await get_tree().process_frame
+		var datos := Estado.datos_final()
+		_ok(escena.tipo == casos[seguras], "final %s con %d seguras" % [casos[seguras], seguras])
+		var textos := _textos_de(escena)
+		_ok(textos.contains(str(datos["mensaje"])), "muestra el mensaje: %s" % datos["mensaje"])
+		_ok(textos.contains("Mi plan en 5 pasos") and textos.contains("5. Infórmate solo en fuentes oficiales."), "muestra «Mi plan en 5 pasos»")
+		_ok(textos.contains("no es un simulacro oficial"), "muestra la nota de que no es un simulacro oficial")
+		escena.queue_free()
+		await get_tree().process_frame
+	_ok(Final.texto_del_plan().contains("1. Revisa y asegura los riesgos de tu casa."), "el plan descargable tiene los 5 pasos")
+
+
+func _textos_de(nodo: Node) -> String:
+	var s := ""
+	if nodo is Label:
+		s += (nodo as Label).text + "\n"
+	for h in nodo.get_children():
+		s += _textos_de(h)
+	return s

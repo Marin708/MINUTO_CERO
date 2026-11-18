@@ -52,6 +52,10 @@ func _construir() -> void:
 		e.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		e.custom_minimum_size = Vector2(440, 0)
 		v.add_child(e)
+	var nota := EstiloUI.etiqueta("MINUTO CERO es un juego educativo: no es un simulacro oficial. Practica tu plan en familia y consulta a las autoridades de gestión del riesgo.", 10, EstiloUI.GRIS)
+	nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	nota.custom_minimum_size = Vector2(440, 0)
+	v.add_child(nota)
 	var fila := HBoxContainer.new()
 	fila.alignment = BoxContainer.ALIGNMENT_END
 	fila.add_theme_constant_override("separation", 10)

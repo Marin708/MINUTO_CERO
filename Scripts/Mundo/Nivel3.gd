@@ -10,12 +10,24 @@ extends Nivel
 const TEXTO_RADIO := "Radio oficial: «Mantengan la calma. Las autoridades evalúan los daños. Infórmense solo por canales oficiales y no saturen las líneas de emergencia.»"
 const SEGUNDOS_ANTES_REPLICA := 3.0
 const SEGUNDOS_REPLICA := 6.0
+const INTENSIDAD_REPLICA := 0.5
+## Segundos del aviso de la réplica antes de exigir que Sami esté agachado.
+const SEGUNDOS_AVISO_REPLICA := 1.0
+const TOLERANCIA_REPLICA := 0.7
+const TEXTO_PROTEGERSE := "Mantén E: agacharte y proteger la cabeza"
+const TEXTO_CIERRE := "MINUTO CERO es un juego educativo. No es un simulacro oficial: practica tu plan en familia y consulta a las autoridades de gestión del riesgo."
 
 var _replica_hecha := false
 var _replica_programada := false
 var _en_peligro_espera := 0.0
 var _aviso_llegada := 0.0
 var _terminando := false
+var _replica_activa := false
+var _r_fuera := 0.0
+var _r_termino := false
+var _capa_replica: CanvasLayer
+var _mensaje: Label
+var _iconos: Array[Label] = []
 
 
 func _init() -> void:
@@ -44,6 +56,9 @@ func _inicio() -> void:
 
 
 func _tick(delta: float) -> void:
+	if _replica_activa:
+		_vigilar_replica(delta)
+		return
 	if ocupado or _terminando:
 		return
 	if _en_peligro_espera > 0.0:
@@ -109,25 +124,115 @@ func _con_tomas() -> void:
 	await decidir("D14")
 
 
-## La réplica: Sami está afuera y debe protegerse (D15). Se repite hasta elegir la opción segura.
+## La réplica (D15): el sistema Sismo con intensidad menor. Sami está afuera, sin mesa: debe quedarse en el espacio
+## abierto, lejos de edificios y cables, MANTENER E (agacharse y proteger la cabeza) hasta que termine. Si no lo hace,
+## sale la tarjeta con «Intentar de nuevo» y la réplica se repite hasta lograrlo (el primer intento queda registrado).
 func _replica() -> void:
 	await esperar(SEGUNDOS_ANTES_REPLICA)
 	while ocupado:
 		await esperar(0.5)
-	ocupado = true
 	_replica_hecha = true
-	Audio.efecto("replica")
-	temblar(3.0, SEGUNDOS_REPLICA, false)
-	for n in npcs:
-		n.asustado = true
-	await esperar(1.2)
-	ocupado = false
+	await decir("", "De pronto, el suelo vuelve a moverse: es una réplica.")
 	while not Estado.lograda("D15"):
-		await decidir("D15")
-	await esperar(0.8)
-	for n in npcs:
-		n.asustado = false
+		_iniciar_replica()
+		_r_termino = false
+		while not _r_termino:
+			await get_tree().process_frame
+		await esperar(0.4)
 	temblar(0.0, 0.01)
+	await esperar(0.5)
+
+
+func _iniciar_replica() -> void:
+	_crear_panel_replica()
+	_replica_activa = true
+	ocupado = true
+	_r_fuera = 0.0
+	_mostrar_mensaje("Estás afuera. Aléjate de edificios y cables y protégete.")
+	Sismo.iniciar(self, INTENSIDAD_REPLICA, SEGUNDOS_REPLICA, SEGUNDOS_AVISO_REPLICA)
+
+
+func _vigilar_replica(delta: float) -> void:
+	if Sismo.fase not in [Sismo.Fase.AVISO, Sismo.Fase.FUERTE]:
+		return
+	var cerca_peligro := en_zona("Zona_Peligro_D13") or en_zona("Zona_Cable")
+	var sujeto := Input.is_action_pressed("INTERACTUAR") and not cerca_peligro
+	if sujeto:
+		jugador.bloquear()
+	else:
+		jugador.liberar()
+	jugador.sprite.scale.y = 0.82 if sujeto else 1.0
+	_mostrar_mensaje(TEXTO_PROTEGERSE if not cerca_peligro else "Estás muy cerca de un edificio o un cable: aléjate.")
+	_actualizar_iconos(2 if sujeto and Sismo.t_fuerte > SEGUNDOS_REPLICA * 0.5 else (1 if sujeto else 0))
+	if cerca_peligro and Sismo.fase == Sismo.Fase.FUERTE and Sismo.t_fuerte > 0.8:
+		_terminar_replica(false, "Correr hacia un edificio")
+		return
+	if Sismo.fase == Sismo.Fase.FUERTE and Sismo.t_fuerte > SEGUNDOS_AVISO_REPLICA:
+		if sujeto:
+			_r_fuera = 0.0
+		else:
+			_r_fuera += delta
+			if _r_fuera >= TOLERANCIA_REPLICA:
+				_terminar_replica(false, "No te agachaste ni protegiste la cabeza")
+				return
+	if Sismo.fase == Sismo.Fase.FUERTE and Sismo.t_fuerte >= SEGUNDOS_REPLICA:
+		_terminar_replica(true, "")
+
+
+func _terminar_replica(exito: bool, que_hizo: String) -> void:
+	_replica_activa = false
+	jugador.liberar()
+	jugador.sprite.scale.y = 1.0
+	_capa_replica.visible = false
+	Sismo.detener()
+	var d := Estado.datos_decision("D15")
+	var opciones: Array = d["opciones"]
+	var primero := Estado.registrar_decision("D15", exito)
+	var titulo := "Ojo"
+	if exito:
+		titulo = "Muy bien" if primero else "Casi"
+	await Retroalimentacion.tarjeta(titulo, str(opciones[0]) if exito else que_hizo, str(opciones[0]), str(d["retro"]), not exito)
+	if exito:
+		hud.marcar("D15")
+	ocupado = false
+	_r_termino = true
+
+
+func _crear_panel_replica() -> void:
+	if _capa_replica != null:
+		_capa_replica.visible = true
+		return
+	_capa_replica = CanvasLayer.new()
+	_capa_replica.layer = 6
+	add_child(_capa_replica)
+	var fila := HBoxContainer.new()
+	fila.position = Vector2(220, 306)
+	fila.add_theme_constant_override("separation", 10)
+	_capa_replica.add_child(fila)
+	for nombre in ["Agáchate", "Protege tu cabeza"]:
+		var caja := PanelContainer.new()
+		caja.add_theme_stylebox_override("panel", EstiloUI.caja(Color("0f2d38", 0.85), EstiloUI.GRIS, 2, 8, 4))
+		var e := EstiloUI.etiqueta(nombre, 12, EstiloUI.GRIS)
+		caja.add_child(e)
+		fila.add_child(caja)
+		_iconos.append(e)
+	_mensaje = EstiloUI.etiqueta("", 13, EstiloUI.CREMA)
+	_mensaje.position = Vector2(0, 280)
+	_mensaje.size = Vector2(640, 20)
+	_mensaje.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_mensaje.add_theme_color_override("font_outline_color", Color("0f2d38"))
+	_mensaje.add_theme_constant_override("outline_size", 5)
+	_capa_replica.add_child(_mensaje)
+
+
+func _actualizar_iconos(encendidos: int) -> void:
+	for i in _iconos.size():
+		_iconos[i].add_theme_color_override("font_color", EstiloUI.NARANJA if i < encendidos else EstiloUI.GRIS)
+
+
+func _mostrar_mensaje(texto: String) -> void:
+	if _mensaje != null:
+		_mensaje.text = texto
 
 
 func _llegar() -> void:
@@ -143,4 +248,5 @@ func _llegar() -> void:
 	hud.marcar("llegada")
 	await decir("Mamá", "¡Sami! Aquí estamos, a salvo y lejos de los edificios y los cables.")
 	await decir("Lucía", ["Llegaste al punto de encuentro. Lo hiciste con calma y pensando en los demás.", "Prepararte hoy puede cambiar el minuto cero."])
+	await decir("", TEXTO_CIERRE)
 	await terminar_nivel()

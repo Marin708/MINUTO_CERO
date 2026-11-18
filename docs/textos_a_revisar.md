@@ -25,4 +25,8 @@ Textos que escribió o adaptó el equipo de desarrollo y **no están literalment
 | 19 | `Scripts/UI/TarjetaRetro.gd`, `Decisiones.gd` | Títulos «Muy bien» (segura al primer intento), «Casi» (segura en un reintento) y «Ojo» (no segura) | El maestro no dice cuándo va «Casi» |
 | 20 | `Scripts/UI/TarjetaRetro.gd` | Falta «una frase para recordar»: la tarjeta usa la retroalimentación del JSON como «Por qué» | El maestro no da una frase aparte |
 | 21 | `Scripts/Final/Final.gd` | «Decisiones seguras al primer intento: X de 15» y los botones | Nuevos |
+| 23 | `Scripts/Mundo/Nivel3.gd` | Mensajes de la réplica («Mantén E: agacharte y proteger la cabeza»…) y texto de cierre `TEXTO_CIERRE` | Nuevos; en D15 «mantener E» reemplaza la elección entre opciones (la tarjeta usa las opciones del JSON) |
+| 24 | `Scripts/Final/Final.gd` | Nota «no es un simulacro oficial…» | Nueva |
+| 25 | `Scripts/Mundo/Nivel2.gd` | «Mantén E: agacharte, cubrirte y sujetarte», nombres de íconos y mensajes de D9 a D11 | Nuevos; D10 usa las opciones del maestro (no «linterna / interruptor / fósforo») |
+| 26 | `Resources/contenido/mitos.json` | Campo `desbloqueo` (qué decisión desbloquea cada mito) | Elegido por el equipo |
 | 22 | `Scripts/Mundo/Nivel1.gd` | **Lucía** aparece como personaje en el pasillo del nivel 1 (no como cuadro de radio) | Cambio de diseño: el maestro dice «cuadro de radio o teléfono» |
