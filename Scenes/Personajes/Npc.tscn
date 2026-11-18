@@ -1,0 +1,32 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/Personajes/Npc.gd" id="1_npc"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pies"]
+size = Vector2(14, 8)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_zona"]
+radius = 26.0
+
+[node name="Npc" type="Node2D"]
+script = ExtResource("1_npc")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+position = Vector2(0, -29)
+
+[node name="Cuerpo" type="StaticBody2D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Forma" type="CollisionShape2D" parent="Cuerpo"]
+position = Vector2(0, -4)
+shape = SubResource("RectangleShape2D_pies")
+
+[node name="Zona" type="Area2D" parent="."]
+collision_layer = 2
+collision_mask = 0
+
+[node name="Forma" type="CollisionShape2D" parent="Zona"]
+position = Vector2(0, -8)
+shape = SubResource("CircleShape2D_zona")
