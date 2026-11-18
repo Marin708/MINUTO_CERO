@@ -1,610 +1,268 @@
 #!/usr/bin/env python3
-"""Genera el primer borrador del mapa de ECOS (96x54 tiles) y comprueba que sea transitable.
+"""Genera los mapas de MINUTO CERO y las escenas de los niveles (sin Pillow).
 
 Escribe:
-  Resources/Mundo/mapa.txt        un carácter por tile (se edita a mano; ver la leyenda en el archivo)
+  Resources/Mundo/apartamento.txt         32 x 20 tiles (niveles 1 y 2)
+  Resources/Mundo/apartamento_danos.txt   la misma forma con la capa de daños leves del nivel 2 (grietas, polvo, vidrios, escombros)
+  Resources/Mundo/calle.txt               40 x 24 tiles (nivel 3: calle y parque)
+  Scenes/Niveles/Nivel1.tscn, Nivel2.tscn, Nivel3.tscn   con un Marker2D por cada objeto, personaje y zona
 
-Uso:
-  python tools/generar_mapa.py            # solo el mapa
-  python tools/generar_mapa.py --vista C:/ruta/vista.png   # además guarda una imagen de revisión
+Cada carácter de los .txt es un tile (leyenda en LEYENDA; los números de tile son los de tools/generar_tileset.py).
+Las líneas que empiezan con ';' son comentarios. Los marcadores llevan metadatos: clase ("prop", "npc", "zona",
+"spawn"), tipo, etiqueta (la decisión, por ejemplo D1) y, en las zonas, radio en píxeles. Un marcador está en el
+suelo, en la base (los pies) del objeto: x = centro del tile, y = borde de abajo del tile.
 
-Después de cambiar el mapa, regenera las vistas previas (ver tools/preview_mapa.gd).
+Comprueba que el mapa sea transitable (que todos los marcadores y el punto de inicio se alcancen) y que las
+puertas y los NPC tengan una zona libre alrededor.
+
+Uso:  python tools/generar_mapa.py
 """
-import math
 import os
 import random
-import sys
 from collections import deque
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import acertijos_mapa
-import compuertas_mapa
-import santuarios_mapa
-
-W, H = 96, 54
-TILE = 32
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LADO = 32
 
-# Centros de las zonas (en tiles)
-ZONAS = {
-    "Hub": (48, 27), "Final": (48, 5),
-    "Rabia": (80, 12), "Culpa": (88, 27), "Ansiedad": (78, 44), "Miedo": (48, 48),
-    "Tristeza": (16, 42), "Soledad": (8, 27), "Verguenza": (16, 12),
+#: carácter -> nombre del tile
+LEYENDA = {
+    ".": "vacio", "F": "piso_madera", "K": "baldosa", "B": "balcon", "P": "pared", "V": "ventana",
+    "D": "umbral", "S": "escalera", "A": "alfombra", "c": "calle", "l": "calle_linea", "a": "anden",
+    "g": "pasto", "p": "camino", "x": "borde", "m": "muro_edificio",
 }
-
-LEYENDA = """\
-; ECOS - mapa de 96x54 tiles. Un carácter por tile. Las líneas que empiezan con ';' son comentarios.
-; Las dos épocas (Pasado y Presente) usan exactamente este mismo mapa.
-;
-;   .  hierba                     f  hierba con flores         d  pasto seco
-;   r  tierra roja                v  suelo volcánico           b  suelo de bosque oscuro
-;   u  suelo de ruinas            a  adoquines
-;   c  camino de tierra           s  arena de orilla           w  agua (los bordes son poco profundos y se pueden pisar)
-;   R  roca (sólida)              C  acantilado (sólido)       M  muro de piedra (sólido)
-;   P  puente                     q  puente roto (parte izquierda)   Q  puente roto (parte derecha)
-;   X  bloqueo invisible              T  franja de árboles (sólida; Decorador pone los árboles encima)
-;
-"""
-
-BLOQUEA = set("CRMXT")
-AGUA = set("wPqQ")
-
-
-# ----------------------------------------------------------------------------
-class Ruido:
-    """Ruido de valores suave (no periódico) para formas orgánicas."""
-
-    def __init__(self, semilla, escala=8):
-        r = random.Random(semilla)
-        self.escala = escala
-        self.g = {}
-        self.r = r
-
-    def _v(self, i, j):
-        if (i, j) not in self.g:
-            self.g[(i, j)] = self.r.random()
-        return self.g[(i, j)]
-
-    def __call__(self, x, y):
-        gx, gy = x / self.escala, y / self.escala
-        i, j = math.floor(gx), math.floor(gy)
-        fx, fy = gx - i, gy - j
-        sx, sy = fx * fx * (3 - 2 * fx), fy * fy * (3 - 2 * fy)
-        a = self._v(i, j) + (self._v(i + 1, j) - self._v(i, j)) * sx
-        b = self._v(i, j + 1) + (self._v(i + 1, j + 1) - self._v(i, j + 1)) * sx
-        return a + (b - a) * sy
-
-
-def dentro(x, y):
-    return 0 <= x < W and 0 <= y < H
+SOLIDOS = set("PVx.m")
+#: capa de daños
+LEYENDA_DANOS = {"r": "grieta", "u": "polvo", "v": "vidrio", "e": "escombro"}
 
 
 class Mapa:
-    def __init__(self):
-        self.g = [["." for _ in range(W)] for _ in range(H)]
-        self.rnd = random.Random(2024)
-        self.ruido = Ruido(11, 7)
-        self.ruido2 = Ruido(23, 5)
-        self.camino = set()          # celdas del camino (centro y ancho)
-        self.eje_camino = set()      # solo la línea central
+    def __init__(self, ancho, alto, relleno):
+        self.ancho, self.alto = ancho, alto
+        self.celdas = [[relleno] * ancho for _ in range(alto)]
 
-    def get(self, x, y):
-        return self.g[y][x] if dentro(x, y) else "C"
+    def poner(self, x, y, ch):
+        if 0 <= x < self.ancho and 0 <= y < self.alto:
+            self.celdas[y][x] = ch
 
-    def put(self, x, y, ch, solo_sobre=None):
-        if dentro(x, y) and (solo_sobre is None or self.g[y][x] in solo_sobre):
-            self.g[y][x] = ch
+    def rect(self, x0, y0, x1, y1, ch):
+        """Rellena el rectángulo de tiles (x0, y0) a (x1, y1), ambos incluidos."""
+        for y in range(y0, y1 + 1):
+            for x in range(x0, x1 + 1):
+                self.poner(x, y, ch)
 
-    def elipse(self, cx, cy, rx, ry, ch, solo_sobre=None, irregular=0.28):
-        celdas = []
-        for y in range(H):
-            for x in range(W):
-                d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2
-                if d <= 1.0 + irregular * (self.ruido(x, y) - 0.5) * 2:
-                    if solo_sobre is None or self.g[y][x] in solo_sobre:
-                        self.g[y][x] = ch
-                        celdas.append((x, y))
-        return celdas
+    def en(self, x, y):
+        return self.celdas[y][x] if 0 <= x < self.ancho and 0 <= y < self.alto else "."
+
+    def texto(self, titulo, leyenda):
+        cab = ["; " + titulo, "; %d x %d tiles. Un carácter por tile." % (self.ancho, self.alto)]
+        cab += ["; %s = %s" % (k, v) for k, v in leyenda.items()]
+        return "\n".join(cab + ["".join(f) for f in self.celdas]) + "\n"
 
 
-def base_plaza(m, x, y):
-    """¿Había una plaza de adoquines debajo? (para devolver ese suelo al borrar un muro suelto)."""
-    return sum(1 for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dentro(x + dx, y + dy) and m.g[y + dy][x + dx] == "a") >= 3
-
-
-def fbm(r1, r2, x, y):
-    """Ruido de dos escalas (formas orgánicas): valores entre 0 y 1."""
-    return 0.65 * r1(x, y) + 0.35 * r2(x, y)
-
-
-def construir():
-    m = Mapa()
-    lento = Ruido(3, 12)      # variaciones grandes
-    medio = Ruido(11, 6)
-    fino = Ruido(31, 2.6)     # para mezclar suelos en manchas pequeñas
-    SUELO = set(".fdrvbuTs")
-    HIERBAS = set(".fd")
-
-    def mezcla(cx, cy, rx, ry, ch, solo=None, nucleo=0.62, borde=1.18, amp=0.5):
-        """Mancha orgánica: el centro es del suelo 'ch' y en el borde se va mezclando con lo que haya
-        (la transición dura 2 o 3 tiles), usando ruido y no azar tile por tile."""
-        solo = solo or (SUELO | set("a"))
-        for y in range(H):
-            for x in range(W):
-                d = math.hypot((x - cx) / rx, (y - cy) / ry) + (fbm(medio, lento, x + 50, y + 20) - 0.5) * amp
-                if d >= borde or m.g[y][x] not in solo:
-                    continue
-                if d < nucleo or fino(x, y) > 0.18 + 0.64 * (d - nucleo) / (borde - nucleo):
-                    m.g[y][x] = ch
-
-    # 1. límite natural: acantilados al norte y al este, agua al sur y al oeste
-    rn, rs, re_, rw = Ruido(5, 9), Ruido(6, 9), Ruido(7, 9), Ruido(8, 9)
-    norte = [3 + int(rn(x, 0) * 2.4) for x in range(W)]
-    for x in range(W):
-        if 40 <= x <= 56:
-            norte[x] = 3          # detrás de la Puerta del Reflejo el acantilado es bajo
-    este = [3 + int(re_(0, y) * 2.4) for y in range(H)]
-    sur = [2 + int(rs(x, 0) * 2.4) for x in range(W)]
-    oeste = [2 + int(rw(0, y) * 2.2) for y in range(H)]
-    for y in range(17, 38):
-        oeste[y] = 2          # la colina de Soledad queda a 3 tiles o más del agua del oeste
-    for y in range(H):
-        for x in range(W):
-            if x >= W - este[y]:
-                m.g[y][x] = "C"
-            elif y >= H - sur[x]:
-                m.g[y][x] = "w"
-            elif x < oeste[y] and y >= norte[x]:
-                m.g[y][x] = "w"
-            elif y < norte[x]:
-                m.g[y][x] = "C"
-    agua_borde = {(x, y) for y in range(H) for x in range(W) if m.g[y][x] == "w"}
-
-    # 2. franja densa de árboles justo dentro del límite (casillas 'T': sólidas; Decorador las llena de árboles)
-    grosor = Ruido(9, 5)
-    for y in range(H):
-        for x in range(W):
-            if m.g[y][x] != ".":
-                continue
-            g = 2 + int(grosor(x, y) * 2.4)
-            if (y < norte[x] + g or x >= W - este[y] - g or y >= H - sur[x] - g or x < oeste[y] + g):
-                m.g[y][x] = "T"
-
-    # 3. variedad del suelo: hierba con flores en manchas grandes (la variación clara/oscura la pone Mundo.gd)
-    flores = Ruido(41, 7)
-    for y in range(H):
-        for x in range(W):
-            if m.g[y][x] == "." and flores(x, y) > 0.72 and fino(x + 9, y + 3) > 0.35:
-                m.g[y][x] = "f"
-
-    # 4. suelos de cada zona, con transiciones graduales
-    mezcla(80, 12, 12.0, 9.0, "r")                       # Rabia: tierra roja...
-    mezcla(80, 12, 7.2, 5.5, "v", nucleo=0.7, borde=1.1)  # ...con el núcleo volcánico
-    mezcla(88, 27, 11.5, 8.5, "d", HIERBAS | set("T"))    # Culpa: pasto seco...
-    mezcla(88, 27, 7.5, 5.8, "u", nucleo=0.6, borde=1.1)  # ...y ruinas
-    mezcla(78, 44, 9.0, 5.8, "a", nucleo=0.97, borde=1.0, amp=0.1)  # Ansiedad: plaza de adoquines
-    mezcla(48, 48, 12.0, 8.0, "b", HIERBAS | set("T"))   # Miedo: bosque oscuro
-    mezcla(8, 27, 10.0, 8.0, "d", HIERBAS | set("T"))     # Soledad: pasto seco alrededor de la colina
-    mezcla(16, 12, 10.5, 7.8, "f", HIERBAS | set("T"))    # Vergüenza: jardín con flores
-    mezcla(16, 12, 4.4, 4.0, "a", nucleo=0.97, borde=1.0, amp=0.1)   # y una plaza redonda
-    mezcla(48, 27, 11.0, 10.5, "f", HIERBAS, amp=0.35)    # Hub: césped con flores...
-    mezcla(48, 27, 6.4, 6.1, "a", nucleo=0.97, borde=1.0, amp=0.1)  # ...y plaza de adoquines
-    # Puerta del Reflejo: un hueco natural en el acantilado, con una plataforma de adoquines
-    for y in range(0, 12):
-        for x in range(41, 56):
-            if y >= norte[x] - 1 and m.g[y][x] in "CT":
-                m.g[y][x] = "."
-    mezcla(48, 6.5, 7.2, 4.3, "a", SUELO | set("a"), nucleo=0.97, borde=1.0, amp=0.1)
-
-    # 5. ríos y lagos
-    # Río de Culpa: baja desde los acantilados del este; recto y fijo entre y=24 y 35 (puente roto y vado)
-    puntos_rio = [(91, 21.5), (86, 21.5), (84, 22.5), (83.5, 24), (83.5, 31), (83.5, 35), (84, 37)]
-    segmentos = list(zip(puntos_rio[:-1], puntos_rio[1:]))
-
-    def dist_rio(px, py):
-        mejor = 1e9
-        for (a, b) in segmentos:
-            ax, ay = a
-            bx, by = b
-            vx, vy = bx - ax, by - ay
-            t = max(0.0, min(1.0, ((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy)))
-            mejor = min(mejor, math.hypot(px - (ax + t * vx), py - (ay + t * vy)))
-        return mejor
-
-    for y in range(H):
-        for x in range(W):
-            if 18 <= y <= 38:
-                if 30 <= y <= 33:
-                    radio = 1.0            # vado: solo 2 de ancho
-                elif 24 <= y <= 35:
-                    radio = 1.95
-                else:
-                    radio = 1.95 + (medio(x, y + 80) - 0.5) * 0.9   # fuera del cruce el cauce ondula
-                if dist_rio(x + 0.5, y + 0.5) <= radio:
-                    m.g[y][x] = "w"
-    m.elipse(83.5, 37.5, 4.4, 2.5, "w", irregular=0.3)
-    m.elipse(11, 46, 7.2, 4.2, "w", irregular=0.35)      # lago de Tristeza
-    for y in (26, 27, 28):                                # puente roto: hueco de 2 tiles
-        m.g[y][82], m.g[y][83], m.g[y][84], m.g[y][85] = "P", "q", "w", "Q"
-
-    # 6. caminos: curvos y orgánicos, de 2 a 3 tiles de ancho
-    base = [fila[:] for fila in m.g]
-    ondas = Ruido(77, 7)
-
-    def catmull(pts, pasos=16):
-        res = []
-        Pt = [pts[0]] + pts + [pts[-1]]
-        for i in range(1, len(Pt) - 2):
-            p0, p1, p2, p3 = Pt[i - 1], Pt[i], Pt[i + 1], Pt[i + 2]
-            for k in range(pasos):
-                t = k / pasos
-                t2, t3 = t * t, t * t * t
-                res.append(tuple(0.5 * ((2 * p1[j]) + (-p0[j] + p2[j]) * t + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t2 + (-p0[j] + 3 * p1[j] - 3 * p2[j] + p3[j]) * t3) for j in range(2)))
-        res.append(pts[-1])
-        return res
-
-    def trazar(pts, ondulacion=3.2, semilla=0):
-        muestras = catmull([(float(a), float(b)) for a, b in pts])
-        n = len(muestras)
-        for i, (px, py) in enumerate(muestras):
-            s = i / max(1, n - 1)
-            # empuje lateral con ruido (nulo en los extremos para que lleguen justo a su sitio)
-            if i + 1 < n:
-                tx, ty = muestras[i + 1][0] - px, muestras[i + 1][1] - py
-            else:
-                tx, ty = px - muestras[i - 1][0], py - muestras[i - 1][1]
-            largo = math.hypot(tx, ty) or 1.0
-            nx, ny = -ty / largo, tx / largo
-            sobre = (math.sin(math.pi * s) ** 0.7) * ondulacion * (ondas(i * 0.09, semilla * 17.0) - 0.5) * 2
-            cx, cy = px + nx * sobre, py + ny * sobre
-            radio = 1.25 + (ondas(i * 0.07 + 40, semilla * 11.0 + 5) - 0.5) * 0.5   # ancho de 2 a 3 tiles
-            m.eje_camino.add((int(round(cx)), int(round(cy))))
-            for dy in range(-3, 4):
-                for dx in range(-3, 4):
-                    x, y = int(round(cx)) + dx, int(round(cy)) + dy
-                    # distancia exacta al punto de la curva (sin redondear), así el ancho es parejo
-                    if math.hypot(x - cx, y - cy) <= radio:
-                        if dentro(x, y) and m.g[y][x] in SUELO and m.g[y][x] != "T":
-                            m.g[y][x] = "c"
-
-    trazar([(48, 27), (62, 26), (72, 21), (76, 14), (80, 12)], 2.4, semilla=1)          # Rabia
-    trazar([(48, 27), (60, 25), (72, 26), (81, 27)], 1.2, semilla=2)                   # Culpa: hasta el puente roto
-    trazar([(86, 27), (87, 27), (88, 27)], 0.0, semilla=3)                              # Culpa: orilla este
-    trazar([(52, 29), (62, 33), (72, 33), (80, 31)], 1.4, semilla=4)                   # Culpa: hacia el vado
-    trazar([(86, 31), (87, 30), (88, 27)], 0.0, semilla=5)                              # Culpa: salida del vado
-    trazar([(48, 27), (52, 36), (60, 43), (70, 44), (78, 44)], 2.4, semilla=6)          # Ansiedad
-    trazar([(48, 27), (48, 34), (47, 41), (48, 48)], semilla=7)                         # Miedo
-    trazar([(48, 27), (44, 35), (34, 41), (24, 42), (16, 42)], 2.4, semilla=8)          # Tristeza
-    trazar([(48, 27), (36, 28), (24, 27), (15, 27), (11, 27)], semilla=9)                # Soledad
-    trazar([(48, 27), (42, 20), (32, 14), (22, 12), (16, 12)], 2.4, semilla=10)         # Vergüenza
-    trazar([(48, 27), (48, 20), (48, 14), (48, 9), (48, 6)], 1.6, semilla=11)           # Reflejo
-
-    # Paso de tierra sobre el río (antes era un vado de agua poco profunda): dos filas de camino de lado a lado
-    for y in (31, 32):
-        for x in range(80, 88):
-            if m.g[y][x] in "wsc.fd":
-                m.g[y][x] = "c"
-
-    # suavizado: filtro de mayoría en un círculo de radio 2 (redondea los escalones de los bordes)
-    disco = [(dx, dy) for dy in range(-2, 3) for dx in range(-2, 3) if math.hypot(dx, dy) <= 2.1]
-    for _ in range(3):
-        nuevo = [fila[:] for fila in m.g]
-        for y in range(2, H - 2):
-            for x in range(2, W - 2):
-                if m.g[y][x] not in SUELO or m.g[y][x] == "T":
-                    continue
-                dentro_c = sum(1 for dx, dy in disco if m.g[y + dy][x + dx] == "c")
-                if m.g[y][x] != "c" and dentro_c >= 11:
-                    nuevo[y][x] = "c"
-                elif m.g[y][x] == "c" and dentro_c <= 7 and base[y][x] in SUELO:
-                    nuevo[y][x] = base[y][x]
-        m.g = nuevo
-    for y in range(H):
-        for x in range(W):
-            if m.g[y][x] == "c":
-                m.camino.add((x, y))
-
-    # 7. arena solo alrededor del agua (la orilla es irregular, nada de parches sueltos)
-    agua = [(x, y) for y in range(H) for x in range(W) if m.g[y][x] in AGUA]
-    for (x, y) in agua:
-        radio = (1.3 if (x, y) in agua_borde else 1.9) + (medio(x, y + 33) - 0.5) * 0.9
-        for dy in range(-3, 4):
-            for dx in range(-3, 4):
-                if math.hypot(dx, dy) <= radio:
-                    m.put(x + dx, y + dy, "s", HIERBAS | set("ruvab"))
-
-    # estanques pequeños en claros vacíos (lejos de caminos y zonas)
-    cerca_camino = set()
-    for (x, y) in m.camino | m.eje_camino:
-        for dy in range(-6, 7):
-            for dx in range(-6, 7):
-                cerca_camino.add((x + dx, y + dy))
-    centros = list(ZONAS.values())
-    for (cx, cy, rx, ry) in ((30, 19, 3.0, 2.0), (66, 36, 2.8, 1.8), (34, 10, 2.6, 1.7), (62, 7, 2.6, 1.7), (28, 46, 2.8, 1.8), (68, 21, 2.4, 1.6)):
-        if (cx, cy) in cerca_camino or any(math.hypot(cx - a, cy - b) < 11 for a, b in centros):
-            continue
-        for y in range(cy - 4, cy + 5):
-            for x in range(cx - 5, cx + 6):
-                if dentro(x, y) and m.g[y][x] in ".fd" and math.hypot((x - cx) / rx, (y - cy) / ry) <= 1.0 + (medio(x, y) - 0.5) * 0.4:
-                    m.g[y][x] = "w"
-        for y in range(cy - 6, cy + 7):
-            for x in range(cx - 7, cx + 8):
-                if dentro(x, y) and m.g[y][x] in ".fd" and any(m.g[y + j][x + i] == "w" for i in (-1, 0, 1) for j in (-1, 0, 1) if dentro(x + i, y + j)):
-                    m.g[y][x] = "s"
-
-    # 9. colinas elevadas: la de Soledad (entrada al este) y el volcán de Rabia (entrada al suroeste)
-    def meseta(cx, cy, rx, ry, suelo, grosor=2.3):
-        """Meseta elevada: anillo de acantilado de 2 tiles de alto con sombra; se deja abierto donde pasa el camino."""
-        interior = set()
-        for y in range(H):
-            for x in range(W):
-                d = math.hypot((x - cx) / rx, (y - cy) / ry) + (medio(x + 10, y + 60) - 0.5) * 0.18
-                if d < 1.0:
-                    interior.add((x, y))
-        libres_camino = set()
-        for (x, y) in m.camino:
-            for dy in range(-1, 2):
-                for dx in range(-1, 2):
-                    libres_camino.add((x + dx, y + dy))
-        for y in range(H):
-            for x in range(W):
-                if (x, y) in interior:
-                    if m.g[y][x] in ".fdTsbu":
-                        m.g[y][x] = suelo
-                    continue
-                if (x, y) in libres_camino or m.g[y][x] in "wcRMP":
-                    continue
-                # ¿está a menos de 'grosor' tiles del interior?
-                if any(math.hypot(dx, dy) <= grosor and (x + dx, y + dy) in interior
-                       for dy in range(-3, 4) for dx in range(-3, 4)):
-                    m.g[y][x] = "C"
-
-    meseta(12, 27, 5.0, 4.4, "f")
-    meseta(80, 12, 8.6, 6.4, "v")
-
-    # 8. obstáculos (lejos de los caminos y de los centros de zona)
-    cerca = set()
-    for (x, y) in m.camino | m.eje_camino:
-        for dy in range(-2, 3):
-            for dx in range(-2, 3):
-                cerca.add((x + dx, y + dy))
-
-    def libre(x, y, margen=3.2):
-        if not dentro(x, y) or (x, y) in cerca:
-            return False
-        return all(math.hypot(x - cx, y - cy) > margen for cx, cy in centros)
-
-    # Rabia: roca volcánica
-    cand = [(x, y) for y in range(H) for x in range(W) if m.g[y][x] in "vr" and libre(x, y, 3.5)]
-    m.rnd.shuffle(cand)
-    for (x, y) in cand[:30]:
-        m.g[y][x] = "R"
-    cand = [(x, y) for y in range(H) for x in range(W) if m.g[y][x] == "b" and libre(x, y, 4.0)]
-    m.rnd.shuffle(cand)
-    for (x, y) in cand[:12]:
-        m.g[y][x] = "R"
-    cand = [(x, y) for y in range(H) for x in range(W) if m.g[y][x] == "s" and 6 <= x <= 26 and 36 <= y <= 50 and libre(x, y, 4.0)]
-    m.rnd.shuffle(cand)
-    for (x, y) in cand[:7]:
-        m.g[y][x] = "R"
-    # Culpa: muros de ruinas rotos (segmentos con huecos)
-    for (x0, y0, dx, dy, largo) in ((90, 22, 1, 0, 5), (94, 23, 0, 1, 3), (88, 34, 1, 0, 5), (92, 29, 0, 1, 3)):
-        for k in range(largo):
-            x, y = x0 + dx * k, y0 + dy * k
-            if dentro(x, y) and m.g[y][x] in "ud" and libre(x, y, 2.6):
-                m.g[y][x] = "M"
-    # Muros bajos con sentido: arcos en el borde de la plaza del hub y a los lados de la plataforma
-    # de la Puerta del Reflejo (nunca sobre los caminos). Los trozos aislados se borran más abajo.
-    def muro_en_arco(cx, cy, angulos, ancho):
-        for y in range(H):
-            for x in range(W):
-                if m.g[y][x] != "a":
-                    continue
-                borde_plaza = any(dentro(x + dx, y + dy) and m.g[y + dy][x + dx] not in "aM" for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
-                if not borde_plaza or (x, y) in cerca:
-                    continue
-                ang = math.degrees(math.atan2(y - cy, x - cx))
-                if any(abs((ang - a + 180) % 360 - 180) <= ancho for a in angulos):
-                    m.g[y][x] = "M"
-
-    muro_en_arco(48, 27, (45, 135, 225, 315), 20)      # hub
-    muro_en_arco(48, 6.5, (0, 180), 38)                # plataforma del Reflejo
-
-    # Se quitan todos los muros aislados (restos sueltos): un muro tiene que ser un tramo de 3 casillas o más
-    visto = set()
-    for y in range(H):
-        for x in range(W):
-            if m.g[y][x] == "M" and (x, y) not in visto:
-                pila, comp = [(x, y)], []
-                visto.add((x, y))
-                while pila:
-                    a, b = pila.pop()
-                    comp.append((a, b))
-                    for dx in (-1, 0, 1):
-                        for dy in (-1, 0, 1):
-                            n = (a + dx, b + dy)
-                            if dentro(*n) and m.g[n[1]][n[0]] == "M" and n not in visto:
-                                visto.add(n)
-                                pila.append(n)
-                if len(comp) < 3:
-                    for (a, b) in comp:
-                        m.g[b][a] = "a" if base_plaza(m, a, b) else "."
-
-    # 13. santuarios: un claro cerrado en el centro de cada zona de emoción (ver santuarios_mapa.py)
-    m.santuarios = santuarios_mapa.estampar(m, ZONAS, W, H, TILE)
-
-    # 12. compuertas de habilidad: tres zonas cercadas con un hueco tapado (ver compuertas_mapa.py)
-    m.compuertas = compuertas_mapa.estampar(m, W, H, TILE)
-
-    # 11. acertijos de habilidad: recintos cerrados con un fragmento de memoria (ver acertijos_mapa.py)
-    m.acertijos = acertijos_mapa.estampar(m, ZONAS, W, H, dentro, transitable)
-
-    # 10. los centros de zona y el hub deben ser transitables
-    for (cx, cy) in centros:
-        if m.g[cy][cx] in BLOQUEA or m.g[cy][cx] == "w":
-            m.g[cy][cx] = "."
+# ---------------------------------------------------------------------------
+# Apartamento (niveles 1 y 2)
+def apartamento():
+    m = Mapa(32, 20, "P")
+    m.rect(1, 2, 13, 10, "F")      # sala-comedor
+    m.rect(5, 5, 9, 8, "A")        # alfombra bajo la mesa
+    m.rect(15, 2, 20, 8, "K")      # cocina
+    m.rect(14, 4, 14, 6, "K")      # paso sala-cocina
+    m.rect(23, 2, 30, 9, "F")      # habitación
+    m.rect(21, 5, 22, 6, "F")      # paso cocina-habitación
+    m.rect(1, 12, 30, 15, "F")     # pasillo
+    m.rect(2, 13, 24, 14, "A")     # alfombra del pasillo
+    m.rect(6, 11, 8, 11, "F")      # paso sala-pasillo
+    m.rect(17, 9, 18, 11, "K")     # paso cocina-pasillo
+    m.rect(26, 10, 27, 11, "F")    # paso habitación-pasillo
+    m.rect(26, 16, 30, 18, "F")    # vestíbulo de salida
+    m.rect(29, 17, 30, 18, "S")    # escalera
+    m.rect(2, 17, 9, 18, "B")      # balcón
+    m.rect(5, 16, 6, 16, "F")      # puerta del balcón
+    for x in (3, 4, 10, 11, 17, 26, 27):
+        m.poner(x, 1, "V")         # ventanas en la pared de arriba
+    m.rect(4, 12, 4, 12, "D") if False else None
     return m
 
 
-# ----------------------------------------------------------------------------
-def profunda(m, x, y):
-    """Agua profunda: una celda 'w' con las 8 vecinas también agua (ahí hay colisión)."""
-    if m.get(x, y) != "w":
-        return False
-    return all(m.get(x + dx, y + dy) in AGUA or not dentro(x + dx, y + dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1))
+def danos_apartamento(m):
+    """La capa de daños leves del nivel 2: solo dibujo (sin colisión)."""
+    azar = random.Random(1999)
+    d = Mapa(m.ancho, m.alto, ".")
+    libres = [(x, y) for y in range(m.alto) for x in range(m.ancho) if m.en(x, y) in "FKAB"]
+    junto_pared = [(x, y) for x, y in libres if m.en(x, y - 1) in "PV" or m.en(x - 1, y) == "P" or m.en(x + 1, y) == "P"]
+    for x, y in azar.sample(junto_pared, 12):
+        d.poner(x, y, "r")
+    for x, y in azar.sample(libres, 26):
+        if d.en(x, y) == ".":
+            d.poner(x, y, "u")
+    for x in (3, 4, 10, 11, 26, 27):
+        d.poner(x, 2, "v")
+        if azar.random() < 0.6:
+            d.poner(x, 3, "v")
+    for x, y in ((11, 5), (12, 6), (12, 3), (24, 5), (27, 8), (16, 4), (19, 6), (8, 9), (6, 9)):
+        d.poner(x, y, "e")
+    return d
 
 
-def transitable(m, x, y):
-    """Todo el agua es sólida (solo los tramos de puente 'P', 'q' y 'Q' se pisan)."""
-    if not dentro(x, y):
-        return False
-    ch = m.g[y][x]
-    return ch not in BLOQUEA and ch != "w"
+MARCADORES_APTO = [
+    # (nombre, clase, tipo, etiqueta, tx, ty, radio)
+    ("Prop_Mesa", "prop", "mesa", "", 7, 7, 0),
+    ("Prop_Sofa", "prop", "sofa", "", 4, 10, 0),
+    ("Prop_MuebleTV", "prop", "mueble_tv", "", 8, 3, 0),
+    ("Prop_Estante_D1", "prop", "estante", "D1", 12, 4, 0),
+    ("Prop_GasEstufa_D3", "prop", "gas_estufa", "D3", 17, 3, 0),
+    ("Prop_Nevera", "prop", "nevera", "", 19, 3, 0),
+    ("Prop_CuadroCama_D2", "prop", "cuadro_cama", "D2", 27, 7, 0),
+    ("Prop_Repisa_D4", "prop", "repisa", "D4", 24, 4, 0),
+    ("Prop_Armario", "prop", "armario", "kit", 29, 4, 0),
+    ("Prop_PuertaSalida", "prop", "puerta_salida", "salida", 29, 11, 0),
+    ("Npc_Marta", "npc", "marta", "", 17, 6, 0),
+    ("Zona_Mesa", "zona", "mesa_segura", "", 7, 7, 56),
+    ("Zona_Ventana", "zona", "ventana", "", 4, 3, 64),
+    ("Zona_Puerta", "zona", "puerta", "", 29, 12, 80),
+    ("Zona_Escalera", "zona", "escalera", "", 29, 17, 40),
+]
 
 
-def alcanzables(m, origen):
-    visto = {origen}
-    cola = deque([origen])
+def apartamento_marcadores(nivel):
+    lista = list(MARCADORES_APTO)
+    if nivel == 1:
+        lista += [("Spawn", "spawn", "", "", 8, 13, 0), ("Npc_Lucia", "npc", "lucia", "", 12, 13, 0)]
+    else:
+        lista += [("Spawn", "spawn", "", "", 11, 9, 0)]
+    return lista
+
+
+# ---------------------------------------------------------------------------
+# Calle y parque (nivel 3)
+def calle():
+    m = Mapa(40, 24, "g")
+    m.rect(0, 0, 39, 0, "x")
+    m.rect(0, 23, 39, 23, "x")
+    m.rect(0, 0, 0, 23, "x")
+    m.rect(39, 0, 39, 23, "x")
+    m.rect(1, 10, 38, 13, "c")
+    m.rect(1, 11, 38, 11, "l")
+    m.rect(1, 8, 38, 9, "a")
+    m.rect(1, 14, 38, 15, "a")
+    m.rect(1, 1, 9, 7, "m")        # edificio de Sami
+    m.rect(11, 2, 16, 7, "m")      # edificio vecino agrietado
+    m.rect(20, 3, 26, 7, "m")
+    m.rect(1, 17, 8, 22, "m")
+    m.rect(20, 17, 38, 22, "g")
+    m.rect(20, 19, 38, 19, "p")    # senderos del parque
+    m.rect(29, 16, 29, 22, "p")
+    m.rect(11, 8, 16, 9, "x")      # andén bloqueado bajo el edificio agrietado
+    m.rect(17, 14, 20, 15, "x")    # andén bloqueado por el cable caído
+    for x in range(30, 38):
+        m.poner(x, 4, "x")
+    return m
+
+
+MARCADORES_CALLE = [
+    ("Spawn", "spawn", "", "", 5, 9, 0),
+    ("Npc_Rosa_D12", "npc", "rosa", "D12", 8, 9, 0),
+    ("Npc_Tomas_D14", "npc", "tomas", "D14", 24, 9, 0),
+    ("Npc_Marta", "npc", "marta", "", 28, 19, 0),
+    ("Npc_Lucia", "npc", "lucia", "", 32, 19, 0),
+    ("Prop_Edificio", "prop", "edificio", "", 13, 7, 0),
+    ("Prop_Escombros", "prop", "escombros", "", 12, 10, 0),
+    ("Prop_Barrera1", "prop", "barrera", "", 11, 9, 0),
+    ("Prop_Barrera2", "prop", "barrera", "", 16, 9, 0),
+    ("Prop_Poste", "prop", "poste", "", 19, 15, 0),
+    ("Prop_Barrera3", "prop", "barrera", "", 17, 15, 0),
+    ("Prop_Carro", "prop", "carro", "", 25, 15, 0),
+    ("Prop_Arbol1", "prop", "arbol", "", 22, 18, 0),
+    ("Prop_Arbol2", "prop", "arbol", "", 35, 18, 0),
+    ("Prop_Arbol3", "prop", "arbol", "", 24, 22, 0),
+    ("Prop_Arbol4", "prop", "arbol", "", 36, 22, 0),
+    ("Prop_Arbol5", "prop", "arbol", "", 18, 7, 0),
+    ("Prop_Banca", "prop", "banca", "", 26, 20, 0),
+    ("Prop_Carpa", "prop", "carpa", "", 30, 20, 0),
+    ("Zona_Peligro_D13", "zona", "peligro", "D13", 13, 9, 112),
+    ("Zona_Cable", "zona", "cable", "", 18, 14, 48),
+    ("Zona_Llegada", "zona", "llegada", "", 30, 19, 72),
+]
+
+
+# ---------------------------------------------------------------------------
+# Salidas
+def tscn(nombre, script, exterior, marcadores):
+    t = ['[gd_scene load_steps=2 format=3]', '',
+         '[ext_resource type="Script" path="res://Scripts/Mundo/%s.gd" id="1_nivel"]' % script, '',
+         '[node name="%s" type="Node2D" groups=["nivel"]]' % nombre, 'script = ExtResource("1_nivel")',
+         'metadata/exterior = %s' % ("true" if exterior else "false"), '',
+         '[node name="Suelo" type="Node2D" parent="."]', '',
+         '[node name="Objetos" type="Node2D" parent="."]', 'y_sort_enabled = true', '',
+         '[node name="Marcadores" type="Node2D" parent="."]', '']
+    for n, clase, tipo, etiqueta, tx, ty, radio in marcadores:
+        x, y = tx * LADO + LADO // 2, (ty * LADO + LADO) if clase != "spawn" else (ty * LADO + LADO - 4)
+        t += ['[node name="%s" type="Marker2D" parent="Marcadores"]' % n, "position = Vector2(%d, %d)" % (x, y),
+              'metadata/clase = "%s"' % clase]
+        if tipo:
+            t.append('metadata/tipo = "%s"' % tipo)
+        if etiqueta:
+            t.append('metadata/etiqueta = "%s"' % etiqueta)
+        if radio:
+            t.append("metadata/radio = %d" % radio)
+        t.append("")
+    return "\n".join(t)
+
+
+def accesible(m, marcadores):
+    """Comprueba que desde el Spawn se llegue a una casilla libre junto a cada marcador."""
+    inicio = next(((tx, ty) for n, c, t, e, tx, ty, r in marcadores if c == "spawn"), None)
+    vistos = {inicio}
+    cola = deque([inicio])
     while cola:
         x, y = cola.popleft()
         for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            n = (x + dx, y + dy)
-            if n not in visto and transitable(m, *n):
-                visto.add(n)
-                cola.append(n)
-    return visto
+            nx, ny = x + dx, y + dy
+            if (nx, ny) not in vistos and m.en(nx, ny) not in SOLIDOS:
+                vistos.add((nx, ny))
+                cola.append((nx, ny))
+    problemas = []
+    ocupados = {(tx, ty) for n, c, t, e, tx, ty, r in marcadores if c in ("prop", "npc")}
+    for n, c, t, e, tx, ty, r in marcadores:
+        if c in ("npc", "prop") and t != "edificio":   # el edificio es un decorado sobre un muro: no hace falta llegar
+            # alguna casilla libre a menos de 2 tiles del marcador que se alcance
+            ok = any((tx + dx, ty + dy) in vistos for dx in range(-2, 3) for dy in range(-2, 3))
+            if not ok:
+                problemas.append("no se llega a " + n)
+    # zona libre alrededor de NPC, puertas y objetos interactivos: ningún otro marcador a menos de 1 tile
+    for n, c, t, e, tx, ty, r in marcadores:
+        if c == "npc" or t == "puerta_salida" or e:
+            for n2, c2, t2, e2, tx2, ty2, r2 in marcadores:
+                if n2 != n and c2 in ("prop", "npc") and abs(tx - tx2) + abs(ty - ty2) < 2:
+                    problemas.append("%s está pegado a %s" % (n, n2))
+    return problemas
 
 
-def ancho_libre(m, x, y):
-    """¿Hay un hueco de 2x2 transitable que contenga la celda? (el jugador cabe)."""
-    for ox in (0, -1):
-        for oy in (0, -1):
-            if all(transitable(m, x + ox + i, y + oy + j) for i in (0, 1) for j in (0, 1)):
-                return True
-    return False
-
-
-def verificar(m):
-    hub = ZONAS["Hub"]
-    ok = True
-    alc = alcanzables(m, hub)
-    for nombre, (x, y) in ZONAS.items():
-        r = (x, y) in alc and ancho_libre(m, x, y)
-        print("  %-10s (%2d,%2d): %s" % (nombre, x, y, "alcanzable" if r else "NO ALCANZABLE"))
-        ok &= r
-    # los caminos no deben cruzar celdas bloqueadas ni quedar estrechos
-    estrechos = [(x, y) for (x, y) in m.eje_camino if dentro(x, y) and m.g[y][x] == "c" and not ancho_libre(m, x, y)]
-    print("  celdas de camino estrechas:", len(estrechos))
-    total = sum(1 for y in range(H) for x in range(W) if transitable(m, x, y))
-    aislado = sum(1 for y in range(H) for x in range(W) if transitable(m, x, y) and (x, y) not in alc)
-    print("  celdas transitables: %d  (%d desconectadas del hub)" % (total, aislado))
-    # el puente roto debe seguir impidiendo el paso directo, pero el vado lo permite
-    return ok and not estrechos
-
-
-def verificar_acertijos(m):
-    """Con la rejilla: sin habilidades el camino principal y las 7 zonas se alcanzan y ningún fragmento;
-    resolviendo cada acertijo, su fragmento se alcanza y se puede volver al hub."""
-    hub = ZONAS["Hub"]
-    todos = set()   # (las compuertas se dan por abiertas aquí: los acertijos son opcionales y van aparte)
-    for s in m.acertijos:
-        todos |= {tuple(c) for c in s["bloqueo"]}
-
-    def alc(origen, bloqueados):
-        visto = {origen}
-        cola = deque([origen])
-        while cola:
-            x, y = cola.popleft()
-            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                n = (x + dx, y + dy)
-                if n not in visto and n not in bloqueados and transitable(m, *n):
-                    visto.add(n)
-                    cola.append(n)
-        return visto
-
-    ok = True
-    base = alc(hub, todos)
-    perdidas = [n for n, (x, y) in ZONAS.items() if (x, y) not in base]
-    print("  sin habilidades se llega a todas las zonas y a la Puerta del Reflejo:", "SI" if not perdidas else "NO " + str(perdidas))
-    ok &= not perdidas
-    for s in m.acertijos:
-        f = (int(s["fragmento"][0] // TILE), int(s["fragmento"][1] // TILE))
-        sin = f in base
-        propios = {tuple(c) for c in s["bloqueo"]}
-        con_acertijo = alc(hub, todos - propios)
-        con = f in con_acertijo
-        vuelve = hub in alc(f, todos - propios)
-        # el recinto debe ser cerrado: desde el fragmento, sin resolver, solo se alcanza su interior
-        encerrado = alc(f, todos)
-        x, y, w, h = s["rect"]
-        fuera = [c for c in encerrado if not (x <= c[0] < x + w and y <= c[1] < y + h)]
-        bien = (not sin) and con and vuelve and not fuera
-        print("  %-9s %-10s fragmento en %s: sin habilidad %s, con ella %s, vuelve al hub %s, recinto cerrado %s"
-              % (s["emocion"], s["habilidad"], f, "ALCANZABLE (mal)" if sin else "no", "si" if con else "NO (mal)",
-                 "si" if vuelve else "NO (mal)", "si" if not fuera else "NO (mal)"))
-        ok &= bien
-    return ok
-
-
-def escribir_vista(m, ruta):
-    from PIL import Image
-    colores = {".": (150, 150, 80), "f": (190, 150, 170), "d": (200, 180, 100), "r": (170, 80, 60), "v": (70, 50, 70),
-               "b": (50, 50, 80), "u": (170, 160, 140), "a": (180, 170, 175), "c": (200, 150, 100), "s": (230, 215, 160),
-               "w": (80, 120, 190), "R": (110, 90, 105), "C": (90, 70, 95), "M": (140, 130, 150), "P": (150, 100, 60),
-               "q": (170, 110, 60), "Q": (170, 110, 60), "X": (255, 0, 0), "T": (40, 90, 50)}
-    esc = 10
-    img = Image.new("RGB", (W * esc, H * esc))
-    px = img.load()
-    for y in range(H):
-        for x in range(W):
-            col = colores[m.g[y][x]]
-            if m.g[y][x] == "w" and profunda(m, x, y):
-                col = (40, 70, 140)
-            for dy in range(esc):
-                for dx in range(esc):
-                    px[x * esc + dx, y * esc + dy] = col
-    for nombre, (cx, cy) in ZONAS.items():
-        for k in range(-4, 5):
-            for t in (-1, 0):
-                for (X, Y) in ((cx * esc + esc // 2 + k, cy * esc + esc // 2 + t), (cx * esc + esc // 2 + t, cy * esc + esc // 2 + k)):
-                    if 0 <= X < img.width and 0 <= Y < img.height:
-                        px[X, Y] = (255, 255, 0)
-    img.save(ruta)
-    print("Vista guardada:", ruta)
+def escribir(ruta, texto):
+    destino = os.path.join(RAIZ, ruta)
+    os.makedirs(os.path.dirname(destino), exist_ok=True)
+    with open(destino, "w", encoding="utf-8", newline="\n") as f:
+        f.write(texto)
+    print("escrito", ruta)
 
 
 def main():
-    args = sys.argv[1:]
-    m = construir()
-    print("Comprobando que el mapa sea transitable...")
-    bien = verificar(m)
-    print("Comprobando los acertijos de habilidad...")
-    bien = verificar_acertijos(m) and bien
-    print("Comprobando las compuertas de habilidad (físico, cada 8 px)...")
-    bien = compuertas_mapa.verificar(m, W, H, TILE, ZONAS, m.compuertas) and bien
-    print("Comprobando los santuarios (físico, cada 8 px)...")
-    bien = santuarios_mapa.verificar(m, W, H, TILE, ZONAS, m.compuertas, m.santuarios) and bien
-    filas = ["".join(f) for f in m.g]
-    assert all(len(f) == W for f in filas) and len(filas) == H
-    ruta = os.path.join(RAIZ, "Resources", "Mundo", "mapa.txt")
-    os.makedirs(os.path.dirname(ruta), exist_ok=True)
-    with open(ruta, "w", encoding="utf-8", newline="\n") as f:
-        f.write(LEYENDA + "\n".join(filas) + "\n")
-    print("Mapa escrito:", ruta)
-    ruta_acertijos = os.path.join(RAIZ, "Resources", "Mundo", "acertijos.json")
-    acertijos_mapa.escribir_json(m.acertijos, ruta_acertijos)
-    print("Acertijos escritos:", ruta_acertijos)
-    ruta_comp = os.path.join(RAIZ, "Resources", "Mundo", "compuertas.json")
-    compuertas_mapa.escribir_json(m.compuertas, ruta_comp)
-    print("Compuertas escritas:", ruta_comp)
-    ruta_sant = os.path.join(RAIZ, "Resources", "Mundo", "santuarios.json")
-    santuarios_mapa.escribir_json(m.santuarios, ruta_sant)
-    print("Santuarios escritos:", ruta_sant)
-    if "--vista" in args:
-        escribir_vista(m, args[args.index("--vista") + 1])
-    if not bien:
-        print("ATENCIÓN: hay zonas no alcanzables o caminos estrechos")
-        sys.exit(1)
+    apto = apartamento()
+    danos = danos_apartamento(apto)
+    escribir("Resources/Mundo/apartamento.txt", apto.texto("MINUTO CERO - apartamento del cuarto piso (niveles 1 y 2)", LEYENDA))
+    escribir("Resources/Mundo/apartamento_danos.txt", danos.texto("MINUTO CERO - daños leves del apartamento (nivel 2)", LEYENDA_DANOS))
+    c = calle()
+    escribir("Resources/Mundo/calle.txt", c.texto("MINUTO CERO - calle y parque de Villa Cafetal (nivel 3)", LEYENDA))
+    problemas = []
+    for nivel, mapa, marc in ((1, apto, apartamento_marcadores(1)), (2, apto, apartamento_marcadores(2)), (3, c, MARCADORES_CALLE)):
+        problemas += ["nivel %d: %s" % (nivel, p) for p in accesible(mapa, marc)]
+        escribir("Scenes/Niveles/Nivel%d.tscn" % nivel, tscn("Nivel%d" % nivel, "Nivel%d" % nivel, nivel == 3, marc))
+    if problemas:
+        print("PROBLEMAS:")
+        for p in problemas:
+            print(" -", p)
+        raise SystemExit(1)
+    print("Mapas transitables y con zonas libres.")
 
 
 if __name__ == "__main__":

@@ -107,7 +107,7 @@ func _ready() -> void:
 	_caja = PanelContainer.new()
 	_caja.position = Vector2(168, 24)
 	_caja.size = Vector2(452, 312)
-	_caja.add_theme_stylebox_override("panel", EstiloUI.caja(Color("1e1b2e", 0.96), EstiloUI.NARANJA, 2, 14, 5))
+	_caja.add_theme_stylebox_override("panel", EstiloUI.caja(Color("0f2d38", 0.96), EstiloUI.NARANJA, 2, 14, 5))
 	_raiz.add_child(_caja)
 	_contenido = VBoxContainer.new()
 	_contenido.add_theme_constant_override("separation", 8)

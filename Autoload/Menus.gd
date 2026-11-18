@@ -11,6 +11,7 @@ const ESCENA_PAUSA := preload("res://Scenes/UI/Pausa.tscn")
 const ESCENA_TITULO := "res://Scenes/UI/PantallaTitulo.tscn"
 
 var pausa: MenuPausa
+var libreta: Libreta
 
 ## true mientras es este autoload quien mantiene el árbol en pausa.
 var _pausando := false
@@ -18,6 +19,9 @@ var _pausando := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	libreta = Libreta.new()
+	add_child(libreta)
+	libreta.abierta_cambiada.connect(func(_abierta: bool) -> void: _actualizar_pausa())
 	pausa = ESCENA_PAUSA.instantiate()
 	add_child(pausa)
 	pausa.reanudar_pedido.connect(cerrar_pausa)
@@ -26,7 +30,7 @@ func _ready() -> void:
 
 ## true si hay un menú abierto.
 func hay_menu() -> bool:
-	return pausa.abierta
+	return pausa.abierta or libreta.abierto
 
 
 ## ¿Se puede abrir un menú ahora? (jugador en escena, sin diálogo ni cuestionario)
@@ -41,8 +45,18 @@ func puede_abrir() -> bool:
 func _input(evento: InputEvent) -> void:
 	if evento is InputEventKey and evento.echo:
 		return
-	if evento.is_action_pressed("PAUSA"):
-		if pausa.abierta:
+	if evento.is_action_pressed("DIARIO"):
+		if libreta.abierto:
+			get_viewport().set_input_as_handled()
+			libreta.cerrar()
+		elif not pausa.abierta and puede_abrir():
+			get_viewport().set_input_as_handled()
+			libreta.abrir()
+	elif evento.is_action_pressed("PAUSA"):
+		if libreta.abierto:
+			get_viewport().set_input_as_handled()
+			libreta.cerrar()
+		elif pausa.abierta:
 			get_viewport().set_input_as_handled()
 			if not pausa.atras():
 				cerrar_pausa()

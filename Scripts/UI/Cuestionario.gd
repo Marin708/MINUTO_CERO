@@ -126,7 +126,7 @@ func _caja(rect: Rect2) -> Control:
 	var panel := PanelContainer.new()
 	panel.position = rect.position
 	panel.size = rect.size
-	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("1e1b2e", 0.96), EstiloUI.NARANJA, 2, 14, 5))
+	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("0f2d38", 0.96), EstiloUI.NARANJA, 2, 14, 5))
 	_raiz.add_child(panel)
 	var margen := MarginContainer.new()
 	panel.add_child(margen)

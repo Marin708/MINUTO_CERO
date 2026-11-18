@@ -23,7 +23,7 @@ def escribir(indice, nombre):
     bloques = []
     for anim in ANIMACIONES:
         bloques.append('"frames": [{\n"duration": 1.0,\n"texture": SubResource("Atlas_%s")\n}],\n"loop": true,\n"name": &"%s",\n"speed": 5.0' % (anim, anim))
-    lineas.append("}, {\n".join(bloques) + "]")
+    lineas.append("}, {\n".join(bloques) + "}]")
     ruta = os.path.join(RAIZ, "Resources", "Personajes", "frames_%s.tres" % nombre)
     os.makedirs(os.path.dirname(ruta), exist_ok=True)
     with open(ruta, "w", encoding="utf-8", newline="\n") as f:

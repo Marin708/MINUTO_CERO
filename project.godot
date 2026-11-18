@@ -26,6 +26,7 @@ general/default_playback_type.web=0
 [autoload]
 
 Estado="*res://Autoload/Estado.gd"
+Flujo="*res://Autoload/Flujo.gd"
 DialogueManager="*res://addons/dialogue_manager/dialogue_manager.gd"
 Dialogo="*res://Autoload/Dialogo.gd"
 Notificacion="*res://Autoload/Notificacion.gd"

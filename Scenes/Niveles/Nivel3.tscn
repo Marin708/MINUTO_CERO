@@ -1,0 +1,129 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Mundo/Nivel3.gd" id="1_nivel"]
+
+[node name="Nivel3" type="Node2D" groups=["nivel"]]
+script = ExtResource("1_nivel")
+metadata/exterior = true
+
+[node name="Suelo" type="Node2D" parent="."]
+
+[node name="Objetos" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="Marcadores" type="Node2D" parent="."]
+
+[node name="Spawn" type="Marker2D" parent="Marcadores"]
+position = Vector2(176, 316)
+metadata/clase = "spawn"
+
+[node name="Npc_Rosa_D12" type="Marker2D" parent="Marcadores"]
+position = Vector2(272, 320)
+metadata/clase = "npc"
+metadata/tipo = "rosa"
+metadata/etiqueta = "D12"
+
+[node name="Npc_Tomas_D14" type="Marker2D" parent="Marcadores"]
+position = Vector2(784, 320)
+metadata/clase = "npc"
+metadata/tipo = "tomas"
+metadata/etiqueta = "D14"
+
+[node name="Npc_Marta" type="Marker2D" parent="Marcadores"]
+position = Vector2(912, 640)
+metadata/clase = "npc"
+metadata/tipo = "marta"
+
+[node name="Npc_Lucia" type="Marker2D" parent="Marcadores"]
+position = Vector2(1040, 640)
+metadata/clase = "npc"
+metadata/tipo = "lucia"
+
+[node name="Prop_Edificio" type="Marker2D" parent="Marcadores"]
+position = Vector2(432, 256)
+metadata/clase = "prop"
+metadata/tipo = "edificio"
+
+[node name="Prop_Escombros" type="Marker2D" parent="Marcadores"]
+position = Vector2(400, 352)
+metadata/clase = "prop"
+metadata/tipo = "escombros"
+
+[node name="Prop_Barrera1" type="Marker2D" parent="Marcadores"]
+position = Vector2(368, 320)
+metadata/clase = "prop"
+metadata/tipo = "barrera"
+
+[node name="Prop_Barrera2" type="Marker2D" parent="Marcadores"]
+position = Vector2(528, 320)
+metadata/clase = "prop"
+metadata/tipo = "barrera"
+
+[node name="Prop_Poste" type="Marker2D" parent="Marcadores"]
+position = Vector2(624, 512)
+metadata/clase = "prop"
+metadata/tipo = "poste"
+
+[node name="Prop_Barrera3" type="Marker2D" parent="Marcadores"]
+position = Vector2(560, 512)
+metadata/clase = "prop"
+metadata/tipo = "barrera"
+
+[node name="Prop_Carro" type="Marker2D" parent="Marcadores"]
+position = Vector2(816, 512)
+metadata/clase = "prop"
+metadata/tipo = "carro"
+
+[node name="Prop_Arbol1" type="Marker2D" parent="Marcadores"]
+position = Vector2(720, 608)
+metadata/clase = "prop"
+metadata/tipo = "arbol"
+
+[node name="Prop_Arbol2" type="Marker2D" parent="Marcadores"]
+position = Vector2(1136, 608)
+metadata/clase = "prop"
+metadata/tipo = "arbol"
+
+[node name="Prop_Arbol3" type="Marker2D" parent="Marcadores"]
+position = Vector2(784, 736)
+metadata/clase = "prop"
+metadata/tipo = "arbol"
+
+[node name="Prop_Arbol4" type="Marker2D" parent="Marcadores"]
+position = Vector2(1168, 736)
+metadata/clase = "prop"
+metadata/tipo = "arbol"
+
+[node name="Prop_Arbol5" type="Marker2D" parent="Marcadores"]
+position = Vector2(592, 256)
+metadata/clase = "prop"
+metadata/tipo = "arbol"
+
+[node name="Prop_Banca" type="Marker2D" parent="Marcadores"]
+position = Vector2(848, 672)
+metadata/clase = "prop"
+metadata/tipo = "banca"
+
+[node name="Prop_Carpa" type="Marker2D" parent="Marcadores"]
+position = Vector2(976, 672)
+metadata/clase = "prop"
+metadata/tipo = "carpa"
+
+[node name="Zona_Peligro_D13" type="Marker2D" parent="Marcadores"]
+position = Vector2(432, 320)
+metadata/clase = "zona"
+metadata/tipo = "peligro"
+metadata/etiqueta = "D13"
+metadata/radio = 112
+
+[node name="Zona_Cable" type="Marker2D" parent="Marcadores"]
+position = Vector2(592, 480)
+metadata/clase = "zona"
+metadata/tipo = "cable"
+metadata/radio = 48
+
+[node name="Zona_Llegada" type="Marker2D" parent="Marcadores"]
+position = Vector2(976, 640)
+metadata/clase = "zona"
+metadata/tipo = "llegada"
+metadata/radio = 72

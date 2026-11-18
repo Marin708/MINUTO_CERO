@@ -38,7 +38,7 @@ func _ready() -> void:
 	var panel := PanelContainer.new()
 	panel.position = Vector2(168, 52)
 	panel.size = Vector2(452, 256)
-	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("1e1b2e", 0.96), EstiloUI.NARANJA, 2, 16, 5))
+	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("0f2d38", 0.96), EstiloUI.NARANJA, 2, 16, 5))
 	_raiz.add_child(panel)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 12)

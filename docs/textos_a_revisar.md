@@ -18,3 +18,11 @@ Textos que escribió o adaptó el equipo de desarrollo y **no están literalment
 | 12 | `Resources/creditos.txt` | Créditos y nota final | Nuevo (faltan nombres: [COMPLETAR]) |
 | 13 | `Scripts/UI/PantallaTitulo.gd` | Subtítulo «Prepararte hoy puede cambiar el minuto cero.» | Frase central del maestro |
 | 14 | `docs/DISENO_MAESTRO.md`, D12 | «[REVISAR primeros auxilios]» | Ya marcado en el maestro |
+| 15 | `Scripts/UI/Introduccion.gd` | Los 4 textos de la introducción de Lucía | Nuevos |
+| 16 | `Scripts/Mundo/Nivel1.gd` | Narración inicial, diálogos de Mamá y de Lucía, pistas de «¿Qué hago ahora?» | Nuevos |
+| 17 | `Scripts/Mundo/Nivel2.gd` | Narración del sismo, mensaje «¡Está temblando!…», textos de después del sismo | Nuevos |
+| 18 | `Scripts/Mundo/Nivel3.gd` | Diálogos de Doña Rosa, Tomás, Mamá y Lucía; **mensaje de radio oficial** (`TEXTO_RADIO`) | Nuevos; el radio debe ser fiel a lo que dicen las autoridades |
+| 19 | `Scripts/UI/TarjetaRetro.gd`, `Decisiones.gd` | Títulos «Muy bien» (segura al primer intento), «Casi» (segura en un reintento) y «Ojo» (no segura) | El maestro no dice cuándo va «Casi» |
+| 20 | `Scripts/UI/TarjetaRetro.gd` | Falta «una frase para recordar»: la tarjeta usa la retroalimentación del JSON como «Por qué» | El maestro no da una frase aparte |
+| 21 | `Scripts/Final/Final.gd` | «Decisiones seguras al primer intento: X de 15» y los botones | Nuevos |
+| 22 | `Scripts/Mundo/Nivel1.gd` | **Lucía** aparece como personaje en el pasillo del nivel 1 (no como cuadro de radio) | Cambio de diseño: el maestro dice «cuadro de radio o teléfono» |

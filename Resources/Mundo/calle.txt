@@ -1,0 +1,42 @@
+; MINUTO CERO - calle y parque de Villa Cafetal (nivel 3)
+; 40 x 24 tiles. Un carácter por tile.
+; . = vacio
+; F = piso_madera
+; K = baldosa
+; B = balcon
+; P = pared
+; V = ventana
+; D = umbral
+; S = escalera
+; A = alfombra
+; c = calle
+; l = calle_linea
+; a = anden
+; g = pasto
+; p = camino
+; x = borde
+; m = muro_edificio
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xmmmmmmmmmgggggggggggggggggggggggggggggx
+xmmmmmmmmmgmmmmmmggggggggggggggggggggggx
+xmmmmmmmmmgmmmmmmgggmmmmmmmggggggggggggx
+xmmmmmmmmmgmmmmmmgggmmmmmmmgggxxxxxxxxgx
+xmmmmmmmmmgmmmmmmgggmmmmmmmggggggggggggx
+xmmmmmmmmmgmmmmmmgggmmmmmmmggggggggggggx
+xmmmmmmmmmgmmmmmmgggmmmmmmmggggggggggggx
+xaaaaaaaaaaxxxxxxaaaaaaaaaaaaaaaaaaaaaax
+xaaaaaaaaaaxxxxxxaaaaaaaaaaaaaaaaaaaaaax
+xccccccccccccccccccccccccccccccccccccccx
+xllllllllllllllllllllllllllllllllllllllx
+xccccccccccccccccccccccccccccccccccccccx
+xccccccccccccccccccccccccccccccccccccccx
+xaaaaaaaaaaaaaaaaxxxxaaaaaaaaaaaaaaaaaax
+xaaaaaaaaaaaaaaaaxxxxaaaaaaaaaaaaaaaaaax
+xggggggggggggggggggggggggggggpgggggggggx
+xmmmmmmmmggggggggggggggggggggpgggggggggx
+xmmmmmmmmggggggggggggggggggggpgggggggggx
+xmmmmmmmmgggggggggggpppppppppppppppppppx
+xmmmmmmmmggggggggggggggggggggpgggggggggx
+xmmmmmmmmggggggggggggggggggggpgggggggggx
+xmmmmmmmmggggggggggggggggggggpgggggggggx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

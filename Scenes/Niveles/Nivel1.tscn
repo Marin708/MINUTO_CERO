@@ -1,0 +1,108 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Mundo/Nivel1.gd" id="1_nivel"]
+
+[node name="Nivel1" type="Node2D" groups=["nivel"]]
+script = ExtResource("1_nivel")
+metadata/exterior = false
+
+[node name="Suelo" type="Node2D" parent="."]
+
+[node name="Objetos" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="Marcadores" type="Node2D" parent="."]
+
+[node name="Prop_Mesa" type="Marker2D" parent="Marcadores"]
+position = Vector2(240, 256)
+metadata/clase = "prop"
+metadata/tipo = "mesa"
+
+[node name="Prop_Sofa" type="Marker2D" parent="Marcadores"]
+position = Vector2(144, 352)
+metadata/clase = "prop"
+metadata/tipo = "sofa"
+
+[node name="Prop_MuebleTV" type="Marker2D" parent="Marcadores"]
+position = Vector2(272, 128)
+metadata/clase = "prop"
+metadata/tipo = "mueble_tv"
+
+[node name="Prop_Estante_D1" type="Marker2D" parent="Marcadores"]
+position = Vector2(400, 160)
+metadata/clase = "prop"
+metadata/tipo = "estante"
+metadata/etiqueta = "D1"
+
+[node name="Prop_GasEstufa_D3" type="Marker2D" parent="Marcadores"]
+position = Vector2(560, 128)
+metadata/clase = "prop"
+metadata/tipo = "gas_estufa"
+metadata/etiqueta = "D3"
+
+[node name="Prop_Nevera" type="Marker2D" parent="Marcadores"]
+position = Vector2(624, 128)
+metadata/clase = "prop"
+metadata/tipo = "nevera"
+
+[node name="Prop_CuadroCama_D2" type="Marker2D" parent="Marcadores"]
+position = Vector2(880, 256)
+metadata/clase = "prop"
+metadata/tipo = "cuadro_cama"
+metadata/etiqueta = "D2"
+
+[node name="Prop_Repisa_D4" type="Marker2D" parent="Marcadores"]
+position = Vector2(784, 160)
+metadata/clase = "prop"
+metadata/tipo = "repisa"
+metadata/etiqueta = "D4"
+
+[node name="Prop_Armario" type="Marker2D" parent="Marcadores"]
+position = Vector2(944, 160)
+metadata/clase = "prop"
+metadata/tipo = "armario"
+metadata/etiqueta = "kit"
+
+[node name="Prop_PuertaSalida" type="Marker2D" parent="Marcadores"]
+position = Vector2(944, 384)
+metadata/clase = "prop"
+metadata/tipo = "puerta_salida"
+metadata/etiqueta = "salida"
+
+[node name="Npc_Marta" type="Marker2D" parent="Marcadores"]
+position = Vector2(560, 224)
+metadata/clase = "npc"
+metadata/tipo = "marta"
+
+[node name="Zona_Mesa" type="Marker2D" parent="Marcadores"]
+position = Vector2(240, 256)
+metadata/clase = "zona"
+metadata/tipo = "mesa_segura"
+metadata/radio = 56
+
+[node name="Zona_Ventana" type="Marker2D" parent="Marcadores"]
+position = Vector2(144, 128)
+metadata/clase = "zona"
+metadata/tipo = "ventana"
+metadata/radio = 64
+
+[node name="Zona_Puerta" type="Marker2D" parent="Marcadores"]
+position = Vector2(944, 416)
+metadata/clase = "zona"
+metadata/tipo = "puerta"
+metadata/radio = 80
+
+[node name="Zona_Escalera" type="Marker2D" parent="Marcadores"]
+position = Vector2(944, 576)
+metadata/clase = "zona"
+metadata/tipo = "escalera"
+metadata/radio = 40
+
+[node name="Spawn" type="Marker2D" parent="Marcadores"]
+position = Vector2(272, 444)
+metadata/clase = "spawn"
+
+[node name="Npc_Lucia" type="Marker2D" parent="Marcadores"]
+position = Vector2(400, 448)
+metadata/clase = "npc"
+metadata/tipo = "lucia"

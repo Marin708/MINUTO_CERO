@@ -339,7 +339,7 @@ func _crear_caja(fondo: Color, borde: Color, grosor: int, margen: int) -> StyleB
 
 
 func _aplicar_estilo() -> void:
-	caja.add_theme_stylebox_override("panel", _crear_caja(Color("1e1b2e", 0.95), Color("ff8a2a"), 2, 8))
+	caja.add_theme_stylebox_override("panel", _crear_caja(Color("0f2d38", 0.95), Color("ff8a2a"), 2, 8))
 	caja_nombre.add_theme_stylebox_override("panel", _crear_caja(Color("14414f"), Color("ff8a2a"), 2, 4))
 	etiqueta_nombre.add_theme_color_override("font_color", Color("ff8a2a"))
 

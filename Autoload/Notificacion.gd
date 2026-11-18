@@ -84,7 +84,7 @@ func _mostrar_una(aviso: Dictionary) -> void:
 ## Mismo estilo que la caja de diálogo: azul petróleo, borde naranja, Pixelify Sans.
 func _aplicar_estilo() -> void:
 	var caja := StyleBoxFlat.new()
-	caja.bg_color = Color("1e1b2e", 0.95)
+	caja.bg_color = Color("0f2d38", 0.95)
 	caja.border_color = Color("ff8a2a")
 	caja.set_border_width_all(2)
 	caja.set_corner_radius_all(4)

@@ -23,6 +23,9 @@ const TOTAL_DECISIONES := 15
 var decisiones: Dictionary = {}
 ## ids de las decisiones cuya retroalimentación ya se recibió (sin repetir, en orden).
 var lecciones: Array[String] = []
+## ids de las decisiones en las que se terminó eligiendo la opción segura (en el primer intento o en un reintento).
+## Sirve para el estado de los objetos del mundo (riesgo asegurado); no cambia el puntaje.
+var logradas: Array[String] = []
 var nivel_actual: int = 1
 ## ids de las tarjetas de memoria desbloqueadas ("mem1"...).
 var tarjetas: Array[String] = []
@@ -90,6 +93,8 @@ func registrar_decision(id: String, segura: bool) -> bool:
 		decisiones[id] = {"primer_intento": segura, "intentos": 1}
 	else:
 		decisiones[id]["intentos"] = int(decisiones[id]["intentos"]) + 1
+	if segura and not logradas.has(id):
+		logradas.append(id)
 	decision_registrada.emit(id, segura, es_primero)
 	if not lecciones.has(id):
 		lecciones.append(id)
@@ -99,6 +104,11 @@ func registrar_decision(id: String, segura: bool) -> bool:
 
 func decision_resuelta(id: String) -> bool:
 	return decisiones.has(id)
+
+
+## true si la decisión terminó con la opción segura (aunque fuera en un reintento).
+func lograda(id: String) -> bool:
+	return logradas.has(id)
 
 
 func intentos_de(id: String) -> int:
@@ -157,10 +167,12 @@ func terminar_juego() -> String:
 func forzar_resultado(seguras: int) -> void:
 	decisiones.clear()
 	lecciones.clear()
+	logradas.clear()
 	var ids := ids_decisiones()
 	for i in ids.size():
 		decisiones[ids[i]] = {"primer_intento": i < seguras, "intentos": 1}
 		lecciones.append(ids[i])
+		logradas.append(ids[i])
 
 
 # --- Niveles y memoria ---
@@ -193,6 +205,7 @@ func tarjeta_desbloqueada_id(id: String) -> bool:
 func nueva_partida() -> void:
 	decisiones.clear()
 	lecciones.clear()
+	logradas.clear()
 	tarjetas.clear()
 	nivel_actual = 1
 	partida_reiniciada.emit()
@@ -206,6 +219,7 @@ func guardar() -> bool:
 		"nivel_actual": nivel_actual,
 		"decisiones": decisiones,
 		"lecciones": lecciones,
+		"logradas": logradas,
 		"tarjetas": tarjetas,
 		"evaluacion": Evaluacion.a_diccionario(),
 	}
@@ -275,6 +289,9 @@ func cargar() -> bool:
 	for id in _lista(lectura, "lecciones"):
 		if _decisiones_datos.has(str(id)) and not lecciones.has(str(id)):
 			lecciones.append(str(id))
+	for id in _lista(lectura, "logradas"):
+		if _decisiones_datos.has(str(id)) and not logradas.has(str(id)):
+			logradas.append(str(id))
 	for t in _tarjetas_datos:
 		if _lista(lectura, "tarjetas").has(t["id"]) and not tarjetas.has(str(t["id"])):
 			tarjetas.append(str(t["id"]))
