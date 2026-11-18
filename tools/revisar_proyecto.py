@@ -222,7 +222,7 @@ def ortografia():
 
 # ----------------------------------------------------------------------------
 def audio():
-    texto = leer(os.path.join(RAIZ, "Autoload", "Sonido.gd"))
+    texto = leer(os.path.join(RAIZ, "Autoload", "Audio.gd"))
 
     def lista(nombre):
         m = re.search(r"const %s := \[(.*?)\]" % nombre, texto, re.DOTALL)
@@ -238,12 +238,12 @@ def audio():
             if n not in existentes[carpeta]:
                 anotar(BLOQUEA, "Falta el audio «%s»" % n, "Debería estar en Assets/Audio/%s/ (el juego no rompe: avisa una vez en la consola)" % carpeta)
         for n in sorted(existentes[carpeta] - set(nombres)):
-            anotar(CONVIENE, "Sobra el audio «%s» (no está en el catálogo de Sonido.gd)" % n, "Assets/Audio/%s/" % carpeta)
+            anotar(CONVIENE, "Sobra el audio «%s» (no está en el catálogo de Audio.gd)" % n, "Assets/Audio/%s/" % carpeta)
     # Sonidos sin conectar: se busca el nombre (o su patrón) en el código, fuera de las listas del catálogo
     codigo = ""
     for ruta in archivos((".gd",), incluir_tools=False):
         t = leer(ruta)
-        if rel(ruta) == "Autoload/Sonido.gd":
+        if rel(ruta) == "Autoload/Audio.gd":
             t = re.sub(r"const (EFECTOS|AMBIENTES|MUSICAS) := \[.*?\]", "", t, flags=re.DOTALL)
             t = re.sub(r"const VOLUMEN_DB := \{.*?\n\}", "", t, flags=re.DOTALL)
         codigo += t + "\n"
@@ -263,7 +263,7 @@ def audio():
             if not usado:
                 sin_conectar.append(n)
     for n in sin_conectar:
-        anotar(CONVIENE, "Sonido sin conectar a ningún evento: «%s»" % n, "El nombre no aparece en el código fuera del catálogo")
+        anotar(CONVIENE, "Audio sin conectar a ningún evento: «%s»" % n, "El nombre no aparece en el código fuera del catálogo")
     total = sum(len(v) for v in esperados.values())
     return total, sin_conectar
 

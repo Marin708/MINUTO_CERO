@@ -172,7 +172,7 @@ func mostrar_epoca(epoca: String) -> void:
 	_activar_epoca(presente, not es_pasado)
 	_aplicar_ambiente(es_pasado, true)
 	if not Engine.is_editor_hint():
-		Sonido.ambientar_epoca(epoca)   # música y ambiente de la época
+		Audio.ambientar_epoca(epoca)   # música y ambiente de la época
 
 
 ## La letra del mapa (ver mapa.txt) en una posición global, o "" si cae fuera. Sirve para elegir el sonido de
@@ -696,7 +696,7 @@ func viajar() -> void:
 		return
 	_viajando = true
 	Habilidades.bloquear("transicion")
-	Sonido.efecto("viaje_epoca")
+	Audio.efecto("viaje_epoca")
 	var jugador := _jugador()
 	if jugador != null and jugador.has_method("bloquear"):
 		jugador.bloquear()

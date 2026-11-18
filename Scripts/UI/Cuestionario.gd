@@ -90,9 +90,9 @@ func _construir() -> void:
 	_boton_seguir.custom_minimum_size = Vector2(120, 26)
 	_boton_seguir.size_flags_horizontal = Control.SIZE_SHRINK_END
 	_boton_seguir.pressed.connect(func() -> void:
-		Sonido.efecto("ui_elegir")
+		Audio.efecto("ui_elegir")
 		_seguir.emit())
-	_boton_seguir.focus_entered.connect(func() -> void: Sonido.efecto("ui_mover"))
+	_boton_seguir.focus_entered.connect(func() -> void: Audio.efecto("ui_mover"))
 	v.add_child(_boton_seguir)
 
 	# Panel de la pregunta
@@ -140,7 +140,7 @@ func _ejecutar() -> void:
 	Evaluacion.iniciar_fase(fase)
 	_preguntas = Evaluacion.orden_para(fase)
 	create_tween().tween_property(_raiz, "modulate:a", 1.0, SEGUNDOS_FUNDIDO)
-	Sonido.efecto("dialogo_abrir")
+	Audio.efecto("dialogo_abrir")
 	await get_tree().create_timer(SEGUNDOS_FUNDIDO).timeout
 	var bloque := ""
 	for i in _preguntas.size():
@@ -215,7 +215,7 @@ func _boton_opcion(texto: String, indice_original: int) -> Button:
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	b.custom_minimum_size = Vector2(410, 36)
 	b.pressed.connect(_al_elegir.bind(indice_original))
-	b.focus_entered.connect(func() -> void: Sonido.efecto("ui_mover"))
+	b.focus_entered.connect(func() -> void: Audio.efecto("ui_mover"))
 	_contenedor_opciones.add_child(b)
 	return b
 
@@ -231,7 +231,7 @@ func _construir_escala(p: Dictionary) -> void:
 		b.text = str(opcion["texto"])
 		b.custom_minimum_size = Vector2(62, 44)
 		b.pressed.connect(_al_elegir.bind(int(opcion["indice_original"])))
-		b.focus_entered.connect(func() -> void: Sonido.efecto("ui_mover"))
+		b.focus_entered.connect(func() -> void: Audio.efecto("ui_mover"))
 		fila.add_child(b)
 		_botones.append(b)
 	var extremos := HBoxContainer.new()
@@ -249,7 +249,7 @@ func _al_elegir(indice_original: int) -> void:
 	if _respondida:
 		return
 	_respondida = true
-	Sonido.efecto("ui_elegir")
+	Audio.efecto("ui_elegir")
 	for b in _botones:
 		b.disabled = true
 	_elegida.emit(indice_original)

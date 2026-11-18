@@ -34,7 +34,7 @@ const COLOR_PORTAL_AZUL := Color(0.5, 0.72, 1.0)
 @onready var negro: ColorRect = %Negro
 ## Música de fondo. Los sonidos se agregan en el paso de audio (aquí solo queda preparado el reproductor).
 @onready var musica: AudioStreamPlayer = $Musica
-## Sonido al cambiar de opción en el menú. Se agrega en el paso de audio.
+## Audio al cambiar de opción en el menú. Se agrega en el paso de audio.
 @onready var sonido_seleccion: AudioStreamPlayer = $SonidoSeleccion
 
 var _letras: Array[Label] = []
@@ -61,8 +61,8 @@ var _tiempo := 0.0
 func _ready() -> void:
 	musica.bus = Opciones.BUS_MUSICA          # los volúmenes de Opciones valen también aquí
 	sonido_seleccion.bus = Opciones.BUS_EFECTOS
-	Sonido.musica("musica_titulo", 1.0)
-	Sonido.detener_ambiente(0.5)
+	Audio.musica("musica_titulo", 1.0)
+	Audio.detener_ambiente(0.5)
 	if ResourceLoader.exists(RUTA_FUENTE):
 		_fuente = load(RUTA_FUENTE)
 	_crear_fondo()
@@ -412,7 +412,7 @@ func _on_foco_cambiado(boton: Button) -> void:
 ## Reproduce el sonido de selección si ya tiene un archivo asignado (se agrega en el paso de audio).
 func _sonido_seleccion() -> void:
 	if not _en_intro:
-		Sonido.efecto("ui_mover")
+		Audio.efecto("ui_mover")
 
 
 func _aplicar_estilo_menu() -> void:
@@ -448,7 +448,7 @@ func _comenzar() -> void:
 	if _eligiendo:
 		return
 	_eligiendo = true
-	Sonido.efecto("titulo_comenzar")
+	Audio.efecto("titulo_comenzar")
 	GameState.nueva_partida()
 	var t := create_tween()
 	t.tween_property(menu, "modulate:a", 0.0, 0.3)
@@ -473,7 +473,7 @@ func _continuar() -> void:
 			"Tu partida guardada está dañada. Puedes empezar una nueva con Comenzar." if dañada 				else "Empieza una nueva con Comenzar.")
 		return
 	_eligiendo = true
-	Sonido.efecto("ui_aceptar")
+	Audio.efecto("ui_aceptar")
 	var t := create_tween()
 	t.tween_property(menu, "modulate:a", 0.0, 0.3)
 	t.tween_property(negro, "color:a", 1.0, 0.7)
@@ -481,8 +481,8 @@ func _continuar() -> void:
 
 
 func _salir() -> void:
-	Sonido.efecto("ui_cancelar")
-	Sonido.salir()
+	Audio.efecto("ui_cancelar")
+	Audio.salir()
 
 
 ## El título se disuelve hacia arriba en chispas doradas mientras una ola de luz cruza la pantalla.

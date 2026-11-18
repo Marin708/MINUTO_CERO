@@ -22,7 +22,7 @@ _Nada en esta categoría._
 
 ## Conviene arreglar (1)
 
-- **Sobra el audio «dialogo_blip» (no está en el catálogo de Sonido.gd)**
+- **Sobra el audio «dialogo_blip» (no está en el catálogo de Audio.gd)**
   - Assets/Audio/Efectos/
 
 ## Detalle (1)

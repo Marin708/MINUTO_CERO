@@ -92,7 +92,7 @@ func _dibujar_icono() -> void:
 
 
 func _mostrar_icono() -> void:
-	Sonido.efecto("guardar")
+	Audio.efecto("guardar")
 	if _tween != null:
 		_tween.kill()
 	_tween = create_tween()

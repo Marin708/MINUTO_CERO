@@ -52,7 +52,7 @@ func _ready() -> void:
 	v.add_child(acepto)
 	v.add_child(sin_guardar)
 	create_tween().tween_property(_raiz, "modulate:a", 1.0, 0.5)
-	Sonido.efecto("dialogo_abrir")
+	Audio.efecto("dialogo_abrir")
 	await get_tree().process_frame
 	acepto.grab_focus()
 
@@ -70,7 +70,7 @@ func _boton(texto: String, acepta: bool) -> Button:
 	b.text = texto
 	b.custom_minimum_size = Vector2(410, 32)
 	b.pressed.connect(_decidir.bind(acepta))
-	b.focus_entered.connect(func() -> void: Sonido.efecto("ui_mover"))
+	b.focus_entered.connect(func() -> void: Audio.efecto("ui_mover"))
 	return b
 
 
@@ -78,7 +78,7 @@ func _decidir(acepta: bool) -> void:
 	if _decidido:
 		return
 	_decidido = true
-	Sonido.efecto("ui_elegir")
+	Audio.efecto("ui_elegir")
 	Evaluacion.consentimiento_dado = true
 	Evaluacion.consentimiento_guardar = acepta
 	decidido.emit(acepta)

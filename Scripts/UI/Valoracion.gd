@@ -113,7 +113,7 @@ func _ready() -> void:
 	_caja.add_child(_contenido)
 	_armar_paginas()
 	create_tween().tween_property(_raiz, "modulate:a", 1.0, 0.5)
-	Sonido.efecto("dialogo_abrir")
+	Audio.efecto("dialogo_abrir")
 	_ejecutar()
 
 
@@ -242,10 +242,10 @@ func _pagina_nota() -> void:
 	for n in range(1, 6):
 		var b := BotonEstrellas.new(n)
 		b.pressed.connect(func() -> void:
-			Sonido.efecto("ui_elegir")
+			Audio.efecto("ui_elegir")
 			_respuestas["nota"] = n
 			_avanzar.emit())
-		b.focus_entered.connect(func() -> void: Sonido.efecto("ui_mover"))
+		b.focus_entered.connect(func() -> void: Audio.efecto("ui_mover"))
 		fila.add_child(b)
 		if primero == null:
 			primero = b
@@ -350,7 +350,7 @@ func _cerrar(enviada: bool) -> void:
 	if _cerrando:
 		return
 	_cerrando = true
-	Sonido.efecto("ui_cancelar" if not enviada else "ui_elegir")
+	Audio.efecto("ui_cancelar" if not enviada else "ui_elegir")
 	_avanzar.emit()   # por si algo estaba esperando
 	terminada.emit(enviada)
 	var t := create_tween()
@@ -374,9 +374,9 @@ func _boton(texto: String, accion: Callable, ancho: int) -> Button:
 	b.text = texto
 	b.custom_minimum_size = Vector2(ancho, 30)
 	b.pressed.connect(func() -> void:
-		Sonido.efecto("ui_elegir")
+		Audio.efecto("ui_elegir")
 		accion.call())
-	b.focus_entered.connect(func() -> void: Sonido.efecto("ui_mover"))
+	b.focus_entered.connect(func() -> void: Audio.efecto("ui_mover"))
 	return b
 
 

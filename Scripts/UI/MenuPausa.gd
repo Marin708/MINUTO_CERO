@@ -64,7 +64,7 @@ func abrir() -> void:
 	if abierta:
 		return
 	abierta = true
-	Sonido.efecto("ui_aceptar")
+	Audio.efecto("ui_aceptar")
 	_raiz.visible = true
 	_panel.visible = true
 	_ir_a(Pagina.PRINCIPAL)
@@ -84,7 +84,7 @@ func cerrar() -> void:
 	if not abierta:
 		return
 	abierta = false
-	Sonido.efecto("ui_cancelar")
+	Audio.efecto("ui_cancelar")
 	if _tween != null:
 		_tween.kill()
 	_raiz.visible = false   # sin fundido de salida: el juego se reanuda al instante
@@ -102,7 +102,7 @@ func ocultar_panel(oculto: bool) -> void:
 func atras() -> bool:
 	if pagina == Pagina.PRINCIPAL:
 		return false
-	Sonido.efecto("ui_cancelar")
+	Audio.efecto("ui_cancelar")
 	_ir_a(Pagina.PRINCIPAL)
 	return true
 
@@ -180,7 +180,7 @@ func _boton(texto: String, accion: Callable, sonido: String = "ui_aceptar") -> B
 	b.custom_minimum_size = Vector2(0, 28)
 	b.focus_mode = Control.FOCUS_ALL
 	b.pressed.connect(func() -> void:
-		Sonido.efecto(sonido)
+		Audio.efecto(sonido)
 		accion.call())
 	b.focus_entered.connect(_sonar_foco)
 	b.mouse_entered.connect(func() -> void:
@@ -285,7 +285,7 @@ func _fila_volumen(padre: Control, nombre: String, bus: String) -> HSlider:
 	slider.value_changed.connect(func(valor: float) -> void:
 		if not _sincronizando:
 			Opciones.poner_volumen(bus, valor)
-			Sonido.efecto("ui_mover"))
+			Audio.efecto("ui_mover"))
 	slider.focus_entered.connect(_sonar_foco)
 	slider.mouse_entered.connect(slider.grab_focus)
 	fila.add_child(slider)
@@ -332,7 +332,7 @@ func _quitar_silencio_foco() -> void:
 
 func _sonar_foco() -> void:
 	if abierta and not _silenciar_foco:
-		Sonido.efecto("ui_mover")
+		Audio.efecto("ui_mover")
 
 
 func _sincronizar_opciones() -> void:

@@ -122,7 +122,7 @@ func _cerrar() -> void:
 	if _cerrando:
 		return
 	_cerrando = true
-	Sonido.efecto("ui_cancelar")
+	Audio.efecto("ui_cancelar")
 	cerrados.emit()
 	var t := create_tween()
 	t.tween_property(_raiz, "modulate:a", 0.0, 0.4)

@@ -278,7 +278,7 @@ func _actualizar_animacion(caminando: bool, delta: float = 0.0) -> void:
 			sprite.play(anim)
 		# Un paso cada vez que el pie toca el suelo (cuadros 0 y 2 de la animación de caminar)
 		if sprite.frame != _cuadro_paso and (sprite.frame == 0 or sprite.frame == 2):
-			Sonido.paso(global_position)
+			Audio.paso(global_position)
 		_cuadro_paso = sprite.frame
 		# Rebote vertical leve, siempre hacia arriba
 		_tiempo_rebote += delta * rebote_velocidad

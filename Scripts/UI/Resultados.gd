@@ -87,7 +87,7 @@ func _ready() -> void:
 	_construir()
 	create_tween().tween_property(_raiz, "modulate:a", 1.0, 0.5)
 	_animar_barras.call_deferred()
-	Sonido.efecto("dialogo_abrir")
+	Audio.efecto("dialogo_abrir")
 	_boton_exportar.grab_focus.call_deferred()
 
 
@@ -184,9 +184,9 @@ func _boton(padre: Control, texto: String, accion: Callable) -> Button:
 	b.add_theme_font_size_override("font_size", 11)
 	b.custom_minimum_size = Vector2(0, 26)
 	b.pressed.connect(func() -> void:
-		Sonido.efecto("ui_elegir")
+		Audio.efecto("ui_elegir")
 		accion.call())
-	b.focus_entered.connect(func() -> void: Sonido.efecto("ui_mover"))
+	b.focus_entered.connect(func() -> void: Audio.efecto("ui_mover"))
 	padre.add_child(b)
 	_botones.append(b)
 	return b
@@ -444,7 +444,7 @@ func _jugar_de_nuevo() -> void:
 
 func _salir() -> void:
 	ultimo_destino = "salir"
-	Sonido.salir()
+	Audio.salir()
 
 
 ## SOLO PARA PRUEBAS: cierra la pantalla sin ir a ninguna parte.

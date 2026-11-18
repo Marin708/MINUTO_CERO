@@ -2,9 +2,9 @@ extends Node
 ## Sistema de audio de ECOS. Los archivos están en Assets/Audio/{Efectos,Ambiente,Musica}/ y el nombre
 ## del archivo (sin extensión) es el identificador del sonido; se aceptan .wav, .ogg y .mp3.
 ##
-##   Sonido.efecto("ui_aceptar")                 un efecto suelto (varias voces a la vez)
-##   Sonido.musica("musica_pasado", 1.5)         música, con fundido cruzado de 1.5 s
-##   Sonido.ambiente("amb_presente")             sonido ambiente en bucle (por el bus de efectos)
+##   Audio.efecto("ui_aceptar")                 un efecto suelto (varias voces a la vez)
+##   Audio.musica("musica_pasado", 1.5)         música, con fundido cruzado de 1.5 s
+##   Audio.ambiente("amb_presente")             sonido ambiente en bucle (por el bus de efectos)
 ##
 ## Los efectos y ambientes salen por el bus "Efectos" y la música por "Musica" (ver Opciones). Todo
 ## sigue sonando con el juego en pausa (para los sonidos del menú).
@@ -157,7 +157,7 @@ func _revisar_catalogo() -> void:
 		if _cargar(nombre) == null:
 			faltan.append(nombre)
 	if not faltan.is_empty():
-		push_warning("Sonido: faltan %d archivos de audio: %s" % [faltan.size(), ", ".join(faltan)])
+		push_warning("Audio: faltan %d archivos de audio: %s" % [faltan.size(), ", ".join(faltan)])
 	# Registro visible (en la web sale en la consola del navegador): cuántos sonidos se cargaron y cómo está el audio
 	print("Audio: %d de %d sonidos cargados%s" % [todos.size() - faltan.size(), todos.size(), "" if faltan.is_empty() else ". No se pudieron cargar: " + ", ".join(faltan)])
 	print("Audio: Master %s a %.1f dB, Musica %.0f %%, Efectos %.0f %%, reproducción %s" % [
@@ -181,7 +181,7 @@ func _cargar(nombre: String) -> AudioStream:
 	_cache[nombre] = recurso
 	if recurso == null and not faltan.has(nombre):
 		faltan.append(nombre)
-		push_warning("Sonido: no existe el audio '%s'." % nombre)
+		push_warning("Audio: no existe el audio '%s'." % nombre)
 	return recurso
 
 

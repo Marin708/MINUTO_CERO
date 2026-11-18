@@ -161,7 +161,7 @@ func _secuencia() -> void:
 	# El fundido a blanco de la puerta se acaba: aquí se aparece desde el blanco
 	for viejo in get_tree().get_nodes_in_group("fundido_final"):
 		viejo.queue_free()
-	Sonido.musica("final_%s" % ("dificil" if tipo == "dificil" else tipo), 2.0)
+	Audio.musica("final_%s" % ("dificil" if tipo == "dificil" else tipo), 2.0)
 	create_tween().tween_property(_blanco, "color:a", 0.0, 1.6)
 	if _reflejo != null:
 		create_tween().tween_property(_reflejo, "modulate:a", 0.9, 2.0).set_delay(0.8)
@@ -218,7 +218,7 @@ func _aparecer(id: String) -> void:
 	var flote := sprite.create_tween().set_loops()
 	flote.tween_property(sprite, "position:y", -4.0, 1.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	flote.tween_property(sprite, "position:y", 0.0, 1.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	Sonido.efecto("emo_%s_integrada" % datos.id)
+	Audio.efecto("emo_%s_integrada" % datos.id)
 
 
 ## Las emociones que aún esperan: una silueta gris y tenue (nada de culpa, solo un lugar vacío).

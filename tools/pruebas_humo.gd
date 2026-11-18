@@ -197,7 +197,7 @@ func _paso_mundo() -> void:
 	comprobar(get_tree().get_nodes_in_group("santuario").size() == 7, "mundo: 7 santuarios en el Presente")
 	comprobar(get_tree().get_nodes_in_group("bloqueos_presente").size() == 7, "mundo: 7 bloqueos del Presente")
 	comprobar(get_tree().get_nodes_in_group("portales").size() >= 8, "mundo: portales y grietas")
-	comprobar(Sonido.faltan.is_empty(), "audio: no falta ningún sonido del catálogo")
+	comprobar(Audio.faltan.is_empty(), "audio: no falta ningún sonido del catálogo")
 
 
 ## Recorre un .dialogue con DialogueManager (sin pantalla) eligiendo la respuesta `indice`; devuelve las líneas leídas.

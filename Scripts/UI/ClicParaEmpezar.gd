@@ -58,5 +58,5 @@ func _input(evento: InputEvent) -> void:
 		return
 	_listo = true
 	get_viewport().set_input_as_handled()
-	Sonido.efecto("ui_aceptar")   # este sonido, en pleno clic, desbloquea el audio del navegador
+	Audio.efecto("ui_aceptar")   # este sonido, en pleno clic, desbloquea el audio del navegador
 	get_tree().change_scene_to_file(ESCENA_TITULO)
