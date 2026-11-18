@@ -1,31 +1,42 @@
-# Revisión de calidad de ECOS
+# Revisión de calidad de MINUTO CERO
 
-Generado por `tools/revisar_proyecto.py` (no arregla nada). Las pruebas con el juego en marcha están en `tools/pruebas_humo.gd` y `tools/pruebas_casos.gd` (`python tools/ejecutar_pruebas.py`), y los resultados de los casos extra, en `docs/pruebas_casos.md`.
+Generada por `tools/revisar_proyecto.py`. Ordenada por gravedad: **Bloqueante** (impide entregar), **Alta** (arreglar antes de entregar), **Media**, **Baja** e **Informativa** (para revisar a mano).
 
-## Resumen
+| Gravedad | Hallazgos |
+|---|---|
+| Bloqueante | 0 |
+| Alta | 0 |
+| Media | 0 |
+| Baja | 2 |
+| Informativa | 10 |
 
-- Referencias res:// rotas: 0
-- Saltos de diálogo comprobados: 0
-- Textos con teclas que no corresponden: 0
-- Acciones del Input Map: ARRIBA (ARRIBA/W), ABAJO (ABAJO/S), DERECHA (D/DERECHA), IZQUIERDA (A/IZQUIERDA), INTERACTUAR (E), DIARIO (TAB), PAUSA (ESC), VIAJAR (Q), HABILIDAD (ESPACIO), BRUJULA (G), HAB_SIGUIENTE (R), HAB_ANTERIOR (F)
-- Posibles faltas de tilde (candidatas): 0
-- Audios del catálogo: 63 (0 sin conectar a ningún evento)
-- Recursos EmocionData revisados: 7
-- Archivos de más de 5 MB: 0
-- Peso aproximado del juego exportado (sin comprimir, sin el motor): 23.1 MB (.ogg 11.3 MB, .wav 8.7 MB, .png 2.0 MB, .gd 0.5 MB)
-- Teclas de depuración sin proteger: 0
-- Revisión con Godot: omitida (--sin-godot)
+## Baja (2)
 
-## Bloquea la entrega (0)
+### Posible falta de ortografía
 
-_Nada en esta categoría._
+- `Autoload/Audio.gd línea 412`: doble espacio: Música: %s    Ambiente: %s
+- `Autoload/Audio.gd línea 413`: doble espacio: Volumen   Música %d%%   Efectos %d%%
 
-## Conviene arreglar (1)
+## Informativa (10)
 
-- **Sobra el audio «dialogo_blip» (no está en el catálogo de Audio.gd)**
-  - Assets/Audio/Efectos/
+### Sonidos
 
-## Detalle (1)
+- `Assets/Audio`: 41 archivos, 41 en el catálogo, 41 pedidos por el código; faltan: 0
 
-- **El motor web pesa aparte**
-  - El .wasm de Godot (sin hilos) pesa unas decenas de MB sin comprimir; solo se puede medir exportando (faltan las plantillas de exportación).
+### Tecla F8
+
+- `Autoload/Reportes.gd`: F8 abre el reporte de problemas para jugadores (no es de depuración); se anuncia en los controles de la pausa
+
+### Textos de seguridad
+
+- `docs/DISENO_MAESTRO.md`: 160 comparaciones texto a texto con el maestro (decisiones, preguntas, mitos, memoria, finales, plan y kit)
+
+### Palabra posiblemente absoluta
+
+- `Resources/contenido/decisiones.json .decisiones[5].opciones[0]`: «todos» en: Un espacio abierto cercano, lejos de edificios y cables, que todos conozcan
+- `Resources/contenido/decisiones.json .decisiones[6].opciones[2]`: «siempre» en: Salir siempre por el ascensor
+- `Resources/contenido/preguntas.json .trivia[3].explicacion`: «todos» en: El plan sirve para que todos sepan qué hacer y dónde reunirse.
+- `Resources/contenido/preguntas.json .trivia[4].opciones[2]`: «nunca» en: Las réplicas nunca causan daño
+- `Resources/contenido/preguntas.json .situaciones[4].opciones[1]`: «todos» en: Lo reenvío a todos por si acaso
+- `Scripts/Mundo/Nivel3.gd:103`: «todos» en: Aquí estamos todos. Buen trabajo.
+- `Scripts/Mundo/Nivel3.gd:119`: «Todos» en: Mira, Sami, me llegó este mensaje al celular: «viene otro terremoto peor esta noche». Todos lo están

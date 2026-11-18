@@ -190,7 +190,7 @@ func _intro() -> void:
 func _mostrar_pagina(indice: int) -> void:
 	var p := _paginas[indice]
 	_limpiar()
-	_contenido.add_child(EstiloUI.etiqueta("Opinión  ·  %d de %d" % [indice + 1, _paginas.size()], 10, EstiloUI.GRIS))
+	_contenido.add_child(EstiloUI.etiqueta("Opinión · %d de %d" % [indice + 1, _paginas.size()], 10, EstiloUI.GRIS))
 	match p["tipo"]:
 		"likert":
 			await _pagina_likert(p)
