@@ -51,6 +51,7 @@ window/size/viewport_height=360
 window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
 window/stretch/scale_mode="integer"
 window/stretch/scale_mode.web="fractional"
 
@@ -111,6 +112,8 @@ PAUSA={
 
 [rendering]
 
+renderer/rendering_method.web="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
 textures/canvas_textures/default_texture_filter=0
 rendering_device/driver.windows="d3d12"
 environment/defaults/default_clear_color=Color(0.0627451, 0.211765, 0.266667, 1)
