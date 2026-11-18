@@ -1,0 +1,14 @@
+# Onboarding: el Guía explica el mundo. Las preguntas de la evaluación inicial ya no están aquí: viven en
+# Resources/Cuestionario/preguntas.json y las hace Scenes/UI/Cuestionario.tscn (ver Evaluacion).
+# "start" va antes del consentimiento y las preguntas; "despedida", después.
+
+~ start
+Guía: Este mundo existe en dos tiempos: el Pasado y el Presente.
+Guía: Lo que no se atiende en el Pasado se convierte en el Presente, el mundo en que vives hoy.
+Guía: Antes de empezar, quiero conocerte un poco. Te haré unas preguntas: no es un examen, solo una forma de acompañarte mejor.
+=> END
+
+~ despedida
+Guía: Gracias. Ya sé un poco más de ti.
+Guía: Ve. Lo que encuentres allí también es parte de ti.
+=> END

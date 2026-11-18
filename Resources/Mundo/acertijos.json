@@ -1,0 +1,647 @@
+{
+ "acertijos": [
+  {
+   "emocion": "soledad",
+   "habilidad": "vinculo",
+   "zona": "Miedo",
+   "tipo": "placas",
+   "rect": [
+    31,
+    44,
+    8,
+    6
+   ],
+   "volteado": true,
+   "interior": [
+    33,
+    46,
+    4,
+    2
+   ],
+   "objetos": [
+    {
+     "escena": "PuertaPlacas",
+     "pos": [
+      1120.0,
+      1440
+     ],
+     "props": {
+      "ancho": 64,
+      "id_mecanismo": "soledad"
+     }
+    },
+    {
+     "escena": "PlacaDoble",
+     "pos": [
+      1056.0,
+      1376
+     ],
+     "props": {
+      "id_mecanismo": "soledad"
+     }
+    },
+    {
+     "escena": "PlacaDoble",
+     "pos": [
+      1184.0,
+      1376
+     ],
+     "props": {
+      "id_mecanismo": "soledad"
+     }
+    }
+   ],
+   "abismos": [],
+   "fragmento": [
+    1120.0,
+    1512.0
+   ],
+   "bloqueo": [
+    [
+     34,
+     45
+    ],
+    [
+     34,
+     44
+    ],
+    [
+     35,
+     45
+    ],
+    [
+     35,
+     44
+    ]
+   ],
+   "rama": [
+    [
+     35,
+     43
+    ],
+    [
+     35,
+     42
+    ]
+   ],
+   "reservada": [
+    30,
+    40,
+    10,
+    11
+   ]
+  },
+  {
+   "emocion": "culpa",
+   "habilidad": "reparacion",
+   "zona": "Ansiedad",
+   "tipo": "porton",
+   "rect": [
+    62,
+    36,
+    8,
+    6
+   ],
+   "volteado": false,
+   "interior": [
+    64,
+    38,
+    4,
+    2
+   ],
+   "objetos": [
+    {
+     "escena": "PortonRoto",
+     "pos": [
+      2112.0,
+      1312
+     ],
+     "props": {
+      "ancho_colision": 64
+     }
+    }
+   ],
+   "abismos": [],
+   "fragmento": [
+    2112.0,
+    1240.0
+   ],
+   "bloqueo": [
+    [
+     65,
+     40
+    ],
+    [
+     65,
+     41
+    ],
+    [
+     66,
+     40
+    ],
+    [
+     66,
+     41
+    ]
+   ],
+   "rama": [
+    [
+     65,
+     42
+    ],
+    [
+     65,
+     43
+    ]
+   ],
+   "reservada": [
+    61,
+    35,
+    10,
+    10
+   ]
+  },
+  {
+   "emocion": "verguenza",
+   "habilidad": "revelar",
+   "zona": "Tristeza",
+   "tipo": "camino",
+   "rect": [
+    21,
+    31,
+    13,
+    9
+   ],
+   "volteado": true,
+   "interior": [
+    23,
+    33,
+    9,
+    5
+   ],
+   "objetos": [
+    {
+     "escena": "CaminoOculto",
+     "pos": [
+      880.0,
+      1168.0
+     ],
+     "props": {
+      "ancho_soporte": 96.0,
+      "alto_soporte": 64.0
+     }
+    }
+   ],
+   "abismos": [
+    [
+     832,
+     1056,
+     96,
+     160
+    ]
+   ],
+   "fragmento": [
+    976.0,
+    1128.0
+   ],
+   "bloqueo": [
+    [
+     26,
+     37
+    ],
+    [
+     26,
+     36
+    ],
+    [
+     26,
+     35
+    ],
+    [
+     26,
+     34
+    ],
+    [
+     26,
+     33
+    ],
+    [
+     27,
+     37
+    ],
+    [
+     27,
+     36
+    ],
+    [
+     27,
+     35
+    ],
+    [
+     27,
+     34
+    ],
+    [
+     27,
+     33
+    ],
+    [
+     28,
+     37
+    ],
+    [
+     28,
+     36
+    ],
+    [
+     28,
+     35
+    ],
+    [
+     28,
+     34
+    ],
+    [
+     28,
+     33
+    ]
+   ],
+   "rama": [
+    [
+     23,
+     30
+    ],
+    [
+     23,
+     29
+    ]
+   ],
+   "reservada": [
+    20,
+    28,
+    15,
+    13
+   ]
+  },
+  {
+   "emocion": "ansiedad",
+   "habilidad": "pausa",
+   "zona": "Rabia",
+   "tipo": "plataforma",
+   "rect": [
+    57,
+    12,
+    11,
+    10
+   ],
+   "volteado": false,
+   "interior": [
+    59,
+    14,
+    7,
+    6
+   ],
+   "objetos": [
+    {
+     "escena": "PlataformaMovil",
+     "pos": [
+      2000.0,
+      512
+     ],
+     "props": {
+      "x_min": 1935.0,
+      "x_max": 2065.0,
+      "velocidad": 150.0,
+      "alto_soporte": 64.0
+     }
+    }
+   ],
+   "abismos": [
+    [
+     1888,
+     512,
+     224,
+     64
+    ]
+   ],
+   "fragmento": [
+    2000.0,
+    488.0
+   ],
+   "bloqueo": [
+    [
+     59,
+     16
+    ],
+    [
+     59,
+     17
+    ],
+    [
+     60,
+     16
+    ],
+    [
+     60,
+     17
+    ],
+    [
+     61,
+     16
+    ],
+    [
+     61,
+     17
+    ],
+    [
+     62,
+     16
+    ],
+    [
+     62,
+     17
+    ],
+    [
+     63,
+     16
+    ],
+    [
+     63,
+     17
+    ],
+    [
+     64,
+     16
+    ],
+    [
+     64,
+     17
+    ],
+    [
+     65,
+     16
+    ],
+    [
+     65,
+     17
+    ]
+   ],
+   "rama": [
+    [
+     61,
+     22
+    ],
+    [
+     61,
+     23
+    ]
+   ],
+   "reservada": [
+    56,
+    11,
+    13,
+    14
+   ]
+  },
+  {
+   "emocion": "miedo",
+   "habilidad": "vision",
+   "zona": "Verguenza",
+   "tipo": "niebla",
+   "rect": [
+    24,
+    6,
+    9,
+    6
+   ],
+   "volteado": false,
+   "interior": [
+    26,
+    8,
+    5,
+    2
+   ],
+   "objetos": [
+    {
+     "escena": "NieblaSombra",
+     "pos": [
+      912.0,
+      352
+     ],
+     "props": {
+      "ancho_colision": 96
+     }
+    }
+   ],
+   "abismos": [],
+   "fragmento": [
+    912.0,
+    280.0
+   ],
+   "bloqueo": [
+    [
+     27,
+     10
+    ],
+    [
+     27,
+     11
+    ],
+    [
+     28,
+     10
+    ],
+    [
+     28,
+     11
+    ],
+    [
+     29,
+     10
+    ],
+    [
+     29,
+     11
+    ]
+   ],
+   "rama": [
+    [
+     27,
+     12
+    ],
+    [
+     27,
+     13
+    ]
+   ],
+   "reservada": [
+    23,
+    5,
+    11,
+    10
+   ]
+  },
+  {
+   "emocion": "tristeza",
+   "habilidad": "calma",
+   "zona": "Verguenza",
+   "tipo": "plantas",
+   "rect": [
+    19,
+    20,
+    9,
+    6
+   ],
+   "volteado": false,
+   "interior": [
+    21,
+    22,
+    5,
+    2
+   ],
+   "objetos": [
+    {
+     "escena": "PlantaMarchita",
+     "pos": [
+      720.0,
+      800
+     ],
+     "props": {}
+    },
+    {
+     "escena": "PlantaMarchita",
+     "pos": [
+      752.0,
+      800
+     ],
+     "props": {}
+    },
+    {
+     "escena": "PlantaMarchita",
+     "pos": [
+      784.0,
+      800
+     ],
+     "props": {}
+    }
+   ],
+   "abismos": [],
+   "fragmento": [
+    752.0,
+    728.0
+   ],
+   "bloqueo": [
+    [
+     22,
+     24
+    ],
+    [
+     22,
+     25
+    ],
+    [
+     23,
+     24
+    ],
+    [
+     23,
+     25
+    ],
+    [
+     24,
+     24
+    ],
+    [
+     24,
+     25
+    ]
+   ],
+   "rama": [
+    [
+     22,
+     26
+    ],
+    [
+     22,
+     27
+    ]
+   ],
+   "reservada": [
+    18,
+    19,
+    11,
+    10
+   ]
+  },
+  {
+   "emocion": "rabia",
+   "habilidad": "impulso",
+   "zona": "Verguenza",
+   "tipo": "roca",
+   "rect": [
+    30,
+    18,
+    8,
+    6
+   ],
+   "volteado": true,
+   "interior": [
+    32,
+    20,
+    4,
+    2
+   ],
+   "objetos": [
+    {
+     "escena": "RocaRompible",
+     "pos": [
+      1088.0,
+      608
+     ],
+     "props": {
+      "ancho_colision": 64
+     }
+    }
+   ],
+   "abismos": [],
+   "fragmento": [
+    1088.0,
+    680.0
+   ],
+   "bloqueo": [
+    [
+     33,
+     19
+    ],
+    [
+     33,
+     18
+    ],
+    [
+     34,
+     19
+    ],
+    [
+     34,
+     18
+    ]
+   ],
+   "rama": [
+    [
+     34,
+     17
+    ],
+    [
+     34,
+     16
+    ]
+   ],
+   "reservada": [
+    29,
+    15,
+    10,
+    10
+   ]
+  }
+ ]
+}

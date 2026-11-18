@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EmocionData" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Datos/EmocionData.gd" id="1_emocion"]
+[ext_resource type="SpriteFrames" path="res://Resources/Emociones/frames_soledad.tres" id="2_frames"]
+
+[resource]
+script = ExtResource("1_emocion")
+id = "soledad"
+orden = 4
+nombre = "Soledad"
+nombre_bloqueo = "Las puertas cerradas"
+descripcion_corta = "Una criatura tímida que solo se acerca si esperas en calma. Quiere compañía, pero no sabe pedirla."
+color = Color(0.373, 0.541, 0.545, 1)
+habilidad_id = "vinculo"
+habilidad_nombre = "Vínculo"
+habilidad_descripcion = "Un compañero que ayuda en mecanismos dobles."
+comportamiento = 3
+velocidad = 40.0
+frames = ExtResource("2_frames")
+mensaje_integracion = "Pedir compañía no es debilidad. Los vínculos te sostienen."
+mensaje_fallo = "La soledad se queda a lo lejos. Nadie se acercó, y ella tampoco se atrevió."
+mensaje_presente_aliada = "Ahora no vas solo. Tu compañero te ayuda donde hacen falta dos manos."
+mensaje_presente_bloqueo = "Hay mecanismos que no se mueven con una sola persona. La soledad sigue esperando que alguien se acerque."
+frase_cierre = "Te espero aquí, sin prisa."
+mensaje_presente_atacada = "Las puertas están marcadas con arañazos. La soledad se cerró todavía más al ser apartada."
+mensaje_presente_ignorada = "Las puertas llevan mucho tiempo cerradas y el polvo cubre a las luciérnagas. Nadie llamó."
+mejora_descripcion = "Vínculo II: tu compañera puede alejarse hasta 500 px y brilla más."
+regalo_nombre = "Una luciérnaga amiga"
+regalo_texto = "Brilla cuando la necesitas. Para sentirte acompañado no hace falta estar siempre con alguien."
+frase_agradecimiento = "Gracias por buscarme. Ya no me siento tan sola."

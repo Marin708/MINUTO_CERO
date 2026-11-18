@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EmocionData" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Datos/EmocionData.gd" id="1_emocion"]
+[ext_resource type="SpriteFrames" path="res://Resources/Emociones/frames_ansiedad.tres" id="2_frames"]
+
+[resource]
+script = ExtResource("1_emocion")
+id = "ansiedad"
+orden = 6
+nombre = "Ansiedad"
+nombre_bloqueo = "El reloj sin parar"
+descripcion_corta = "Una criatura inquieta que se mueve a ráfagas y vibra cuando te acercas. Siempre va un paso adelante de lo que todavía no pasó."
+color = Color(1, 0.18, 0.55, 1)
+habilidad_id = "pausa"
+habilidad_nombre = "Pausa"
+habilidad_descripcion = "Ralentiza el tiempo unos segundos para cruzar mecanismos y plataformas que se mueven"
+comportamiento = 5
+velocidad = 85.0
+frames = ExtResource("2_frames")
+mensaje_integracion = "La ansiedad quiere adelantarse a lo que viene. Con respiración y un paso a la vez, se vuelve preparación."
+mensaje_fallo = "La ansiedad se aceleró más. Presionarla solo la acelera, y ahora el Presente corre un poco más rápido."
+mensaje_presente_aliada = "Un reloj tranquilo marca el ritmo. La ansiedad ahora te regala una pausa cuando todo se mueve demasiado rápido."
+mensaje_presente_bloqueo = "Un torbellino de relojes y engranajes gira sin parar y no te deja pasar. Vuelve al Pasado y respira con ella."
+frase_cierre = "Respira. No hace falta correr."
+mensaje_presente_atacada = "Los engranajes chirrían y sueltan chispas. La ansiedad gira más rápido cada vez que la empujan."
+mensaje_presente_ignorada = "Los relojes corren sin freno y el torbellino casi tapa el camino. Nadie le pidió ir más despacio."
+mejora_descripcion = "Pausa II: dura 8 s y se recupera en 7 s."
+regalo_nombre = "Un reloj que descansa"
+regalo_texto = "Sus manecillas se paran cuando respiras hondo. Hay tiempo."
+frase_agradecimiento = "Gracias por esperarme. Respiro mejor desde que me escuchas."

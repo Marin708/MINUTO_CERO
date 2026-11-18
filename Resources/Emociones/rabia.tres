@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EmocionData" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Datos/EmocionData.gd" id="1_emocion"]
+[ext_resource type="SpriteFrames" path="res://Resources/Emociones/frames_rabia.tres" id="2_frames"]
+
+[resource]
+script = ExtResource("1_emocion")
+id = "rabia"
+orden = 1
+nombre = "Rabia"
+nombre_bloqueo = "La roca de lava"
+descripcion_corta = "Una criatura ardiente que te sigue de cerca. Está enojada porque algo importante fue herido."
+color = Color(0.898, 0.325, 0.176, 1)
+habilidad_id = "impulso"
+habilidad_nombre = "Impulso"
+habilidad_descripcion = "Un dash que rompe obstáculos."
+comportamiento = 0
+velocidad = 60.0
+frames = ExtResource("2_frames")
+mensaje_integracion = "La rabia protege lo que te importa. Si la escuchas, se convierte en fuerza."
+mensaje_fallo = "La rabia se encoge y se esconde. No se fue: sigue ahí, esperando que alguien la escuche."
+mensaje_presente_aliada = "Ahora la rabia te empuja hacia adelante. Sabe cuándo romper lo que estorba."
+mensaje_presente_bloqueo = "Un muro de rabia sin atender te cierra el paso. Vuelve al Pasado y escúchala."
+frase_cierre = "No hay prisa. Aquí sigo."
+mensaje_presente_atacada = "Los restos de tu golpe todavía arden aquí. El muro de rabia es más duro que antes."
+mensaje_presente_ignorada = "Nadie la escuchó y la rabia creció en silencio. El muro es enorme y está helado."
+mejora_descripcion = "Impulso II: llegas más lejos (200 px) y rompes también las rocas grandes."
+regalo_nombre = "Una brasa que calienta sin quemar"
+regalo_texto = "Guarda tu fuerza sin hacerte daño. En los días fríos, calienta las manos."
+frase_agradecimiento = "Gracias por escucharme. Ahora mi fuerza tiene un camino."
