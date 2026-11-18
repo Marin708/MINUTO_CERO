@@ -1,6 +1,6 @@
 {
 	"version": 1,
-	"nota": "Banco de 14 preguntas (7 trivia, 5 situaciones, 2 escala). En trivia y situaciones la opcion 0 es la correcta o mas segura; en el juego se mezclan. Texto tomado de docs/DISENO_MAESTRO.md seccion 10.",
+	"nota": "Banco de 14 preguntas (7 trivia, 5 situaciones, 2 escala). En trivia y situaciones la opcion 0 es la correcta o mas segura; en el juego se mezclan. Texto tomado de docs/DISENO_MAESTRO.md seccion 10. 'tema' es el titulo corto de cada pregunta en la pantalla de resultados (lo escribio el equipo, [REVISAR]).",
 	"trivia": [
 		{
 			"id": "t1",
@@ -12,7 +12,8 @@
 				"Usar el ascensor para bajar rápido"
 			],
 			"correcta": 0,
-			"explicacion": "Las autoridades recomiendan agacharse, cubrirse y sujetarse. Correr o usar el ascensor aumenta el riesgo."
+			"explicacion": "Las autoridades recomiendan agacharse, cubrirse y sujetarse. Correr o usar el ascensor aumenta el riesgo.",
+			"tema": "Qué hacer durante un sismo"
 		},
 		{
 			"id": "t2",
@@ -24,7 +25,8 @@
 				"Los recomienda la Cruz Roja como primera opción"
 			],
 			"correcta": 0,
-			"explicacion": "En construcciones actuales no se puede anticipar cómo reaccionará la estructura, y por eso se recomienda protegerse bajo un mueble resistente."
+			"explicacion": "En construcciones actuales no se puede anticipar cómo reaccionará la estructura, y por eso se recomienda protegerse bajo un mueble resistente.",
+			"tema": "El marco de la puerta y el «triángulo de la vida»"
 		},
 		{
 			"id": "t3",
@@ -36,7 +38,8 @@
 				"Una vela y un televisor pequeño"
 			],
 			"correcta": 0,
-			"explicacion": "El kit debe estar en un lugar de fácil acceso y tener lo básico para las primeras horas."
+			"explicacion": "El kit debe estar en un lugar de fácil acceso y tener lo básico para las primeras horas.",
+			"tema": "El kit de emergencia"
 		},
 		{
 			"id": "t4",
@@ -48,7 +51,8 @@
 				"El horario de las comidas"
 			],
 			"correcta": 0,
-			"explicacion": "El plan sirve para que todos sepan qué hacer y dónde reunirse."
+			"explicacion": "El plan sirve para que todos sepan qué hacer y dónde reunirse.",
+			"tema": "El plan familiar"
 		},
 		{
 			"id": "t5",
@@ -60,7 +64,8 @@
 				"Es seguro volver de inmediato a un edificio dañado"
 			],
 			"correcta": 0,
-			"explicacion": "Las réplicas pueden dañar estructuras que ya estaban afectadas."
+			"explicacion": "Las réplicas pueden dañar estructuras que ya estaban afectadas.",
+			"tema": "Después del temblor: las réplicas"
 		},
 		{
 			"id": "t6",
@@ -72,7 +77,8 @@
 				"Usar el encendedor para comprobar si aún huele"
 			],
 			"correcta": 0,
-			"explicacion": "Una chispa puede encender el gas. Usa linterna."
+			"explicacion": "Una chispa puede encender el gas. Usa linterna.",
+			"tema": "Olor a gas"
 		},
 		{
 			"id": "t7",
@@ -84,7 +90,8 @@
 				"Creyendo lo primero que veas"
 			],
 			"correcta": 0,
-			"explicacion": "La información oficial evita rumores, y las líneas de emergencia deben quedar libres para urgencias."
+			"explicacion": "La información oficial evita rumores, y las líneas de emergencia deben quedar libres para urgencias.",
+			"tema": "Cómo informarte"
 		}
 	],
 	"situaciones": [
@@ -96,7 +103,8 @@
 				"Corro a la puerta",
 				"Me quedo mirando por la ventana"
 			],
-			"correcta": 0
+			"correcta": 0,
+			"tema": "En tu cuarto cuando tiembla"
 		},
 		{
 			"id": "s2",
@@ -106,7 +114,8 @@
 				"Entro corriendo al edificio más cercano",
 				"Me paro junto a una pared alta"
 			],
-			"correcta": 0
+			"correcta": 0,
+			"tema": "En la calle cuando tiembla"
 		},
 		{
 			"id": "s3",
@@ -116,7 +125,8 @@
 				"Uso el ascensor para ser más rápido",
 				"Me quedo esperando sin revisar nada"
 			],
-			"correcta": 0
+			"correcta": 0,
+			"tema": "Terminó de temblar en el 4.º piso"
 		},
 		{
 			"id": "s4",
@@ -126,7 +136,8 @@
 				"Enciendo la luz para ver",
 				"Prendo un fósforo para buscar la fuga"
 			],
-			"correcta": 0
+			"correcta": 0,
+			"tema": "Olor a gas en la cocina"
 		},
 		{
 			"id": "s5",
@@ -136,7 +147,8 @@
 				"Lo reenvío a todos por si acaso",
 				"Lo creo y entro en pánico"
 			],
-			"correcta": 0
+			"correcta": 0,
+			"tema": "Un mensaje de cadena"
 		}
 	],
 	"escala": [
@@ -145,14 +157,16 @@
 			"texto": "Sé qué hacer antes, durante y después de un sismo.",
 			"valores": 5,
 			"minimo": "Nada de acuerdo",
-			"maximo": "Totalmente de acuerdo"
+			"maximo": "Totalmente de acuerdo",
+			"tema": "Qué hacer antes, durante y después"
 		},
 		{
 			"id": "e2",
 			"texto": "Me siento capaz de ayudar a mi familia a prepararnos.",
 			"valores": 5,
 			"minimo": "Nada de acuerdo",
-			"maximo": "Totalmente de acuerdo"
+			"maximo": "Totalmente de acuerdo",
+			"tema": "Ayudar a tu familia a prepararse"
 		}
 	]
 }

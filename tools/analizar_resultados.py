@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
-"""Análisis de los resultados de ECOS (evaluación antes y después de jugar).
+"""Análisis de los resultados de MINUTO CERO (evaluación antes y después de jugar).
 
 Uso:
     python tools/analizar_resultados.py RUTA [RUTA ...] [--salida docs/analisis] [--reportes CARPETA] [--permitir-prueba]
 
-RUTA puede ser un CSV (ECOS_resultados.csv de un computador) o una carpeta con varios CSV (se unen todos).
+RUTA puede ser un CSV (MINUTOCERO_resultados.csv de un computador) o una carpeta con varios CSV (se unen todos).
 Necesita pandas, numpy, matplotlib y scipy.
 
 Genera en la carpeta de salida (por defecto docs/analisis/):
   resumen.csv     participantes, media y desviación de pre y post por bloque, diferencia, ganancia normalizada, Wilcoxon
   preguntas.csv   porcentaje de acierto antes y después de cada pregunta
-  emociones.csv   por emoción: aciertos antes y después, y cuántos mejoraron, se mantuvieron o bajaron
-  barras_bloques.png, barras_emociones_trivia.png, lineas_participantes.png
+  temas.csv       por tema (cada pregunta de conocimiento y de situaciones): aciertos antes y después, y cuántos mejoraron, se mantuvieron o bajaron
+  decisiones.csv  por decisión (D1 a D15): porcentaje de acierto al primer intento y promedio de intentos
+  barras_bloques.png, barras_temas.png, barras_decisiones.png, lineas_participantes.png
   barras_experiencia.png, distribucion_nota.png, sus_participantes.png, comparacion_frecuencia.png   (si hay opiniones)
   comentarios.md  los comentarios libres agrupados por pregunta y por palabras o frases repetidas, y la tabla de errores
   informe.md      un párrafo por resultado en lenguaje claro (aprendizaje y experiencia de usuario) y las limitaciones
@@ -36,22 +37,28 @@ from scipy import stats
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Paleta del juego: morado oscuro y dorado
-FONDO = "#1e1b2e"
-PANEL = "#2d2845"
-DORADO = "#f4c77b"
-VIOLETA = "#8a7fa3"
+# Paleta del juego: azul petróleo y naranja de seguridad
+FONDO = "#0f2d38"
+PANEL = "#14414f"
+DORADO = "#ff8a2a"   # (el naranja de seguridad)
+VIOLETA = "#9db0b8"   # (el gris azulado)
 CREMA = "#fff4dc"
 VERDE = "#8fd19e"
 
-EMOCIONES = ["rabia", "miedo", "tristeza", "soledad", "culpa", "ansiedad", "verguenza"]
-NOMBRES = {"rabia": "Rabia", "miedo": "Miedo", "tristeza": "Tristeza", "soledad": "Soledad", "culpa": "Culpa",
-           "ansiedad": "Ansiedad", "verguenza": "Vergüenza"}
+def cargar_json(nombre):
+    with open(os.path.join(RAIZ, "Resources", "contenido", nombre), encoding="utf-8") as f:
+        return json.load(f)
+
+
+BANCO = cargar_json("preguntas.json")
+#: id de pregunta -> (bloque, tema) de trivia y situaciones (las preguntas de conocimiento y de situaciones)
+TEMAS = {q["id"]: (bloque, q.get("tema", q["id"])) for bloque in ("trivia", "situaciones") for q in BANCO[bloque]}
+DECISIONES = {d["id"]: d["situacion"] for d in cargar_json("decisiones.json")["decisiones"]}
 # bloque -> (título, mínimo, máximo) del puntaje
 BLOQUES = {
     "trivia": ("Conocimiento (trivia)", 0, 7),
-    "situaciones": ("Cómo reaccionas (situaciones)", 0, 7),
-    "escala": ("Cómo te sientes (escala)", 2, 10),
+    "situaciones": ("Qué harías (situaciones)", 0, 5),
+    "escala": ("Confianza para prepararte (escala)", 2, 10),
 }
 MINIMO_WILCOXON = 6
 
@@ -127,8 +134,8 @@ def leyenda(ax):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="Análisis de resultados de ECOS")
-    ap.add_argument("rutas", nargs="+", help="CSV o carpetas con CSV de ECOS_resultados")
+    ap = argparse.ArgumentParser(description="Análisis de resultados de MINUTO CERO")
+    ap.add_argument("rutas", nargs="+", help="CSV o carpetas con CSV de MINUTOCERO_resultados")
     ap.add_argument("--salida", default=os.path.join(RAIZ, "docs", "analisis"), help="carpeta de salida")
     ap.add_argument("--permitir-prueba", action="store_true", help="acepta CSV de datos de prueba (NO reales)")
     ap.add_argument("--reportes", default=os.path.join(RAIZ, "docs", "analisis", "datos_reales", "reportes"),
@@ -153,7 +160,7 @@ def main(argv=None):
     repetidos = antes - len(df)
     for c in ["pre_trivia", "pre_situaciones", "pre_escala", "post_trivia", "post_situaciones", "post_escala"]:
         if c not in df.columns:
-            sys.exit("Falta la columna %s: ¿es un CSV de ECOS?" % c)
+            sys.exit("Falta la columna %s: ¿es un CSV de MINUTO CERO?" % c)
         df[c] = pd.to_numeric(df[c], errors="coerce")
     completos = df.dropna(subset=["pre_trivia", "pre_situaciones", "pre_escala", "post_trivia", "post_situaciones", "post_escala"]).copy()
     excluidos = len(df) - len(completos)
@@ -170,7 +177,7 @@ def main(argv=None):
     # --- resumen.csv ---
     filas = []
     todos = dict(BLOQUES)
-    todos["total"] = ("Total (trivia + situaciones)", 0, 14)
+    todos["total"] = ("Total (trivia + situaciones)", 0, 12)
     for clave, (titulo, minimo, maximo) in todos.items():
         pre, post = df["pre_" + clave], df["post_" + clave]
         dif = post - pre
@@ -190,45 +197,56 @@ def main(argv=None):
     resumen.round(4).to_csv(os.path.join(args.salida, "resumen.csv"), index=False, encoding="utf-8")
 
     # --- preguntas.csv ---
-    ids = sorted({c[len("pre_"):] for c in df.columns if c.startswith("pre_") and not c.startswith("pre_ok_")
-                  and c[4:5] in ("t", "s", "e") and c[5:6] == "_"})
     filas_p = []
-    for qid in ids:
-        bloque = {"t": "trivia", "s": "situaciones", "e": "escala"}[qid[0]]
-        fila = {"id": qid, "bloque": bloque, "emocion": qid[2:] if bloque != "escala" else ""}
-        if bloque == "escala":
-            pre = pd.to_numeric(df["pre_" + qid], errors="coerce")
-            post = pd.to_numeric(df["post_" + qid], errors="coerce")
-            fila.update({"pre_media": pre.mean(), "post_media": post.mean(), "pct_acierto_pre": np.nan, "pct_acierto_post": np.nan})
-        else:
-            pre = pd.to_numeric(df["pre_ok_" + qid], errors="coerce")
-            post = pd.to_numeric(df["post_ok_" + qid], errors="coerce")
-            fila.update({"pre_media": np.nan, "post_media": np.nan,
-                         "pct_acierto_pre": 100 * pre.mean(), "pct_acierto_post": 100 * post.mean()})
-        filas_p.append(fila)
+    for bloque in ("trivia", "situaciones", "escala"):
+        for q in BANCO[bloque]:
+            qid = q["id"]
+            fila = {"id": qid, "bloque": bloque, "tema": q.get("tema", "")}
+            if "pre_" + qid not in df.columns:
+                continue
+            if bloque == "escala":
+                pre = pd.to_numeric(df["pre_" + qid], errors="coerce")
+                post = pd.to_numeric(df["post_" + qid], errors="coerce")
+                fila.update({"pre_media": pre.mean(), "post_media": post.mean(), "pct_acierto_pre": np.nan, "pct_acierto_post": np.nan})
+            else:
+                pre = pd.to_numeric(df["pre_ok_" + qid], errors="coerce")
+                post = pd.to_numeric(df["post_ok_" + qid], errors="coerce")
+                fila.update({"pre_media": np.nan, "post_media": np.nan,
+                             "pct_acierto_pre": 100 * pre.mean(), "pct_acierto_post": 100 * post.mean()})
+            filas_p.append(fila)
     preguntas = pd.DataFrame(filas_p)
     preguntas.round(1).to_csv(os.path.join(args.salida, "preguntas.csv"), index=False, encoding="utf-8")
 
-    # --- emociones.csv ---
+    # --- temas.csv (cada pregunta de conocimiento y de situaciones es un tema) ---
     filas_e = []
-    for e in EMOCIONES:
-        t_pre, t_post = "pre_ok_t_" + e, "post_ok_t_" + e
-        s_pre, s_post = "pre_ok_s_" + e, "post_ok_s_" + e
-        if not all(c in df.columns for c in (t_pre, t_post, s_pre, s_post)):
+    for qid, (bloque, tema) in TEMAS.items():
+        c_pre, c_post = "pre_ok_" + qid, "post_ok_" + qid
+        if c_pre not in df.columns or c_post not in df.columns:
             continue
-        antes_e = pd.to_numeric(df[t_pre], errors="coerce") + pd.to_numeric(df[s_pre], errors="coerce")
-        despues_e = pd.to_numeric(df[t_post], errors="coerce") + pd.to_numeric(df[s_post], errors="coerce")
-        dif = (despues_e - antes_e).dropna()
+        antes_q = pd.to_numeric(df[c_pre], errors="coerce")
+        despues_q = pd.to_numeric(df[c_post], errors="coerce")
+        dif = (despues_q - antes_q).dropna()
         filas_e.append({
-            "emocion": e, "participantes": len(dif),
-            "trivia_pct_pre": 100 * pd.to_numeric(df[t_pre], errors="coerce").mean(),
-            "trivia_pct_post": 100 * pd.to_numeric(df[t_post], errors="coerce").mean(),
-            "situacion_pct_pre": 100 * pd.to_numeric(df[s_pre], errors="coerce").mean(),
-            "situacion_pct_post": 100 * pd.to_numeric(df[s_post], errors="coerce").mean(),
+            "id": qid, "tema": tema, "bloque": bloque, "participantes": len(dif),
+            "pct_pre": 100 * antes_q.mean(), "pct_post": 100 * despues_q.mean(),
             "mejoraron": int((dif > 0).sum()), "se_mantuvieron": int((dif == 0).sum()), "bajaron": int((dif < 0).sum()),
         })
-    emociones = pd.DataFrame(filas_e)
-    emociones.round(1).to_csv(os.path.join(args.salida, "emociones.csv"), index=False, encoding="utf-8")
+    temas = pd.DataFrame(filas_e)
+    temas.round(1).to_csv(os.path.join(args.salida, "temas.csv"), index=False, encoding="utf-8")
+
+    # --- decisiones.csv (D1 a D15: acierto al primer intento) ---
+    filas_d = []
+    for did, situacion in DECISIONES.items():
+        c_primer, c_int = did + "_primer", did + "_intentos"
+        if c_primer not in df.columns:
+            continue
+        primer = pd.to_numeric(df[c_primer], errors="coerce").dropna()
+        intentos = pd.to_numeric(df.get(c_int), errors="coerce").dropna() if c_int in df.columns else pd.Series(dtype=float)
+        filas_d.append({"id": did, "situacion": situacion, "participantes": len(primer),
+                        "pct_segura_primer_intento": 100 * primer.mean() if len(primer) else np.nan,
+                        "intentos_promedio": intentos.mean() if len(intentos) else np.nan})
+    decisiones = pd.DataFrame(filas_d)
+    decisiones.round(1).to_csv(os.path.join(args.salida, "decisiones.csv"), index=False, encoding="utf-8")
 
     # --- Gráficos ---
     # 1) Barras agrupadas antes y después por bloque (como % del rango de cada puntaje)
@@ -257,21 +275,38 @@ def main(argv=None):
     fig.savefig(os.path.join(args.salida, "barras_bloques.png"), dpi=140, facecolor=FONDO)
     plt.close(fig)
 
-    # 2) Barras por emoción en trivia
-    if not emociones.empty:
-        fig, ax = figura(9, 4.6)
-        x = np.arange(len(emociones))
-        ax.bar(x - ancho / 2, emociones["trivia_pct_pre"], ancho, color=VIOLETA, label="Antes")
-        ax.bar(x + ancho / 2, emociones["trivia_pct_post"], ancho, color=DORADO, label="Después")
+    # 2) Barras por tema (cada pregunta de conocimiento y de situaciones)
+    if not temas.empty:
+        fig, ax = figura(11, 5.2)
+        x = np.arange(len(temas))
+        ax.bar(x - ancho / 2, temas["pct_pre"], ancho, color=VIOLETA, label="Antes")
+        ax.bar(x + ancho / 2, temas["pct_post"], ancho, color=DORADO, label="Después")
         ax.set_xticks(x)
-        ax.set_xticklabels([NOMBRES[e] for e in emociones["emocion"]])
+        ax.set_xticklabels([textwrap_corto(tm) for tm in temas["tema"]], fontsize=7, rotation=35, ha="right")
         ax.set_ylabel("Participantes que acertaron (%)")
         ax.set_ylim(0, 112)
-        ax.set_title("Trivia: aciertos por emoción, antes y después (n = %d)" % n)
+        ax.set_title("Aciertos por tema, antes y después (n = %d)" % n)
         leyenda(ax)
         marca_prueba(ax, es_prueba)
         fig.tight_layout()
-        fig.savefig(os.path.join(args.salida, "barras_emociones_trivia.png"), dpi=140, facecolor=FONDO)
+        fig.savefig(os.path.join(args.salida, "barras_temas.png"), dpi=140, facecolor=FONDO)
+        plt.close(fig)
+
+    # 2b) Decisiones: porcentaje que acertó al primer intento
+    if not decisiones.empty:
+        fig, ax = figura(10, 4.8)
+        x = np.arange(len(decisiones))
+        ax.bar(x, decisiones["pct_segura_primer_intento"], 0.6, color=DORADO)
+        for i, v in enumerate(decisiones["pct_segura_primer_intento"]):
+            ax.text(x[i], v + 1.5, "%d" % round(v), ha="center", color=CREMA, fontsize=8)
+        ax.set_xticks(x)
+        ax.set_xticklabels(decisiones["id"], fontsize=8)
+        ax.set_ylim(0, 112)
+        ax.set_ylabel("Segura al primer intento (%)")
+        ax.set_title("Decisiones del juego: acierto al primer intento (n = %d)" % n)
+        marca_prueba(ax, es_prueba)
+        fig.tight_layout()
+        fig.savefig(os.path.join(args.salida, "barras_decisiones.png"), dpi=140, facecolor=FONDO)
         plt.close(fig)
 
     # 3) Líneas por participante (total, de pre a post)
@@ -283,8 +318,8 @@ def main(argv=None):
     ax.set_xticks([0, 1])
     ax.set_xticklabels(["Antes", "Después"])
     ax.set_xlim(-0.25, 1.25)
-    ax.set_ylim(-0.5, 14.5)
-    ax.set_ylabel("Total (trivia + situaciones, de 0 a 14)")
+    ax.set_ylim(-0.5, 12.5)
+    ax.set_ylabel("Total (trivia + situaciones, de 0 a 12)")
     ax.set_title("Cada participante, de antes a después (n = %d)" % n)
     leyenda(ax)
     marca_prueba(ax, es_prueba)
@@ -296,7 +331,7 @@ def main(argv=None):
     ux = experiencia_usuario(df, args.salida, es_prueba, args.reportes)
 
     # --- informe.md ---
-    escribir_informe(args.salida, resumen, preguntas, emociones, n, excluidos, repetidos, archivos, es_prueba, avisos, ux)
+    escribir_informe(args.salida, resumen, preguntas, temas, decisiones, df, n, excluidos, repetidos, archivos, es_prueba, avisos, ux)
 
     print("Participantes analizados: %d (excluidos por datos incompletos: %d; ids repetidos: %d)" % (n, excluidos, repetidos))
     for a in avisos:
@@ -310,7 +345,7 @@ def main(argv=None):
 
 AFIRMACIONES = {
     "u1": "Entendí qué hacer", "u2": "Los controles fueron fáciles", "u3": "Se veía y sonaba bien",
-    "u4": "Los textos y pistas ayudaron", "u5": "Ganas de seguir jugando", "u6": "Me hizo pensar en mis emociones",
+    "u4": "Los textos y pistas ayudaron", "u5": "Ganas de seguir jugando", "u6": "Me hizo pensar en cómo prepararme",
 }
 PREGUNTAS_LIBRES = [("val_gusto", "¿Qué fue lo que más te gustó?"), ("val_mejorar", "¿Qué te confundió o qué cambiarías?"),
                     ("val_error", "¿Viste algún error? Cuéntanos qué pasó")]
@@ -444,6 +479,11 @@ def experiencia_usuario(df, salida, es_prueba, reportes=None):
 ancho_barra = 0.36
 
 
+def textwrap_corto(texto, largo=26):
+    """Acorta un tema para que quepa en el eje del gráfico."""
+    return texto if len(texto) <= largo else texto[:largo - 1].rstrip() + "…"
+
+
 def frases_repetidas(comentarios, minimo=2, maximo=10):
     """Palabras (y pares de palabras) que aparecen en al menos `minimo` comentarios distintos, sin interpretarlas."""
     por_comentario = []
@@ -473,7 +513,7 @@ def leer_reportes(carpeta):
             except (OSError, ValueError):
                 continue
             filas.append({"fecha": str(d.get("fecha_iso", ""))[:16], "escena": os.path.basename(str(d.get("escena", ""))),
-                          "epoca": d.get("epoca", ""), "version": d.get("version_juego", ""), "texto": str(d.get("texto", "")).replace("\n", " "),
+                          "nivel": d.get("nivel", ""), "version": d.get("version_juego", ""), "texto": str(d.get("texto", "")).replace("\n", " "),
                           "captura": d.get("captura", "")})
     return filas
 
@@ -513,7 +553,7 @@ def escribir_comentarios(df, salida, es_prueba, reportes, ux):
             if t and t.lower() != "nan" and t.lower() not in ("nada", "no", "ninguno", "ninguna"):
                 errores.append(("Valoración", str(f.get("id_participante", "")), "", t))
     for r in leer_reportes(reportes):
-        errores.append(("Reporte F8 (%s, %s, v%s)" % (r["escena"], r["epoca"], r["version"]), r["fecha"], r["captura"], r["texto"]))
+        errores.append(("Reporte F8 (%s, nivel %s, v%s)" % (r["escena"], r["nivel"], r["version"]), r["fecha"], r["captura"], r["texto"]))
     ux["errores"] = len(errores)
     if errores:
         L += ["| Origen | Participante o fecha | Captura | Qué pasó |", "|---|---|---|---|"]
@@ -539,13 +579,13 @@ def coma(x, dec=2):
     return (("%." + str(dec) + "f") % x).replace(".", ",") if not np.isnan(x) else "—"
 
 
-def escribir_informe(salida, resumen, preguntas, emociones, n, excluidos, repetidos, archivos, es_prueba, avisos, ux=None):
+def escribir_informe(salida, resumen, preguntas, temas, decisiones, df, n, excluidos, repetidos, archivos, es_prueba, avisos, ux=None):
     L = []
     if es_prueba:
         L += ["> **DATOS DE PRUEBA.** Este informe se generó con datos inventados (NO reales). No lo uses como resultado.", ""]
-    L += ["# Resultados de la evaluación de ECOS", ""]
+    L += ["# Resultados de la evaluación de MINUTO CERO", ""]
     L.append("Se analizaron las respuestas de **%d participantes** (de %d archivo%s). Cada persona contestó las mismas "
-             "16 preguntas antes de jugar y después de terminar el juego: 7 de trivia, 7 de situaciones y 2 de escala."
+             "14 preguntas antes de jugar y después de terminar el juego: 7 de trivia, 5 de situaciones y 2 de escala."
              % (n, len(archivos), "" if len(archivos) == 1 else "s"))
     if excluidos or repetidos:
         L.append("Se dejaron fuera %d participante%s con datos incompletos y %d fila%s repetida%s." % (
@@ -567,17 +607,29 @@ def escribir_informe(salida, resumen, preguntas, emociones, n, excluidos, repeti
             parrafo += " La ganancia normalizada media fue de %s (calculada con %d participantes que no tenían ya el máximo)." % (
                 coma(f["ganancia_normalizada_media"]), f["n_ganancia"])
         L += [parrafo, ""]
-    if not emociones.empty:
-        L += ["## Por emoción", ""]
-        mejor = emociones.assign(d=emociones["trivia_pct_post"] - emociones["trivia_pct_pre"]).sort_values("d", ascending=False).iloc[0]
-        peor = emociones.assign(d=emociones["trivia_pct_post"] - emociones["trivia_pct_pre"]).sort_values("d").iloc[0]
-        L.append("En trivia, la emoción con más mejora fue **%s** (de %d %% a %d %% de aciertos) y la de menos cambio fue **%s** (de %d %% a %d %%)." % (
-            NOMBRES[mejor["emocion"]], round(mejor["trivia_pct_pre"]), round(mejor["trivia_pct_post"]),
-            NOMBRES[peor["emocion"]], round(peor["trivia_pct_pre"]), round(peor["trivia_pct_post"])))
-        L += ["", "Mirando trivia y situaciones juntas, por emoción:", ""]
-        for _, e in emociones.iterrows():
-            L.append("- %s: mejoraron %d, se mantuvieron %d y bajaron %d." % (NOMBRES[e["emocion"]], e["mejoraron"], e["se_mantuvieron"], e["bajaron"]))
+    if not temas.empty:
+        L += ["## Por tema", ""]
+        con_d = temas.assign(d=temas["pct_post"] - temas["pct_pre"])
+        mejor = con_d.sort_values("d", ascending=False).iloc[0]
+        peor = con_d.sort_values("d").iloc[0]
+        L.append("El tema con más mejora fue **%s** (de %d %% a %d %% de aciertos) y el de menos cambio fue **%s** (de %d %% a %d %%)." % (
+            mejor["tema"], round(mejor["pct_pre"]), round(mejor["pct_post"]), peor["tema"], round(peor["pct_pre"]), round(peor["pct_post"])))
+        L += ["", "Por tema (conocimiento y situaciones), cuántas personas mejoraron, se mantuvieron o bajaron:", ""]
+        for _, e in temas.iterrows():
+            L.append("- %s: mejoraron %d, se mantuvieron %d y bajaron %d." % (e["tema"], e["mejoraron"], e["se_mantuvieron"], e["bajaron"]))
         L.append("")
+    if not decisiones.empty:
+        L += ["## Decisiones del juego", ""]
+        if "seguras" in df.columns and pd.to_numeric(df["seguras"], errors="coerce").notna().any():
+            seg = pd.to_numeric(df["seguras"], errors="coerce").dropna()
+            L.append("En promedio, cada persona tomó **%s de 15** decisiones seguras al primer intento (desviación %s)." % (coma(seg.mean(), 1), coma(seg.std(ddof=1) if len(seg) > 1 else float("nan"), 1)))
+        if "final" in df.columns:
+            cuenta = df["final"].value_counts()
+            L.append("Finales: " + "; ".join("%s: %d" % (k, v) for k, v in cuenta.items()) + ".")
+        facil = decisiones.sort_values("pct_segura_primer_intento", ascending=False).iloc[0]
+        dificil = decisiones.sort_values("pct_segura_primer_intento").iloc[0]
+        L += ["", "La decisión más acertada al primer intento fue **%s** (%d %%) y la que más se falló fue **%s** (%d %%). El detalle está en `decisiones.csv`." % (
+            facil["id"], round(facil["pct_segura_primer_intento"]), dificil["id"], round(dificil["pct_segura_primer_intento"])), ""]
     p = preguntas[preguntas["bloque"] != "escala"].copy()
     if not p.empty:
         p["d"] = p["pct_acierto_post"] - p["pct_acierto_pre"]
@@ -610,7 +662,7 @@ def escribir_informe(salida, resumen, preguntas, emociones, n, excluidos, repeti
           "- **Autoinforme:** las situaciones y las escalas dependen de lo que cada persona dice de sí misma, no de lo que hace.",
           "- **Sin grupo de control:** no se puede saber cuánto del cambio se debe al juego y cuánto a otras causas (por ejemplo, haber hecho las preguntas antes).",
           "- **Opiniones:** las valoraciones también son autoinforme y pueden estar influidas por querer agradar a quien hizo el juego.",
-          "- **No es una medición psicológica validada:** las preguntas son una herramienta educativa de este proyecto, no un test psicológico ni dan diagnósticos.", ""]
+          "- **No es una medición validada:** las preguntas son una herramienta educativa de este proyecto, no un examen oficial ni una evaluación de las autoridades de gestión del riesgo.", ""]
     with open(os.path.join(salida, "informe.md"), "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(L))
 

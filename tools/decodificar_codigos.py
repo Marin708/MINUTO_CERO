@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
-"""Decodifica los códigos de resultados de ECOS que los jugadores pegaron en un formulario de Google.
+"""Decodifica los códigos de resultados de MINUTO CERO que los jugadores pegaron en un formulario de Google.
 
     python tools/decodificar_codigos.py RESPUESTAS_FORMULARIO.csv [--salida RUTA.csv] [--columna "Nombre de la columna"]
 
 Entrada: el CSV descargado de la hoja de respuestas de Google Forms (Respuestas > Hojas de cálculo > Archivo > Descargar > CSV).
-El script localiza la columna con el código por su prefijo "ECOS1:" (aunque cambie el nombre de la pregunta); con
+El script localiza la columna con el código por su prefijo "MC1:" (aunque cambie el nombre de la pregunta); con
 --columna se le puede indicar el nombre si hiciera falta.
 
-Salida: un CSV con el MISMO formato que ECOS_resultados.csv (así tools/analizar_resultados.py funciona sin cambios),
+Salida: un CSV con el MISMO formato que MINUTOCERO_resultados.csv (así tools/analizar_resultados.py funciona sin cambios),
 con las columnas de opinión del formulario intactas al final, y un informe en pantalla de cuántos códigos se leyeron bien.
 - Se verifica el control de errores (CRC32) de cada código; los inválidos se descartan y se listan por NÚMERO DE FILA.
 - Si un id_participante aparece repetido, se queda con el más reciente (y lo avisa).
 
 Formato del código (lo genera Scripts/Sistemas/CodigoResultados.gd):
-    "ECOS1:" + base64 seguro para URL de (JSON compacto comprimido con zlib) + CRC32 (8 hex) del texto base64
+    "MC1:" + base64 seguro para URL de (JSON compacto comprimido con zlib) + CRC32 (8 hex) del texto base64
+
+Claves del JSON (ver CodigoResultados.gd): v versión del formato, id, f fecha, g versión del juego, fin final (p, e, r),
+s decisiones seguras al primer intento, l lecciones, dp y di (una cifra por decisión D1 a D15: segura al primer intento
+y número de intentos), d duración en minutos, pre y post (puntajes), rp y rq (respuestas por pregunta) y val (opinión).
 """
 import argparse
 import base64
@@ -25,11 +29,12 @@ import sys
 import zlib
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PREGUNTAS = os.path.join(RAIZ, "Resources", "Cuestionario", "preguntas.json")
-PREFIJO = "ECOS1:"
+PREGUNTAS = os.path.join(RAIZ, "Resources", "contenido", "preguntas.json")
+DECISIONES = [f"D{i}" for i in range(1, 16)]
+PREFIJO = "MC1:"
 VERSION_FORMATO = 1
-PATRON = re.compile(r"ECOS1:[A-Za-z0-9_\-]+")
-FINALES = {"b": "bueno", "n": "neutro", "d": "dificil"}
+PATRON = re.compile(r"MC1:[A-Za-z0-9_\-]+")
+FINALES = {"p": "preparado", "e": "encamino", "r": "reforzar"}
 FRECUENCIAS = ["Nunca", "A veces", "Seguido"]
 BLOQUES = ("trivia", "situaciones", "escala")
 
@@ -52,7 +57,7 @@ def decodificar(codigo):
     """Devuelve (datos, error). error es "" si todo salió bien."""
     texto = codigo.strip()
     if not texto.startswith(PREFIJO):
-        return None, "falta el prefijo ECOS1:"
+        return None, "falta el prefijo MC1:"
     cuerpo = texto[len(PREFIJO):]
     if len(cuerpo) <= 8:
         return None, "el código está cortado"
@@ -66,12 +71,12 @@ def decodificar(codigo):
     except Exception as e:  # noqa: BLE001 (cualquier fallo de contenido es "código inválido")
         return None, "no se pudo leer el contenido (%s)" % type(e).__name__
     if not isinstance(datos, dict) or datos.get("v") != VERSION_FORMATO:
-        return None, "no es un código de ECOS de la versión esperada"
+        return None, "no es un código de MINUTO CERO de la versión esperada"
     return datos, ""
 
 
 # ----------------------------------------------------------------------------
-# Del código al formato de ECOS_resultados.csv
+# Del código al formato de MINUTOCERO_resultados.csv
 
 def cargar_banco():
     with open(PREGUNTAS, encoding="utf-8") as f:
@@ -79,9 +84,10 @@ def cargar_banco():
 
 
 def columnas_estandar(banco):
-    c = ["id_participante", "fecha_iso", "duracion_min", "final", "integradas", "atacadas", "ignoradas", "pendientes",
-         "fragmentos", "habilidades", "pre_trivia", "pre_situaciones", "pre_escala", "post_trivia", "post_situaciones",
-         "post_escala"]
+    c = ["id_participante", "fecha_iso", "duracion_min", "final", "seguras", "resueltas", "lecciones"]
+    for d in DECISIONES:
+        c += [d + "_primer", d + "_intentos"]
+    c += ["pre_trivia", "pre_situaciones", "pre_escala", "post_trivia", "post_situaciones", "post_escala"]
     for bloque in BLOQUES:
         for p in banco[bloque]:
             c += ["pre_" + p["id"], "post_" + p["id"]]
@@ -93,13 +99,18 @@ def columnas_estandar(banco):
 
 
 def fila_estandar(datos, banco):
-    """Un diccionario columna -> valor con el mismo contenido que escribe el juego en ECOS_resultados.csv."""
+    """Un diccionario columna -> valor con el mismo contenido que escribe el juego en MINUTOCERO_resultados.csv."""
+    dp, di = datos.get("dp", ""), datos.get("di", "")
     f = {
         "id_participante": datos.get("id", ""), "fecha_iso": datos.get("f", ""), "duracion_min": datos.get("d", ""),
         "final": FINALES.get(datos.get("fin", ""), datos.get("fin", "")),
-        "integradas": datos.get("i", ""), "atacadas": datos.get("a", ""), "ignoradas": datos.get("ig", ""),
-        "pendientes": datos.get("p", ""), "fragmentos": "", "habilidades": "",
+        "seguras": datos.get("s", ""), "resueltas": sum(1 for ch in dp if ch != "-"), "lecciones": datos.get("l", ""),
     }
+    for i, d in enumerate(DECISIONES):
+        primer = dp[i] if i < len(dp) else "-"
+        intentos = di[i] if i < len(di) else "-"
+        f[d + "_primer"] = int(primer) if primer != "-" else ""
+        f[d + "_intentos"] = int(intentos) if intentos != "-" else ""
     for fase, clave_p, clave_r in (("pre", "pre", "rp"), ("post", "post", "rq")):
         p = datos.get(clave_p, [0, 0, 0])
         f[fase + "_trivia"], f[fase + "_situaciones"], f[fase + "_escala"] = p[0], p[1], p[2]
@@ -170,7 +181,7 @@ def leer_filas(ruta):
 
 
 def decodificar_archivo(ruta, columna=None, salida=None, silencioso=False):
-    """Decodifica el CSV del formulario y escribe el CSV con el formato de ECOS_resultados.csv.
+    """Decodifica el CSV del formulario y escribe el CSV con el formato de MINUTOCERO_resultados.csv.
     Devuelve un diccionario con el resumen: {leidos, invalidos: [numeros de fila], repetidos, salida, filas}."""
     encabezados, filas = leer_filas(ruta)
     if not filas:
@@ -215,7 +226,7 @@ def decodificar_archivo(ruta, columna=None, salida=None, silencioso=False):
     nombres_extra = [(h if h not in columnas else "form_" + h) for h in extras]
     encabezado_final = (["dato_de_prueba"] if es_prueba else []) + columnas + nombres_extra
     if salida is None:
-        salida = os.path.join(os.path.dirname(os.path.abspath(ruta)), "ECOS_resultados_desde_formulario.csv")
+        salida = os.path.join(os.path.dirname(os.path.abspath(ruta)), "MINUTOCERO_resultados_desde_formulario.csv")
     os.makedirs(os.path.dirname(os.path.abspath(salida)), exist_ok=True)
     with open(salida, "w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=encabezado_final, extrasaction="ignore")
@@ -243,7 +254,7 @@ def imprimir_informe(r):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Decodifica los códigos de resultados de ECOS")
+    ap = argparse.ArgumentParser(description="Decodifica los códigos de resultados de MINUTO CERO")
     ap.add_argument("csv", help="CSV descargado de la hoja de respuestas del formulario")
     ap.add_argument("--salida", help="CSV de salida (por defecto, junto al de entrada)")
     ap.add_argument("--columna", help="nombre de la columna con el código (si no se detecta sola)")

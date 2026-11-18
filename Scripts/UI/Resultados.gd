@@ -143,6 +143,8 @@ func _construir() -> void:
 			contenido.add_child(_fila_pregunta(p, bloque))
 	contenido.add_child(EstiloUI.etiqueta("Tu partida", 14, EstiloUI.NARANJA))
 	contenido.add_child(_resumen(c))
+	contenido.add_child(EstiloUI.etiqueta("Tus 15 decisiones", 14, EstiloUI.NARANJA))
+	contenido.add_child(_decisiones())
 	contenido.add_child(EstiloUI.etiqueta("Tu código de resultados", 14, EstiloUI.NARANJA))
 	contenido.add_child(_seccion_codigo())
 
@@ -248,7 +250,8 @@ func _fila_pregunta(p: Dictionary, bloque: String) -> Control:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 2)
 	panel.add_child(col)
-	col.add_child(_texto(str(p["texto"]), 11, EstiloUI.CREMA))
+	col.add_child(_texto(str(p.get("tema", "")), 12, EstiloUI.NARANJA))
+	col.add_child(_texto(str(p["texto"]), 10, EstiloUI.GRIS))
 	var marcas := HBoxContainer.new()
 	marcas.add_theme_constant_override("separation", 6)
 	if hay_pre:
@@ -291,6 +294,35 @@ func _resumen(c: Dictionary) -> Control:
 	lineas.append("Lecciones aprendidas: %d" % Estado.cantidad_lecciones())
 	lineas.append("Tu final: %s" % str(Estado.datos_final().get("nombre", "")))
 	return _texto("\n".join(lineas), 12, EstiloUI.CREMA)
+
+
+## Las 15 decisiones del juego: cuáles fueron seguras al primer intento y cuántos intentos llevó cada una.
+func _decisiones() -> Control:
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 2)
+	v.add_child(_texto("Seguras al primer intento: %d de %d. Los reintentos no suman, pero te enseñan." % [Estado.cantidad_seguras(), Estado.TOTAL_DECISIONES], 11, EstiloUI.CREMA))
+	for id in Estado.ids_decisiones():
+		var d := Estado.datos_decision(id)
+		var estado := "Sin resolver"
+		var color := GRIS_VIOLACEO
+		if Estado.decision_resuelta(id):
+			if Estado.primer_intento_de(id):
+				estado = "Segura al primer intento"
+				color = Color("8fd19e")
+			else:
+				estado = "Para reforzar (%d intento%s)" % [Estado.intentos_de(id), "" if Estado.intentos_de(id) == 1 else "s"]
+				color = Color("ffd166")
+		var fila := HBoxContainer.new()
+		fila.add_theme_constant_override("separation", 6)
+		var etiqueta_id := EstiloUI.etiqueta(id, 10, EstiloUI.NARANJA)
+		etiqueta_id.custom_minimum_size = Vector2(26, 0)
+		fila.add_child(etiqueta_id)
+		var situacion := _texto(str(d.get("situacion", "")), 10, EstiloUI.CREMA)
+		situacion.custom_minimum_size = Vector2(300, 0)
+		fila.add_child(situacion)
+		fila.add_child(EstiloUI.etiqueta(estado, 10, color))
+		v.add_child(fila)
+	return v
 
 
 ## "Tu código de resultados": una línea en un cuadro de solo lectura, con "Copiar código" y "Abrir formulario".

@@ -19,6 +19,7 @@ func _ready() -> void:
 	_prueba_intentos()
 	_prueba_guardado()
 	_prueba_evaluacion()
+	_prueba_codigo()
 
 	# Deja todo como estaba
 	Estado.nueva_partida()
@@ -146,3 +147,29 @@ func _prueba_evaluacion() -> void:
 		originales.append(o["indice_original"])
 	originales.sort()
 	_comprobar(originales == [0, 1, 2, 3], "el barajado conserva los índices originales")
+
+
+# --- Código de resultados ---
+
+func _prueba_codigo() -> void:
+	print("Código de resultados")
+	Estado.nueva_partida()
+	Evaluacion.reiniciar()
+	Estado.forzar_resultado(10)
+	for fase in ["pre", "post"]:
+		Evaluacion.iniciar_fase(fase)
+		for p in Evaluacion.orden_para(fase):
+			Evaluacion.registrar(fase, p["id"], 4 if p["bloque"] == "escala" else (0 if fase == "post" else 1))
+		Evaluacion.calcular(fase)
+	var codigo := CodigoResultados.generar()
+	_comprobar(codigo.begins_with("MC1:"), "el código empieza con MC1:")
+	var r := CodigoResultados.decodificar(codigo)
+	_comprobar(bool(r["ok"]), "el código se decodifica y el CRC cuadra")
+	var d: Dictionary = r["datos"]
+	_comprobar(int(d["s"]) == 10 and d["fin"] == "e" and str(d["dp"]).length() == 15, "trae seguras, final y las 15 decisiones")
+	_comprobar(str(d["rp"]).length() == 14 and str(d["rq"]).length() == 14, "trae las 14 respuestas del antes y del después")
+	_comprobar(not CodigoResultados.decodificar(codigo.substr(0, codigo.length() - 3))["ok"], "un código cortado se rechaza")
+	var f := FileAccess.open("res://docs/analisis/codigo_godot_NO_REAL.txt", FileAccess.WRITE)
+	if f != null:
+		f.store_string(codigo)
+		f.close()

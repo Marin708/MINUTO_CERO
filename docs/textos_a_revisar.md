@@ -29,4 +29,7 @@ Textos que escribió o adaptó el equipo de desarrollo y **no están literalment
 | 24 | `Scripts/Final/Final.gd` | Nota «no es un simulacro oficial…» | Nueva |
 | 25 | `Scripts/Mundo/Nivel2.gd` | «Mantén E: agacharte, cubrirte y sujetarte», nombres de íconos y mensajes de D9 a D11 | Nuevos; D10 usa las opciones del maestro (no «linterna / interruptor / fósforo») |
 | 26 | `Resources/contenido/mitos.json` | Campo `desbloqueo` (qué decisión desbloquea cada mito) | Elegido por el equipo |
+| 27 | `Resources/contenido/preguntas.json`, campo `tema` | Títulos cortos de cada pregunta («Olor a gas», «El plan familiar»…) para la pantalla de resultados y el análisis | Escritos por el equipo |
+| 28 | `Scripts/UI/Resultados.gd` | «Para reforzar», «Segura al primer intento» y los mensajes de la lista de 15 decisiones | Nuevos |
+| 29 | `Resources/creditos.txt` | Créditos (plan gratuito de ElevenLabs, uso no comercial, etc.) | Según lo pedido; completar [COMPLETAR] |
 | 22 | `Scripts/Mundo/Nivel1.gd` | **Lucía** aparece como personaje en el pasillo del nivel 1 (no como cuadro de radio) | Cambio de diseño: el maestro dice «cuadro de radio o teléfono» |

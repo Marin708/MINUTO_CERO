@@ -1,0 +1,16 @@
+id,situacion,participantes,pct_segura_primer_intento,intentos_promedio
+D1,"Estante alto con libros y objetos pesados arriba, sin fijar",12,66.7,1.3
+D2,Cuadro con marco pesado sobre la cama,12,50.0,1.6
+D3,Cilindro de gas suelto en la cocina,12,66.7,1.1
+D4,Objetos pesados o de vidrio en una repisa alta,12,66.7,1.2
+D5,Armar el kit (elegir 8 de 12 objetos),12,41.7,1.7
+D6,¿Dónde reunirse con la familia tras evacuar?,12,50.0,1.4
+D7,¿Cómo se organiza la salida?,12,50.0,1.8
+D8,Sismo fuerte (mecánica),12,75.0,1.2
+D9,Terminó el movimiento y hay vidrios en el piso,12,75.0,1.2
+D10,Huele a gas en la cocina,12,33.3,1.8
+D11,Hay que bajar del 4.º piso,12,58.3,1.6
+D12,Doña Rosa está asustada y no puede caminar bien,12,66.7,1.2
+D13,Cable caído y edificio agrietado en el camino,12,75.0,1.3
+D14,Radio oficial y un mensaje de cadena («viene otro peor esta noche»),12,66.7,1.2
+D15,Llega una réplica y estás afuera,12,50.0,1.6

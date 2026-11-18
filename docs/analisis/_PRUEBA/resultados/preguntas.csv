@@ -1,17 +1,15 @@
-id,bloque,emocion,pre_media,post_media,pct_acierto_pre,pct_acierto_post
-e_entiendo,escala,,3.0,3.8,,
-e_se_hacer,escala,,2.9,3.7,,
-s_ansiedad,situaciones,ansiedad,,,75.0,75.0
-s_culpa,situaciones,culpa,,,41.7,83.3
-s_miedo,situaciones,miedo,,,58.3,83.3
-s_rabia,situaciones,rabia,,,58.3,75.0
-s_soledad,situaciones,soledad,,,50.0,66.7
-s_tristeza,situaciones,tristeza,,,41.7,75.0
-s_verguenza,situaciones,verguenza,,,41.7,66.7
-t_ansiedad,trivia,ansiedad,,,50.0,50.0
-t_culpa,trivia,culpa,,,83.3,66.7
-t_miedo,trivia,miedo,,,50.0,75.0
-t_rabia,trivia,rabia,,,58.3,83.3
-t_soledad,trivia,soledad,,,75.0,75.0
-t_tristeza,trivia,tristeza,,,41.7,83.3
-t_verguenza,trivia,verguenza,,,33.3,91.7
+id,bloque,tema,pre_media,post_media,pct_acierto_pre,pct_acierto_post
+t1,trivia,Qué hacer durante un sismo,,,58.3,66.7
+t2,trivia,El marco de la puerta y el «triángulo de la vida»,,,41.7,83.3
+t3,trivia,El kit de emergencia,,,66.7,66.7
+t4,trivia,El plan familiar,,,66.7,50.0
+t5,trivia,Después del temblor: las réplicas,,,41.7,83.3
+t6,trivia,Olor a gas,,,33.3,83.3
+t7,trivia,Cómo informarte,,,58.3,75.0
+s1,situaciones,En tu cuarto cuando tiembla,,,58.3,58.3
+s2,situaciones,En la calle cuando tiembla,,,50.0,83.3
+s3,situaciones,Terminó de temblar en el 4.º piso,,,58.3,83.3
+s4,situaciones,Olor a gas en la cocina,,,41.7,58.3
+s5,situaciones,Un mensaje de cadena,,,33.3,75.0
+e1,escala,"Qué hacer antes, durante y después",2.7,3.8,,
+e2,escala,Ayudar a tu familia a prepararse,3.2,4.5,,

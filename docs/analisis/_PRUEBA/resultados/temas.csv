@@ -1,0 +1,13 @@
+id,tema,bloque,participantes,pct_pre,pct_post,mejoraron,se_mantuvieron,bajaron
+t1,Qué hacer durante un sismo,trivia,12,58.3,66.7,3,7,2
+t2,El marco de la puerta y el «triángulo de la vida»,trivia,12,41.7,83.3,6,5,1
+t3,El kit de emergencia,trivia,12,66.7,66.7,4,4,4
+t4,El plan familiar,trivia,12,66.7,50.0,2,6,4
+t5,Después del temblor: las réplicas,trivia,12,41.7,83.3,6,5,1
+t6,Olor a gas,trivia,12,33.3,83.3,6,6,0
+t7,Cómo informarte,trivia,12,58.3,75.0,4,6,2
+s1,En tu cuarto cuando tiembla,situaciones,12,58.3,58.3,4,4,4
+s2,En la calle cuando tiembla,situaciones,12,50.0,83.3,5,6,1
+s3,Terminó de temblar en el 4.º piso,situaciones,12,58.3,83.3,4,7,1
+s4,Olor a gas en la cocina,situaciones,12,41.7,58.3,5,4,3
+s5,Un mensaje de cadena,situaciones,12,33.3,75.0,6,5,1

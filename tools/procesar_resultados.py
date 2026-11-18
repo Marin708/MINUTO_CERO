@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Un solo comando para procesar los resultados de ECOS (sin argumentos obligatorios):
+"""Un solo comando para procesar los resultados de MINUTO CERO (sin argumentos obligatorios):
 
     python tools/procesar_resultados.py
 
@@ -29,12 +29,14 @@ REPORTES = os.path.join(RAIZ, "docs", "analisis", "datos_reales", "reportes")
 
 # Qué es cada archivo que se crea (para explicarlo al final)
 EXPLICACIONES = {
-    "ECOS_resultados_desde_formulario.csv": "Las respuestas ya decodificadas (una fila por persona), con el formato de ECOS_resultados.csv.",
+    "MINUTOCERO_resultados_desde_formulario.csv": "Las respuestas ya decodificadas (una fila por persona), con el formato de MINUTOCERO_resultados.csv.",
     "resumen.csv": "Promedios y desviaciones del antes y el después, la ganancia normalizada y la prueba estadística de cada bloque.",
     "preguntas.csv": "El porcentaje de acierto de cada pregunta, antes y después.",
-    "emociones.csv": "Por emoción: aciertos antes y después, y cuántas personas mejoraron, se mantuvieron o bajaron.",
+    "temas.csv": "Por tema (cada pregunta de conocimiento y de situaciones): aciertos antes y después, y cuántas personas mejoraron, se mantuvieron o bajaron.",
+    "decisiones.csv": "Por decisión (D1 a D15): cuántas personas la acertaron al primer intento y cuántos intentos llevó en promedio.",
     "barras_bloques.png": "Gráfico de barras: puntaje medio antes y después en trivia, situaciones y escala.",
-    "barras_emociones_trivia.png": "Gráfico de barras: cuánta gente acertó la trivia de cada emoción, antes y después.",
+    "barras_temas.png": "Gráfico de barras: cuánta gente acertó cada pregunta de conocimiento y de situaciones, antes y después.",
+    "barras_decisiones.png": "Gráfico de barras: porcentaje de personas que acertó cada decisión al primer intento.",
     "lineas_participantes.png": "Gráfico de líneas: cada persona, de antes a después (verde sube, naranja baja).",
     "barras_experiencia.png": "Gráfico de barras: qué tan de acuerdo estuvieron con cada afirmación sobre el juego (1 a 5).",
     "distribucion_nota.png": "Gráfico de barras: cuántas personas dieron cada nota (1 a 5 estrellas).",
@@ -89,7 +91,7 @@ def abrir_carpeta(ruta):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Procesa los resultados de ECOS (decodifica y analiza)")
+    ap = argparse.ArgumentParser(description="Procesa los resultados de MINUTO CERO (decodifica y analiza)")
     ap.add_argument("--prueba", action="store_true", help="usa los datos de prueba (NO reales)")
     ap.add_argument("--no-abrir", action="store_true", help="no abrir la carpeta al terminar")
     args = ap.parse_args()
@@ -97,7 +99,7 @@ def main():
     entrada = ENTRADA_PRUEBA if args.prueba else ENTRADA_REAL
     salida = SALIDA_PRUEBA if args.prueba else SALIDA_REAL
     print("=" * 66)
-    print("ECOS: procesar resultados" + ("   (DATOS DE PRUEBA, NO REALES)" if args.prueba else ""))
+    print("MINUTO CERO: procesar resultados" + ("   (DATOS DE PRUEBA, NO REALES)" if args.prueba else ""))
     print("=" * 66)
 
     # 1. El archivo del formulario
@@ -112,7 +114,7 @@ def main():
 
     # 2. Decodificar los códigos
     print("\nPaso 1 de 2: leyendo los códigos de resultados...")
-    csv_decodificado = os.path.join(salida, "ECOS_resultados_desde_formulario.csv")
+    csv_decodificado = os.path.join(salida, "MINUTOCERO_resultados_desde_formulario.csv")
     resumen = decodificar_codigos.decodificar_archivo(entrada, salida=csv_decodificado)
     if resumen["leidos"] == 0:
         print("\nNo se pudo leer ningún código. Revisa que la columna con los códigos sea la correcta "

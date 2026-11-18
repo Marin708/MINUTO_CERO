@@ -5,28 +5,35 @@
 
 # Juego
 MINUTO CERO
-Un juego educativo sobre qué hacer antes, durante y después de un sismo
+Un proyecto académico: juego educativo sobre qué hacer antes, durante y después de un sismo
 "Prepararte hoy puede cambiar el minuto cero."
+[COMPLETAR: nombre del curso, la universidad y el semestre]
 
-# Programación
-[COMPLETAR: nombre de quien programó el juego]
+# Equipo
+[COMPLETAR: nombres de quienes diseñaron y programaron el juego]
+[COMPLETAR: nombre del docente o asesor]
 
 # Arte
-Arte pixel art generado con herramientas de IA y procesado a mano
+Arte pixel art generado con herramientas de inteligencia artificial y procesado a mano
 [COMPLETAR: herramientas de IA usadas]
 [COMPLETAR: nombre de quien procesó y ajustó el arte]
 
 # Música y sonido
-Efectos de sonido y música generados con herramientas de IA
+Sonido y música generados con ElevenLabs (plan gratuito, uso no comercial)
 Los sonidos de interfaz y de diálogo vienen del proyecto ECOS
-[COMPLETAR: herramientas de IA usadas y nombre de quien eligió y procesó los audios]
+[COMPLETAR: nombre de quien eligió y procesó los audios]
 
-# Fuentes y herramientas
+# Herramientas y licencias
+Godot Engine, licencia MIT
+Dialogue Manager, complemento para Godot, licencia MIT
 Pixelify Sans, fuente tipográfica con licencia abierta (SIL Open Font License)
-Dialogue Manager, complemento para Godot (licencia MIT)
-Godot Engine (licencia MIT)
-Unidad Nacional para la Gestión del Riesgo de Desastres (UNGRD), Servicio Geológico Colombiano, Cruz Roja Colombiana e IDIGER: fuentes de las recomendaciones
-[COMPLETAR: otras fuentes y bibliografía]
+
+# Fuentes de contenido
+Unidad Nacional para la Gestión del Riesgo de Desastres (UNGRD)
+Servicio Geológico Colombiano (SGC)
+Cruz Roja Colombiana
+IDIGER y Alcaldía de Bogotá
+[COMPLETAR: documentos y fechas exactas consultados]
 
 # Homenaje
 A las personas afectadas por el terremoto del Eje Cafetero del 25 de enero de 1999.
@@ -35,4 +42,4 @@ A las personas afectadas por el terremoto del Eje Cafetero del 25 de enero de 19
 [COMPLETAR: personas e instituciones a quienes agradecer]
 A quienes probaron el juego y respondieron las preguntas.
 
-> MINUTO CERO es un juego educativo. Villa Cafetal es una ciudad ficticia. No reemplaza la orientación de las autoridades de gestión del riesgo: sigue siempre sus indicaciones.
+> MINUTO CERO es un juego educativo; no reemplaza los simulacros ni las instrucciones de las autoridades de gestión del riesgo.
