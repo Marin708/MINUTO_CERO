@@ -1,0 +1,148 @@
+extends Node
+## Pruebas sin ventana del estado, los finales y la evaluación.
+##   godot --headless --path . res://tools/pruebas_estado.tscn
+## Sale con código 0 si todo pasa y con 1 si algo falla. No toca la partida real: respalda y restaura el
+## archivo de guardado.
+
+var _fallos := 0
+var _pruebas := 0
+
+
+func _ready() -> void:
+	var respaldo := ""
+	var habia_guardado := FileAccess.file_exists(Estado.RUTA_GUARDADO)
+	if habia_guardado:
+		respaldo = FileAccess.get_file_as_string(Estado.RUTA_GUARDADO)
+
+	_prueba_contenido()
+	_prueba_finales()
+	_prueba_intentos()
+	_prueba_guardado()
+	_prueba_evaluacion()
+
+	# Deja todo como estaba
+	Estado.nueva_partida()
+	Evaluacion.reiniciar()
+	if habia_guardado:
+		var archivo := FileAccess.open(Estado.RUTA_GUARDADO, FileAccess.WRITE)
+		archivo.store_string(respaldo)
+		archivo.close()
+	elif FileAccess.file_exists(Estado.RUTA_GUARDADO):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(Estado.RUTA_GUARDADO))
+
+	print("Pruebas: %d comprobaciones, %d fallos." % [_pruebas, _fallos])
+	get_tree().quit(1 if _fallos > 0 else 0)
+
+
+func _comprobar(condicion: bool, descripcion: String) -> void:
+	_pruebas += 1
+	if condicion:
+		print("  ok   %s" % descripcion)
+	else:
+		_fallos += 1
+		print("  FALLA %s" % descripcion)
+
+
+# --- Contenido ---
+
+func _prueba_contenido() -> void:
+	print("Contenido")
+	var errores := ValidadorContenido.validar()
+	_comprobar(errores.is_empty(), "los JSON de contenido son válidos %s" % str(errores))
+	_comprobar(Estado.ids_decisiones().size() == 15, "existen las 15 decisiones")
+	var por_nivel := [Estado.ids_de_nivel(1).size(), Estado.ids_de_nivel(2).size(), Estado.ids_de_nivel(3).size()]
+	_comprobar(por_nivel == [7, 4, 4], "decisiones por nivel 7, 4 y 4 %s" % str(por_nivel))
+
+
+# --- Finales ---
+
+func _prueba_finales() -> void:
+	print("Finales")
+	Estado.nueva_partida()
+	Estado.forzar_resultado(15)
+	_comprobar(Estado.cantidad_seguras() == 15, "todas seguras da 15")
+	_comprobar(Estado.calcular_final() == "preparado", "todas seguras: final Preparado")
+	_comprobar(str(Estado.datos_final()["nombre"]) == "Preparado o preparada", "nombre del final Preparado")
+	_comprobar(str(Estado.datos_final()["mensaje"]) == "Tu minuto cero estuvo preparado.", "mensaje del final Preparado")
+	var esperado := {15: "preparado", 12: "preparado", 11: "encamino", 10: "encamino", 8: "encamino", 7: "reforzar", 3: "reforzar", 0: "reforzar"}
+	for seguras in esperado:
+		Estado.forzar_resultado(seguras)
+		_comprobar(Estado.calcular_final() == esperado[seguras], "%d seguras: %s" % [seguras, esperado[seguras]])
+	Estado.forzar_resultado(8)
+	_comprobar(str(Estado.datos_final()["nombre"]) == "En camino", "la mitad (8 seguras) da En camino")
+	Estado.forzar_resultado(0)
+	_comprobar(str(Estado.datos_final()["nombre"]) == "A reforzar", "ninguna segura da A reforzar")
+
+
+# --- Intentos y lecciones ---
+
+func _prueba_intentos() -> void:
+	print("Intentos y lecciones")
+	Estado.nueva_partida()
+	var primero := Estado.registrar_decision("D1", false)
+	_comprobar(primero and not Estado.primer_intento_de("D1"), "D1 fallada al primer intento")
+	Estado.registrar_decision("D1", true)
+	_comprobar(Estado.intentos_de("D1") == 2, "D1 lleva 2 intentos")
+	_comprobar(not Estado.primer_intento_de("D1") and Estado.cantidad_seguras() == 0, "el reintento no suma puntos")
+	_comprobar(Estado.cantidad_lecciones() == 1, "D1 queda como lección aprendida (una sola vez)")
+	Estado.registrar_decision("D2", true)
+	_comprobar(Estado.primer_intento_de("D2") and Estado.cantidad_seguras() == 1, "D2 segura al primer intento suma 1")
+	_comprobar(Estado.desbloquear_tarjeta_de_nivel(1) == "mem1", "la tarjeta del nivel 1 se desbloquea")
+	_comprobar(Estado.desbloquear_tarjeta_de_nivel(1) == "", "no se desbloquea dos veces")
+
+
+# --- Guardado ---
+
+func _prueba_guardado() -> void:
+	print("Guardado")
+	Estado.nueva_partida()
+	Estado.registrar_decision("D1", false)
+	Estado.registrar_decision("D1", true)
+	Estado.registrar_decision("D3", true)
+	Estado.desbloquear_tarjeta_de_nivel(1)
+	Estado.ir_a_nivel(2)
+	_comprobar(Estado.guardar(), "guardar() escribe user://minutocero_save.json")
+	Estado.nueva_partida()
+	_comprobar(Estado.cantidad_resueltas() == 0 and Estado.nivel_actual == 1, "nueva_partida() deja todo en blanco")
+	_comprobar(Estado.diagnosticar_partida() == "ok", "el archivo guardado se reconoce")
+	_comprobar(Estado.cargar(), "cargar() devuelve true")
+	_comprobar(Estado.nivel_actual == 2 and Estado.intentos_de("D1") == 2 and Estado.primer_intento_de("D3"), "cargar() restaura nivel, intentos y primer intento")
+	_comprobar(Estado.lecciones.size() == 2 and Estado.tarjetas == ["mem1"], "cargar() restaura lecciones y tarjetas")
+	# Un archivo dañado no rompe nada
+	var archivo := FileAccess.open(Estado.RUTA_GUARDADO, FileAccess.WRITE)
+	archivo.store_string("{esto no es json")
+	archivo.close()
+	_comprobar(Estado.diagnosticar_partida() == "danada" and not Estado.cargar(), "un archivo dañado se detecta y no se carga")
+
+
+# --- Evaluación ---
+
+func _prueba_evaluacion() -> void:
+	print("Evaluación")
+	_comprobar(Evaluacion.valido, "el banco de preguntas es válido %s" % str(Evaluacion.errores))
+	Evaluacion.reiniciar()
+	Evaluacion.iniciar_fase("pre")
+	var orden := Evaluacion.orden_para("pre")
+	_comprobar(orden.size() == 14, "cada fase tiene 14 preguntas")
+	_comprobar(Evaluacion.banco["trivia"].size() == 7 and Evaluacion.banco["situaciones"].size() == 5 and Evaluacion.banco["escala"].size() == 2, "7 de trivia, 5 de situaciones y 2 de escala")
+	# Todas correctas (índice original 0) y escala máxima
+	for p in orden:
+		Evaluacion.registrar("pre", p["id"], 5 if p["bloque"] == "escala" else 0)
+	var buenos := Evaluacion.calcular("pre")
+	_comprobar(buenos["trivia"] == 7 and buenos["situaciones"] == 5 and buenos["escala"] == 10 and buenos["total"] == 12, "todo correcto: trivia 7, situaciones 5, escala 10, total 12 %s" % str(buenos))
+	_comprobar(Evaluacion.pre_completo(), "el pre queda completo")
+	# Todas incorrectas (índice original 1) y escala mínima
+	Evaluacion.iniciar_fase("post")
+	for p in Evaluacion.orden_para("post"):
+		Evaluacion.registrar("post", p["id"], 1)
+	var malos := Evaluacion.calcular("post")
+	_comprobar(malos["trivia"] == 0 and malos["situaciones"] == 0 and malos["escala"] == 2, "todo incorrecto: 0, 0 y escala 2 %s" % str(malos))
+	var c := Evaluacion.comparar()
+	_comprobar(c["por_bloque"]["trivia"]["dif"] == -7 and c["por_bloque"]["escala"]["dif"] == -8, "la comparación resta pre y post")
+	# Las opciones se barajan, pero el índice original se conserva
+	var primera := Evaluacion.orden_para("pre")[0]
+	var originales: Array = []
+	for o in primera["opciones"]:
+		originales.append(o["indice_original"])
+	originales.sort()
+	_comprobar(originales == [0, 1, 2, 3], "el barajado conserva los índices originales")

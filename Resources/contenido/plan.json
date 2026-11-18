@@ -1,0 +1,12 @@
+{
+	"version": 1,
+	"nota": "Mi plan en 5 pasos (docs/DISENO_MAESTRO.md seccion 8).",
+	"titulo": "Mi plan en 5 pasos",
+	"pasos": [
+		{ "numero": 1, "texto": "Revisa y asegura los riesgos de tu casa." },
+		{ "numero": 2, "texto": "Arma el kit." },
+		{ "numero": 3, "texto": "Acuerda rutas y punto de encuentro con tu familia." },
+		{ "numero": 4, "texto": "Practica agacharte, cubrirte y sujetarte." },
+		{ "numero": 5, "texto": "Infórmate solo en fuentes oficiales." }
+	]
+}

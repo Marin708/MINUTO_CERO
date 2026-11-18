@@ -1,0 +1,28 @@
+{
+	"version": 1,
+	"nota": "Finales segun el numero de decisiones seguras al primer intento, de 15 (docs/DISENO_MAESTRO.md seccion 8). Rangos inclusivos y sin huecos.",
+	"total_decisiones": 15,
+	"finales": [
+		{
+			"id": "preparado",
+			"nombre": "Preparado o preparada",
+			"minimo": 12,
+			"maximo": 15,
+			"mensaje": "Tu minuto cero estuvo preparado."
+		},
+		{
+			"id": "encamino",
+			"nombre": "En camino",
+			"minimo": 8,
+			"maximo": 11,
+			"mensaje": "Ya sabes lo importante. Lo que falló se puede practicar."
+		},
+		{
+			"id": "reforzar",
+			"nombre": "A reforzar",
+			"minimo": 0,
+			"maximo": 7,
+			"mensaje": "Aprendiste cosas valiosas. Vuelve a jugar y practica en familia."
+		}
+	]
+}

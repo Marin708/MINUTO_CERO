@@ -1,0 +1,185 @@
+{
+	"version": 1,
+	"nota": "15 decisiones (docs/DISENO_MAESTRO.md seccion 6). 'opciones' lleva primero la segura y 'segura' es su indice (0); en el juego se mezclan. D5 es de tipo 'kit' y se resuelve con kit.json.",
+	"decisiones": [
+		{
+			"id": "D1",
+			"nivel": 1,
+			"situacion": "Estante alto con libros y objetos pesados arriba, sin fijar",
+			"opciones": [
+				"Fijarlo a la pared y dejar lo pesado abajo",
+				"Dejarlo así",
+				"Poner más cosas arriba"
+			],
+			"segura": 0,
+			"retro": "Los muebles altos pueden caerse. Fíjalos y deja lo pesado en los niveles bajos."
+		},
+		{
+			"id": "D2",
+			"nivel": 1,
+			"situacion": "Cuadro con marco pesado sobre la cama",
+			"opciones": [
+				"Pasarlo a una pared lejos de camas y sillas",
+				"Dejarlo",
+				"Colgarlo con más peso"
+			],
+			"segura": 0,
+			"retro": "Lo que cuelga sobre donde duermes o te sientas puede caerte encima."
+		},
+		{
+			"id": "D3",
+			"nivel": 1,
+			"situacion": "Cilindro de gas suelto en la cocina",
+			"opciones": [
+				"Asegurarlo y saber dónde está la llave",
+				"Dejarlo suelto",
+				"Esconderlo detrás de la nevera"
+			],
+			"segura": 0,
+			"retro": "Un cilindro suelto puede caerse y causar una fuga. Asegúralo y conoce la llave."
+		},
+		{
+			"id": "D4",
+			"nivel": 1,
+			"situacion": "Objetos pesados o de vidrio en una repisa alta",
+			"opciones": [
+				"Bajarlos o guardarlos en un lugar bajo",
+				"Dejarlos",
+				"Subirlos más"
+			],
+			"segura": 0,
+			"retro": "En un temblor, lo que está arriba cae. Lo pesado y frágil, abajo."
+		},
+		{
+			"id": "D5",
+			"nivel": 1,
+			"tipo": "kit",
+			"situacion": "Armar el kit (elegir 8 de 12 objetos)",
+			"opciones": [],
+			"segura": -1,
+			"retro": "Sí cuenta si hay al menos 7 correctos y 1 distractor como máximo. Un kit de emergencia lleva: agua potable, alimentos no perecederos, linterna, pilas de repuesto, silbato, botiquín, medicinas de uso diario y documentos en bolsa impermeable."
+		},
+		{
+			"id": "D6",
+			"nivel": 1,
+			"situacion": "¿Dónde reunirse con la familia tras evacuar?",
+			"opciones": [
+				"Un espacio abierto cercano, lejos de edificios y cables, que todos conozcan",
+				"Dentro del apartamento",
+				"Debajo de un edificio alto"
+			],
+			"segura": 0,
+			"retro": "El plan define rutas, qué hace cada quien y un punto de encuentro abierto y conocido."
+		},
+		{
+			"id": "D7",
+			"nivel": 1,
+			"situacion": "¿Cómo se organiza la salida?",
+			"opciones": [
+				"Cada quien sabe qué hacer; salir por la escalera con calma",
+				"Improvisar",
+				"Salir siempre por el ascensor"
+			],
+			"segura": 0,
+			"retro": "No uses el ascensor en un sismo. Practicar el plan hace que se recuerde bajo presión."
+		},
+		{
+			"id": "D8",
+			"nivel": 2,
+			"situacion": "Sismo fuerte (mecánica)",
+			"opciones": [
+				"Agacharse, cubrirse y sujetarse bajo la mesa, lejos de ventanas",
+				"Correr a la puerta",
+				"Ponerse en el marco de la puerta",
+				"Quedarse junto a la ventana"
+			],
+			"segura": 0,
+			"retro": "Las autoridades recomiendan agacharse, cubrirse y sujetarse. El marco de la puerta no es lo más seguro en construcciones actuales."
+		},
+		{
+			"id": "D9",
+			"nivel": 2,
+			"situacion": "Terminó el movimiento y hay vidrios en el piso",
+			"opciones": [
+				"Ponerse zapatos cerrados y tomar mochila y linterna",
+				"Salir descalzo corriendo",
+				"No revisar nada"
+			],
+			"segura": 0,
+			"retro": "Calzado cerrado evita cortes. Ten a mano linterna, documentos y medicinas."
+		},
+		{
+			"id": "D10",
+			"nivel": 2,
+			"situacion": "Huele a gas en la cocina",
+			"opciones": [
+				"No usar fuego ni interruptores, ventilar si es seguro y alejarse para avisar",
+				"Encender la luz para ver",
+				"Encender un fósforo"
+			],
+			"segura": 0,
+			"retro": "Una chispa puede encender el gas. Usa solo linterna y avisa a emergencias desde un lugar seguro."
+		},
+		{
+			"id": "D11",
+			"nivel": 2,
+			"situacion": "Hay que bajar del 4.º piso",
+			"opciones": [
+				"Escalera, con calma, sin ascensor",
+				"Ascensor",
+				"Quedarse esperando"
+			],
+			"segura": 0,
+			"retro": "No uses ascensores durante ni después de un sismo: pueden fallar."
+		},
+		{
+			"id": "D12",
+			"nivel": 3,
+			"situacion": "Doña Rosa está asustada y no puede caminar bien",
+			"opciones": [
+				"Acompañarla, tranquilizarla y avisar a los equipos de emergencia",
+				"Irse sin avisar",
+				"Entrar a un edificio dañado a buscar ayuda"
+			],
+			"segura": 0,
+			"retro": "Ayuda sin ponerte en riesgo. No entres a edificios dañados.",
+			"revisar": "[REVISAR primeros auxilios]"
+		},
+		{
+			"id": "D13",
+			"nivel": 3,
+			"situacion": "Cable caído y edificio agrietado en el camino",
+			"opciones": [
+				"Alejarse, rodear por la avenida abierta y avisar",
+				"Pasar por debajo del cable",
+				"Entrar a recoger cosas"
+			],
+			"segura": 0,
+			"retro": "Los cables caídos y los edificios agrietados son peligrosos aunque «parezcan» estables."
+		},
+		{
+			"id": "D14",
+			"nivel": 3,
+			"situacion": "Radio oficial y un mensaje de cadena («viene otro peor esta noche»)",
+			"opciones": [
+				"Confiar en canales oficiales y no reenviar la cadena",
+				"Reenviar la cadena «por si acaso»",
+				"Llamar a emergencias a preguntar"
+			],
+			"segura": 0,
+			"retro": "Los terremotos no se pueden predecir. Verifica y no satures las líneas de emergencia."
+		},
+		{
+			"id": "D15",
+			"nivel": 3,
+			"situacion": "Llega una réplica y estás afuera",
+			"opciones": [
+				"Quedarte en el espacio abierto, lejos de edificios y cables, agacharte y proteger la cabeza",
+				"Correr hacia un edificio",
+				"Pararte junto a una pared alta"
+			],
+			"segura": 0,
+			"retro": "Las réplicas pueden continuar. Prepárate para protegerte otra vez."
+		}
+	]
+}

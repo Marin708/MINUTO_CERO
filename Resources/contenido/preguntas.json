@@ -1,0 +1,158 @@
+{
+	"version": 1,
+	"nota": "Banco de 14 preguntas (7 trivia, 5 situaciones, 2 escala). En trivia y situaciones la opcion 0 es la correcta o mas segura; en el juego se mezclan. Texto tomado de docs/DISENO_MAESTRO.md seccion 10.",
+	"trivia": [
+		{
+			"id": "t1",
+			"texto": "Si estás dentro de una edificación y empieza un sismo, ¿qué recomiendan las autoridades?",
+			"opciones": [
+				"Agacharte, cubrirte y sujetarte bajo un mueble resistente, lejos de ventanas.",
+				"Salir corriendo hacia las escaleras",
+				"Ponerte en el marco de una puerta",
+				"Usar el ascensor para bajar rápido"
+			],
+			"correcta": 0,
+			"explicacion": "Las autoridades recomiendan agacharse, cubrirse y sujetarse. Correr o usar el ascensor aumenta el riesgo."
+		},
+		{
+			"id": "t2",
+			"texto": "¿Qué pasa con el “triángulo de la vida” y el marco de la puerta?",
+			"opciones": [
+				"No son lo más recomendado; es mejor agacharse, cubrirse y sujetarse.",
+				"Son el lugar más seguro de cualquier casa",
+				"Solo sirven en casas de un piso",
+				"Los recomienda la Cruz Roja como primera opción"
+			],
+			"correcta": 0,
+			"explicacion": "En construcciones actuales no se puede anticipar cómo reaccionará la estructura, y por eso se recomienda protegerse bajo un mueble resistente."
+		},
+		{
+			"id": "t3",
+			"texto": "¿Qué debe tener un kit de emergencia?",
+			"opciones": [
+				"Agua potable, alimentos no perecederos, linterna con pilas de repuesto, silbato, botiquín y documentos importantes protegidos.",
+				"Solo dinero y el celular",
+				"Solo comida enlatada",
+				"Una vela y un televisor pequeño"
+			],
+			"correcta": 0,
+			"explicacion": "El kit debe estar en un lugar de fácil acceso y tener lo básico para las primeras horas."
+		},
+		{
+			"id": "t4",
+			"texto": "¿Qué debe definir un plan familiar de emergencia?",
+			"opciones": [
+				"Las rutas de evacuación, qué hace cada persona y un punto de encuentro.",
+				"Solo el número de teléfono del vecino",
+				"Quién se queda en casa pase lo que pase",
+				"El horario de las comidas"
+			],
+			"correcta": 0,
+			"explicacion": "El plan sirve para que todos sepan qué hacer y dónde reunirse."
+		},
+		{
+			"id": "t5",
+			"texto": "Cuando termina el temblor principal, ¿qué es cierto?",
+			"opciones": [
+				"Pueden venir réplicas, y hay que estar listo para protegerse otra vez.",
+				"Ya no hay ningún peligro",
+				"Las réplicas nunca causan daño",
+				"Es seguro volver de inmediato a un edificio dañado"
+			],
+			"correcta": 0,
+			"explicacion": "Las réplicas pueden dañar estructuras que ya estaban afectadas."
+		},
+		{
+			"id": "t6",
+			"texto": "Si hueles gas después de un sismo, ¿qué es lo más seguro?",
+			"opciones": [
+				"Evitar chispas (nada de fósforos, velas ni interruptores), ventilar si es seguro y alejarte para avisar a emergencias.",
+				"Encender una vela para ver mejor",
+				"Prender la luz para buscar la fuga",
+				"Usar el encendedor para comprobar si aún huele"
+			],
+			"correcta": 0,
+			"explicacion": "Una chispa puede encender el gas. Usa linterna."
+		},
+		{
+			"id": "t7",
+			"texto": "¿Cómo te informas después de un sismo?",
+			"opciones": [
+				"Con canales oficiales (autoridades de gestión del riesgo, Servicio Geológico, radio oficial).",
+				"Reenviando cadenas de mensajes sin verificar",
+				"Llamando a emergencias para preguntar qué pasó",
+				"Creyendo lo primero que veas"
+			],
+			"correcta": 0,
+			"explicacion": "La información oficial evita rumores, y las líneas de emergencia deben quedar libres para urgencias."
+		}
+	],
+	"situaciones": [
+		{
+			"id": "s1",
+			"texto": "Estás en tu cuarto y empieza a temblar fuerte, ¿qué haces?",
+			"opciones": [
+				"Me agacho, me cubro bajo un mueble resistente y me sujeto.",
+				"Corro a la puerta",
+				"Me quedo mirando por la ventana"
+			],
+			"correcta": 0
+		},
+		{
+			"id": "s2",
+			"texto": "Estás en la calle cuando tiembla, ¿qué haces?",
+			"opciones": [
+				"Me alejo de edificios, postes y cables y busco un espacio abierto.",
+				"Entro corriendo al edificio más cercano",
+				"Me paro junto a una pared alta"
+			],
+			"correcta": 0
+		},
+		{
+			"id": "s3",
+			"texto": "Terminó de temblar y estás en el 4.º piso, ¿qué haces?",
+			"opciones": [
+				"Reviso cómo estoy, me pongo zapatos, tomo linterna y mochila y bajo por las escaleras con calma.",
+				"Uso el ascensor para ser más rápido",
+				"Me quedo esperando sin revisar nada"
+			],
+			"correcta": 0
+		},
+		{
+			"id": "s4",
+			"texto": "Huele a gas en la cocina, ¿qué haces?",
+			"opciones": [
+				"No uso fuego ni interruptores, ventilo si es seguro y me alejo para avisar.",
+				"Enciendo la luz para ver",
+				"Prendo un fósforo para buscar la fuga"
+			],
+			"correcta": 0
+		},
+		{
+			"id": "s5",
+			"texto": "Un amigo escribe: “viene un terremoto peor esta noche”, ¿qué haces?",
+			"opciones": [
+				"Verifico en canales oficiales antes de compartirlo.",
+				"Lo reenvío a todos por si acaso",
+				"Lo creo y entro en pánico"
+			],
+			"correcta": 0
+		}
+	],
+	"escala": [
+		{
+			"id": "e1",
+			"texto": "Sé qué hacer antes, durante y después de un sismo.",
+			"valores": 5,
+			"minimo": "Nada de acuerdo",
+			"maximo": "Totalmente de acuerdo"
+		},
+		{
+			"id": "e2",
+			"texto": "Me siento capaz de ayudar a mi familia a prepararnos.",
+			"valores": 5,
+			"minimo": "Nada de acuerdo",
+			"maximo": "Totalmente de acuerdo"
+		}
+	]
+}

@@ -1,0 +1,25 @@
+{
+	"version": 1,
+	"nota": "Kit de la decision D5 (docs/DISENO_MAESTRO.md seccion 6). 'icono' es el indice en Assets/UI/kit.png (4 columnas x 3 filas). Los indices 0 a 7 son los correctos y 8 a 11 los distractores.",
+	"decision": "D5",
+	"regla": {
+		"elegir": 8,
+		"minimo_correctos": 7,
+		"maximo_distractores": 1,
+		"texto": "Sí cuenta si hay al menos 7 correctos y 1 distractor como máximo."
+	},
+	"objetos": [
+		{ "id": "agua", "nombre": "Agua potable", "correcto": true, "icono": 0 },
+		{ "id": "alimentos", "nombre": "Alimentos no perecederos", "correcto": true, "icono": 1 },
+		{ "id": "linterna", "nombre": "Linterna", "correcto": true, "icono": 2 },
+		{ "id": "pilas", "nombre": "Pilas de repuesto", "correcto": true, "icono": 3 },
+		{ "id": "silbato", "nombre": "Silbato", "correcto": true, "icono": 4 },
+		{ "id": "botiquin", "nombre": "Botiquín", "correcto": true, "icono": 5 },
+		{ "id": "medicinas", "nombre": "Medicinas de uso diario", "correcto": true, "icono": 6 },
+		{ "id": "documentos", "nombre": "Documentos en bolsa impermeable", "correcto": true, "icono": 7 },
+		{ "id": "vela", "nombre": "Vela", "correcto": false, "icono": 8 },
+		{ "id": "televisor", "nombre": "Televisor pequeño", "correcto": false, "icono": 9 },
+		{ "id": "perfume", "nombre": "Perfume", "correcto": false, "icono": 10 },
+		{ "id": "videojuego", "nombre": "Videojuego", "correcto": false, "icono": 11 }
+	]
+}

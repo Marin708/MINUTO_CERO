@@ -1,0 +1,25 @@
+{
+	"version": 1,
+	"nota": "Memoria de 1999: una tarjeta por nivel (docs/DISENO_MAESTRO.md seccion 9). [REVISAR cifras con fuentes oficiales: UNGRD, Servicio Geologico Colombiano, Cruz Roja Colombiana, IDIGER].",
+	"revisar": true,
+	"tarjetas": [
+		{
+			"id": "mem1",
+			"nivel": 1,
+			"titulo": "25 de enero de 1999",
+			"texto": "El 25 de enero de 1999, a la 1:19 p. m., un terremoto de magnitud cercana a 6,2 sacudió el Eje Cafetero, con epicentro cerca de Córdoba (Quindío). Armenia fue una de las ciudades más afectadas. (Algunas fuentes lo reportan como 6,1.)"
+		},
+		{
+			"id": "mem2",
+			"nivel": 2,
+			"titulo": "Lo que dejó el terremoto",
+			"texto": "Murieron más de mil personas y miles de viviendas quedaron dañadas o destruidas. (Las cifras varían según la fuente.) Se creó un fondo para la reconstrucción de la región."
+		},
+		{
+			"id": "mem3",
+			"nivel": 3,
+			"titulo": "Prepararse sí ayuda",
+			"texto": "Los terremotos no se pueden predecir, pero sí se pueden reducir sus efectos con construcción sismorresistente, planes de evacuación y preparación."
+		}
+	]
+}
