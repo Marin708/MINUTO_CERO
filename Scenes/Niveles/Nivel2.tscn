@@ -96,8 +96,23 @@ metadata/radio = 80
 position = Vector2(944, 576)
 metadata/clase = "zona"
 metadata/tipo = "escalera"
-metadata/radio = 40
+metadata/radio = 56
 
 [node name="Spawn" type="Marker2D" parent="Marcadores"]
 position = Vector2(368, 316)
 metadata/clase = "spawn"
+
+[node name="Item_Zapatos" type="Marker2D" parent="Marcadores"]
+position = Vector2(112, 288)
+metadata/clase = "item"
+metadata/tipo = "zapatos"
+
+[node name="Item_Mochila" type="Marker2D" parent="Marcadores"]
+position = Vector2(400, 256)
+metadata/clase = "item"
+metadata/tipo = "mochila"
+
+[node name="Item_Linterna" type="Marker2D" parent="Marcadores"]
+position = Vector2(304, 320)
+metadata/clase = "item"
+metadata/tipo = "linterna"

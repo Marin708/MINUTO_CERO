@@ -120,7 +120,7 @@ MARCADORES_APTO = [
     ("Zona_Mesa", "zona", "mesa_segura", "", 7, 7, 56),
     ("Zona_Ventana", "zona", "ventana", "", 4, 3, 64),
     ("Zona_Puerta", "zona", "puerta", "", 29, 12, 80),
-    ("Zona_Escalera", "zona", "escalera", "", 29, 17, 40),
+    ("Zona_Escalera", "zona", "escalera", "", 29, 17, 56),
 ]
 
 
@@ -129,7 +129,10 @@ def apartamento_marcadores(nivel):
     if nivel == 1:
         lista += [("Spawn", "spawn", "", "", 8, 13, 0), ("Npc_Lucia", "npc", "lucia", "", 12, 13, 0)]
     else:
-        lista += [("Spawn", "spawn", "", "", 11, 9, 0)]
+        lista += [("Spawn", "spawn", "", "", 11, 9, 0),
+                  ("Item_Zapatos", "item", "zapatos", "", 3, 8, 0),
+                  ("Item_Mochila", "item", "mochila", "", 12, 7, 0),
+                  ("Item_Linterna", "item", "linterna", "", 9, 9, 0)]
     return lista
 
 

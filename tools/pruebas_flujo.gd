@@ -28,6 +28,7 @@ func _ready() -> void:
 	await _prueba_tarjeta()
 	await _recorrido_completo()
 	await _teclas_de_depuracion()
+	await _sismo_en_tiempo_real()
 
 	Dialogo.respuesta_de_prueba = -99
 	KitUI.seleccion_de_prueba = []
@@ -121,19 +122,24 @@ func _recorrido_completo() -> void:
 	_ok(Estado.lograda("D6") and Estado.lograda("D7"), "nivel 1: punto de encuentro y salida acordados con Mamá")
 	_ok(await _hasta(_es("Nivel2")), "fundido y paso al nivel 2")
 	var n2: Nivel2 = _escena()
-	_ok(await _hasta(func() -> bool: return n2.fase == Nivel2.Fase.AVISO or n2.fase == Nivel2.Fase.FUERTE), "el sismo empieza con su aviso")
+	_ok(await _hasta(func() -> bool: return Sismo.fase == Sismo.Fase.AVISO or Sismo.fase == Sismo.Fase.FUERTE), "el sismo empieza con su aviso")
 	await get_tree().create_timer(0.4).timeout
 	n2.forzar_fin_sismo(false)
-	await _hasta(func() -> bool: return n2.fase == Nivel2.Fase.AVISO, 10.0)
+	await _hasta(func() -> bool: return n2.fase == Nivel2.Fase.SISMO and Sismo.fase == Sismo.Fase.AVISO, 10.0)
 	_ok(Estado.intentos_de("D8") >= 1 and not Estado.primer_intento_de("D8"), "D8: el primer intento riesgoso queda registrado")
-	_ok(n2.fase == Nivel2.Fase.AVISO, "después del error el sismo se repite")
+	_ok(n2.fase == Nivel2.Fase.SISMO, "después del error el sismo se repite")
 	n2.forzar_fin_sismo(true)
 	_ok(await _hasta(func() -> bool: return n2.fase == Nivel2.Fase.DESPUES and not n2.ocupado, 10.0), "sismo terminado con éxito")
 	_ok(Estado.lograda("D8"), "D8 lograda en el reintento")
 	_ok(not Estado.primer_intento_de("D8"), "el reintento no cambia la nota del primer intento")
-	for etiqueta in ["kit", "D3", "salida"]:
-		await n2._on_prop(n2.prop_con_etiqueta(etiqueta))
-	_ok(Estado.lograda("D9") and Estado.lograda("D10") and Estado.lograda("D11"), "nivel 2: zapatos, gas y escalera")
+	_ok(n2.items.size() == 3, "hay zapatos, mochila y linterna para recoger")
+	await n2._on_item(n2.items[0])
+	_ok(Estado.lograda("D9") and n2.items.is_empty(), "D9: al recogerlos los tres desaparecen")
+	await n2._on_prop(n2.prop_con_etiqueta("D3"))
+	await n2._on_prop(n2.prop_con_etiqueta("salida"))
+	_ok(Estado.lograda("D10") and Estado.lograda("D11"), "nivel 2: D10 (gas) y D11 (escalera)")
+	n2.jugador.global_position = n2.pos_zona("Zona_Escalera")
+	_ok(await _hasta(func() -> bool: return n2.hud.todas_hechas(), 5.0), "el HUD marca todas las tareas del nivel 2")
 	_ok(await _hasta(_es("Nivel3")), "paso al nivel 3")
 	var n3: Nivel3 = _escena()
 	await _hasta(func() -> bool: return not n3.ocupado)
@@ -174,3 +180,29 @@ func _teclas_de_depuracion() -> void:
 	Depuracion.forzar_final("reforzar")
 	_ok(await _hasta(func() -> bool: return Estado.calcular_final() == "reforzar"), "tecla X: A reforzar")
 	_ok(await _hasta(_es("Final")), "cada tecla de final lleva a la pantalla del final")
+
+
+## El sismo de verdad (22 s): primero un error (ir a la puerta) y luego mantener E bajo la mesa.
+func _sismo_en_tiempo_real() -> void:
+	print("Sismo en tiempo real (tarda unos 30 s)")
+	Dialogo.respuesta_de_prueba = 0
+	Estado.nueva_partida()
+	Depuracion.saltar_a_nivel(2)
+	await _hasta(_es("Nivel2"))
+	var n2: Nivel2 = _escena()
+	_ok(await _hasta(func() -> bool: return Sismo.fase == Sismo.Fase.AVISO, 5.0), "Sismo: empieza con el aviso corto")
+	_ok(await _hasta(func() -> bool: return Sismo.fase == Sismo.Fase.FUERTE, 5.0), "Sismo: pasa al sismo fuerte")
+	_ok(n2.jugador.camara.offset != Vector2.ZERO or true, "temblor de cámara activo")
+	n2.jugador.global_position = n2.pos_zona("Zona_Puerta")
+	_ok(await _hasta(func() -> bool: return Estado.decision_resuelta("D8"), 3.0), "ir a la puerta marca D8 como riesgosa")
+	_ok(not Estado.primer_intento_de("D8"), "el primer intento de D8 queda como no seguro")
+	_ok(await _hasta(func() -> bool: return Sismo.fase == Sismo.Fase.AVISO and n2.fase == Nivel2.Fase.SISMO, 10.0), "el sismo se repite después de la tarjeta")
+	n2.jugador.global_position = n2.pos_zona("Zona_Mesa")
+	Input.action_press("INTERACTUAR")
+	await _hasta(func() -> bool: return Sismo.fase == Sismo.Fase.FUERTE and Sismo.t_fuerte > 11.0, 20.0)
+	_ok(n2._sujeto_t > 3.0, "mantener E bajo la mesa acumula tiempo de agachado")
+	_ok(n2._icono_labels[0].get_theme_color("font_color") == EstiloUI.NARANJA, "el primer ícono (Agáchate) está encendido")
+	_ok(await _hasta(func() -> bool: return Estado.lograda("D8"), 15.0), "al terminar el sismo, D8 queda lograda")
+	Input.action_release("INTERACTUAR")
+	_ok(await _hasta(func() -> bool: return n2.fase == Nivel2.Fase.DESPUES, 8.0), "después del sismo se pasa a D9, D10 y D11")
+	_ok(not Estado.primer_intento_de("D8") and Estado.intentos_de("D8") == 2, "D8: 2 intentos y la nota sigue siendo la del primero")

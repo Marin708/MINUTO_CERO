@@ -28,6 +28,7 @@ general/default_playback_type.web=0
 Estado="*res://Autoload/Estado.gd"
 Flujo="*res://Autoload/Flujo.gd"
 Retroalimentacion="*res://Autoload/Retroalimentacion.gd"
+Sismo="*res://Autoload/Sismo.gd"
 DialogueManager="*res://addons/dialogue_manager/dialogue_manager.gd"
 Dialogo="*res://Autoload/Dialogo.gd"
 Notificacion="*res://Autoload/Notificacion.gd"

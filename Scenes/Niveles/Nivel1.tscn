@@ -96,7 +96,7 @@ metadata/radio = 80
 position = Vector2(944, 576)
 metadata/clase = "zona"
 metadata/tipo = "escalera"
-metadata/radio = 40
+metadata/radio = 56
 
 [node name="Spawn" type="Marker2D" parent="Marcadores"]
 position = Vector2(272, 444)

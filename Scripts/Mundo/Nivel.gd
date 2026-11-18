@@ -22,6 +22,7 @@ var jugador: Player
 var hud: HUD
 var props: Array[Prop] = []
 var npcs: Array[Npc] = []
+var items: Array[ObjetoSuelo] = []
 var zonas: Dictionary = {}   # nombre -> {"pos": Vector2, "radio": float, "tipo": String}
 var tamano_mapa := Vector2.ZERO
 ## true mientras una decisión o un diálogo tiene ocupado al jugador (para no abrir dos a la vez).
@@ -93,6 +94,15 @@ func _colocar_marcadores() -> void:
 				objetos.add_child(n)
 				npcs.append(n)
 				n.interactuado.connect(_on_npc)
+			"item":
+				if _usa_items():
+					var o := ObjetoSuelo.new()
+					o.tipo = tipo
+					o.position = m.position
+					o.name = m.name
+					objetos.add_child(o)
+					items.append(o)
+					o.interactuado.connect(_on_item)
 			"zona":
 				zonas[m.name] = {"pos": m.position, "radio": float(m.get_meta("radio", 48.0)), "tipo": tipo, "etiqueta": etiqueta}
 
@@ -157,6 +167,15 @@ func _on_prop(_prop: Prop) -> void:
 
 func _on_npc(_npc: Npc) -> void:
 	pass
+
+
+func _on_item(_item: ObjetoSuelo) -> void:
+	pass
+
+
+## ¿Este nivel pone los objetos del piso (zapatos, mochila, linterna)?
+func _usa_items() -> bool:
+	return false
 
 
 # --- Diálogos y decisiones sin chocar entre sí ---
