@@ -20,6 +20,7 @@ func _ready() -> void:
 	_prueba_guardado()
 	_prueba_evaluacion()
 	_prueba_codigo()
+	_prueba_audio()
 
 	# Deja todo como estaba
 	Estado.nueva_partida()
@@ -173,3 +174,24 @@ func _prueba_codigo() -> void:
 	if f != null:
 		f.store_string(codigo)
 		f.close()
+
+
+# --- Audio ---
+
+func _prueba_audio() -> void:
+	print("Audio")
+	_comprobar(Audio.faltan_del_catalogo().is_empty(), "no falta ningún archivo del catálogo %s" % str(Audio.faltan_del_catalogo()))
+	var contados := {"n": 0}
+	var contar := func(nombre: String) -> void:
+		if nombre == "dialogo_blip_guia":
+			contados["n"] += 1
+	Audio.efecto_reproducido.connect(contar)
+	for letra in ["H", "o", "l", "a", " ", "m", "u", "n"]:   # 7 letras (el espacio no cuenta): un blip cada 2
+		Audio.letra_para_prueba(letra)
+	Audio.efecto_reproducido.disconnect(contar)
+	_comprobar(contados["n"] == 3, "un solo sonido de letras, una vez cada 2 letras (%d blips con 7 letras)" % contados["n"])
+	var ruta_inexistente := "res://Assets/Audio/Efectos/no_existe_xyz.wav"
+	_comprobar(not ResourceLoader.exists(ruta_inexistente), "ResourceLoader.exists dice que un sonido ausente no existe")
+	Audio.efecto("no_existe_xyz")
+	_comprobar(Audio.faltan.has("no_existe_xyz"), "un sonido ausente no da error y queda anotado una vez")
+	Audio.faltan.erase("no_existe_xyz")

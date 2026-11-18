@@ -246,6 +246,7 @@ func _llegar() -> void:
 		return
 	_terminando = true
 	hud.marcar("llegada")
+	Audio.efecto("llegada_punto")
 	await decir("Mamá", "¡Sami! Aquí estamos, a salvo y lejos de los edificios y los cables.")
 	await decir("Lucía", ["Llegaste al punto de encuentro. Lo hiciste con calma y pensando en los demás.", "Prepararte hoy puede cambiar el minuto cero."])
 	await decir("", TEXTO_CIERRE)

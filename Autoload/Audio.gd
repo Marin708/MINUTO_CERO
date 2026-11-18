@@ -34,6 +34,8 @@ const VOLUMEN_POR_DEFECTO := -6.0
 const VOLUMEN_DB := {
 	"dialogo_blip_guia": -13.0,
 	"paso_piso": -9.0, "paso_calle": -9.0,
+	# La retroalimentación suena muy suave: nada de sonidos de error agresivos
+	"correcto": -17.0, "ojo": -17.0, "silbato": -10.0,
 	"ui_mover": -9.0, "ui_aceptar": -6.0, "ui_elegir": -6.0, "ui_cancelar": -6.0,
 }
 const VOLUMEN_MUSICA_DB := -2.0
@@ -332,6 +334,11 @@ func _on_letra(_personaje: String, letra: String) -> void:
 
 func _es_letra_o_cifra(letra: String) -> bool:
 	return letra.length() > 0 and (letra.to_lower() != letra.to_upper() or letra.is_valid_int())
+
+
+## Solo para pruebas: simula una letra escrita.
+func letra_para_prueba(letra: String) -> void:
+	_on_letra("", letra)
 
 
 ## Reproduce el blip de texto (mismo archivo, volumen y tono siempre).

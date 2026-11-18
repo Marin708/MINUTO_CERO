@@ -4,7 +4,7 @@ extends Control
 ## arranca con su música). Fuera de la web no se muestra: pasa directo al título.
 
 const ESCENA_TITULO := "res://Scenes/UI/PantallaTitulo.tscn"
-const FONDO := "res://Assets/UI/fondo_onboarding.png"
+const FONDO := "res://Assets/UI/fondo_titulo.png"
 
 var _listo := false
 

@@ -158,7 +158,8 @@ func _on_alternado(activo: bool, id: String, boton: Button) -> void:
 	if activo and _elegidos.size() >= int(_datos["regla"]["elegir"]):
 		boton.set_pressed_no_signal(false)   # ya hay 8: primero hay que quitar uno
 		return
-	Audio.efecto("item_recoge" if activo else "ui_cancelar")
+	# El silbato suena al elegirlo; los demás objetos suenan a «recoger»
+	Audio.efecto("silbato" if activo and id == "silbato" else ("item_recoge" if activo else "ui_cancelar"))
 	if activo:
 		_elegidos.append(id)
 	else:

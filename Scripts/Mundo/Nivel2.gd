@@ -258,10 +258,14 @@ func _quitar_items() -> void:
 	items.clear()
 
 
-func _on_opcion(id: String, indice: int, _segura: bool) -> void:
+func _on_opcion(id: String, indice: int, segura: bool) -> void:
 	# El ascensor tiene el cartel «No usar» y suena el rechazo
 	if id == "D11" and indice == 1:
 		Audio.efecto("ascensor_no")
+	# Olor a gas: la opción segura (cerrar la llave y usar solo linterna) suena a válvula y linterna
+	elif id == "D10" and segura:
+		Audio.efecto("valvula")
+		Audio.efecto("linterna_on", NAN, 0.0, 0.5)
 
 
 func _on_prop(prop: Prop) -> void:
@@ -281,6 +285,7 @@ func _on_prop(prop: Prop) -> void:
 			if Estado.lograda("D11"):
 				await decir("", "Baja por la escalera, al fondo del vestíbulo.")
 				return
+			Audio.efecto("puerta_abre")
 			await decir("", "Hay que bajar del 4.º piso. Junto a la puerta está la escalera y el ascensor, que tiene un cartel que dice «No usar».")
 			if await decidir("D11"):
 				_ir_escalera = true
