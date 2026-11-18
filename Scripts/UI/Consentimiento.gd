@@ -8,6 +8,7 @@ extends CanvasLayer
 ## Uso:   await Consentimiento.mostrar(get_tree())
 
 const ESCENA := "res://Scenes/UI/Consentimiento.tscn"
+# [REVISAR] texto de consentimiento adaptado de ECOS por el equipo.
 const TEXTO := "MINUTO CERO es un juego educativo sobre qué hacer antes, durante y después de un sismo. Antes y después de jugar te haremos algunas preguntas para saber qué aprendiste. Tus respuestas se guardan de forma anónima en este computador y solo se usan para evaluar el juego. No es un examen oficial ni reemplaza la orientación de las autoridades de gestión del riesgo. Puedes dejar de jugar cuando quieras."
 
 signal decidido(acepta: bool)

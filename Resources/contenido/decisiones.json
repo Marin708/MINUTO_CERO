@@ -57,6 +57,7 @@
 			"situacion": "Armar el kit (elegir 8 de 12 objetos)",
 			"opciones": [],
 			"segura": -1,
+			"revisar_retro": "[REVISAR] la lista del kit en esta retroalimentación la armó el equipo a partir de la fila D5 del maestro",
 			"retro": "Sí cuenta si hay al menos 7 correctos y 1 distractor como máximo. Un kit de emergencia lleva: agua potable, alimentos no perecederos, linterna, pilas de repuesto, silbato, botiquín, medicinas de uso diario y documentos en bolsa impermeable."
 		},
 		{

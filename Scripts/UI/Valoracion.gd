@@ -17,6 +17,7 @@ const RUTA_CONFIG := "res://Resources/config_valoracion.json"
 const MAXIMO_TEXTO := 300
 
 const INTRO := ["Antes de despedirnos, ¿me cuentas cómo fue tu experiencia?", "Es opcional y puedes salir cuando quieras, sin perder nada."]
+# [REVISAR] textos de la valoración adaptados por el equipo.
 const GRACIAS := "Gracias por contarnos tu experiencia. Tus palabras ayudan a mejorar MINUTO CERO."
 const GRACIAS_SIN_GUARDAR := "Como elegiste jugar sin guardar, no se escribió nada en ningún archivo."
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Procesa los audios descargados (ElevenLabs, .mp3) y los deja en Assets/Audio/.
+"""Procesa los audios nuevos de MINUTO CERO (.mp3) y los deja en Assets/Audio/.
 
 Uso (necesita ffmpeg: o está en el PATH o está instalado el paquete `imageio-ffmpeg`):
     python tools/procesar_audio.py CARPETA_CON_LOS_MP3 [--solo nombre1,nombre2] [--sin-copiar-originales]
@@ -12,6 +12,7 @@ Qué hace:
                    pico a -3 dB, fundido de salida de 50 ms, .wav 44.1 kHz 16 bits.
        AMBIENTE -> solo recorta el silencio inicial si lo hay, sin tocar el final; ~ -26 LUFS; .ogg (calidad 4).
        MUSICA   -> ~ -20 LUFS; fundido de salida de 1.5 s solo en los tres finales; .ogg (calidad 4).
+  El Loop de amb_*, musica_titulo, musica_antes y musica_despues lo activa tools/activar_bucles.py en los .import.
   4. Escribe en Assets/Audio/Efectos, Ambiente y Musica con los nombres exactos.
   5. Imprime una tabla con duración, pico y volumen antes y después.
 
@@ -27,21 +28,17 @@ import tempfile
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-EFECTOS = """dialogo_blip dialogo_blip_guia dialogo_abrir dialogo_cerrar dialogo_opciones
-ui_mover ui_aceptar ui_elegir ui_cancelar diario_abrir diario_cerrar guardar
-emo_rabia emo_miedo emo_tristeza emo_soledad emo_culpa emo_ansiedad emo_verguenza
-emo_rabia_integrada emo_miedo_integrada emo_tristeza_integrada emo_soledad_integrada
-emo_culpa_integrada emo_ansiedad_integrada emo_verguenza_integrada
-integrar_exito atacar_ignorar habilidad_desbloqueada fragmento_recogido viaje_epoca bloqueo_abre
-hab_impulso hab_vision hab_calma hab_vinculo hab_reparar hab_pausa hab_revelar hab_denegada
-paso paso_piedra
-roca_rompe planta_florece placa_activa porton_repara puente_aparece niebla_disipa titulo_comenzar luz_blanca
-cofre_abre mejora_habilidad compuerta_abre pista""".split()
-AMBIENTE = "amb_pasado amb_presente amb_lluvia portal_activo".split()
-MUSICA = "musica_titulo musica_pasado musica_presente final_bueno final_neutro final_dificil".split()
-FINALES = {"final_bueno", "final_neutro", "final_dificil"}
+# Los 12 sonidos de interfaz reutilizados de ECOS (ui_*, dialogo_*, guardar, pista, diario_*) NO se procesan ni se tocan:
+# ya están en Assets/Audio/Efectos/. Aquí solo van los nuevos de MINUTO CERO (sección 14 del documento maestro).
+EFECTOS = """sismo_aviso sismo_fin replica objeto_cae estante_cae vidrio_roto escombros radio_estatica radio_aviso
+valvula linterna_on item_recoge correcto ojo silbato ascensor_no puerta_abre paso_piso paso_calle llegada_punto""".split()
+AMBIENTE = "amb_casa amb_sismo amb_calle".split()
+MUSICA = "musica_titulo musica_antes musica_despues final_preparado final_encamino final_reforzar".split()
+FINALES = {"final_preparado", "final_encamino", "final_reforzar"}
 #: nombres con errores de escritura en la descarga -> nombre correcto
-ALIAS = {"mo_miedo_integrada": "emo_miedo_integrada"}
+ALIAS = {}
+#: con bucle (Loop activado al importar en Godot): amb_*, musica_titulo, musica_antes y musica_despues
+CON_BUCLE = set(AMBIENTE) | {"musica_titulo", "musica_antes", "musica_despues"}
 
 OBJETIVO_AMBIENTE_LUFS = -26.0
 OBJETIVO_MUSICA_LUFS = -20.0
@@ -162,7 +159,15 @@ def procesar(nombre: str, origen: str, destino: str) -> dict:
         recorte = filtro_inicio_y_final()
         tras_recorte = medir(origen, recorte)
         if tras_recorte["duracion"] < 0.02:
-            sys.exit("%s: el recorte de silencio deja el audio vacío" % nombre)
+            # Un sonido muy bajito (como un paso suave) queda por debajo de los umbrales normales: se recorta con
+            # umbrales más bajos (-65 dB) y, si aun así queda vacío, solo se normaliza sin recortar.
+            print("  aviso: %s es muy bajito; se recorta con umbral de -65 dB" % nombre)
+            recorte = ("silenceremove=start_periods=1:start_threshold=-65dB:start_silence=0.01,areverse,"
+                       "silenceremove=start_periods=1:start_threshold=-65dB,areverse")
+            tras_recorte = medir(origen, recorte)
+            if tras_recorte["duracion"] < 0.02:
+                recorte = "anull"
+                tras_recorte = medir(origen)
         ganancia = PICO_EFECTOS_DB - tras_recorte["pico_db"]
         fade = min(0.05, tras_recorte["duracion"])
         filtros = "%s,volume=%.3fdB,afade=t=out:st=%.4f:d=%.4f" % (recorte, ganancia, tras_recorte["duracion"] - fade, fade)

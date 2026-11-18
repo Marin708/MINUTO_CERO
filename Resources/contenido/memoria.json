@@ -13,12 +13,14 @@
 			"id": "mem2",
 			"nivel": 2,
 			"titulo": "Lo que dejó el terremoto",
+			"revisar_titulo": "[REVISAR] título escrito por el equipo, no está en el documento maestro",
 			"texto": "Murieron más de mil personas y miles de viviendas quedaron dañadas o destruidas. (Las cifras varían según la fuente.) Se creó un fondo para la reconstrucción de la región."
 		},
 		{
 			"id": "mem3",
 			"nivel": 3,
 			"titulo": "Prepararse sí ayuda",
+			"revisar_titulo": "[REVISAR] título escrito por el equipo, no está en el documento maestro",
 			"texto": "Los terremotos no se pueden predecir, pero sí se pueden reducir sus efectos con construcción sismorresistente, planes de evacuación y preparación."
 		}
 	]

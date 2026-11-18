@@ -13,7 +13,7 @@ signal fase_terminada(fase: String)
 const ESCENA := "res://Scenes/UI/Cuestionario.tscn"
 const SEGUNDOS_FUNDIDO := 0.5
 
-## Lo que dice Lucía antes de cada bloque (cada elemento es una línea).
+## Lo que dice Lucía antes de cada bloque (cada elemento es una línea). [REVISAR] textos escritos por el equipo.
 const INTRO := {
 	"trivia": ["Primero, cuánto sabes sobre qué hacer en un sismo.", "Aquí está bien equivocarse: no es un examen, solo queremos saber qué sabes hoy."],
 	"situaciones": ["Ahora, qué harías en distintas situaciones.", "Elige lo que harías en ese momento."],
