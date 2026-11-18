@@ -1,96 +1,54 @@
 extends Node
-## Dueño del diario (TAB) y del menú de pausa (ESC). Decide cuándo se pueden abrir y pausa el juego
-## mientras alguno está abierto (get_tree().paused).
+## Dueño del menú de pausa (ESC). Decide cuándo se puede abrir y pausa el juego mientras está abierto
+## (get_tree().paused). La libreta (TAB) se conectará aquí cuando exista su escena.
 ##
 ## Reglas:
-##  - Ninguno se abre durante un diálogo (ni el onboarding ni los cuestionarios), ni sin jugador en
-##    escena (título, onboarding), ni durante una transición de época.
+##  - No se abre durante un diálogo ni un cuestionario, ni sin jugador en escena (título, introducción).
 ##  - ESC: la cancelación de conversaciones tiene prioridad (el balloon se la queda); si no hay
-##    diálogo, abre la pausa. Con el diario abierto, ESC lo cierra; en la pausa, ESC retrocede o reanuda.
+##    diálogo, abre la pausa. En la pausa, ESC retrocede o reanuda.
 
-const ESCENA_DIARIO := preload("res://Scenes/UI/Diario.tscn")
 const ESCENA_PAUSA := preload("res://Scenes/UI/Pausa.tscn")
 const ESCENA_TITULO := "res://Scenes/UI/PantallaTitulo.tscn"
 
-var diario: Diario
 var pausa: MenuPausa
 
-## true si el diario se abrió desde el menú de pausa (al cerrarlo se vuelve al menú).
-var _diario_desde_pausa := false
 ## true mientras es este autoload quien mantiene el árbol en pausa.
 var _pausando := false
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	diario = ESCENA_DIARIO.instantiate()
-	add_child(diario)
 	pausa = ESCENA_PAUSA.instantiate()
 	add_child(pausa)
 	pausa.reanudar_pedido.connect(cerrar_pausa)
-	pausa.diario_pedido.connect(abrir_diario.bind(true))
 	pausa.volver_al_titulo_pedido.connect(volver_al_titulo)
 
 
-## true si hay un menú abierto (diario o pausa).
+## true si hay un menú abierto.
 func hay_menu() -> bool:
-	return diario.abierto or pausa.abierta
+	return pausa.abierta
 
 
-## ¿Se puede abrir un menú ahora? (jugador en escena, sin diálogo ni transición)
+## ¿Se puede abrir un menú ahora? (jugador en escena, sin diálogo ni cuestionario)
 func puede_abrir() -> bool:
 	if Dialogo.hay_dialogo() or not Dialogo.pausa_permitida():
 		return false
 	if Evaluacion.cuestionario_activo:
-		return false   # la evaluación no se interrumpe con la pausa ni el diario
-	if Habilidades.bloqueado_por("transicion"):
-		return false
+		return false   # la evaluación no se interrumpe con la pausa
 	return get_tree().get_first_node_in_group("player") != null
 
 
 func _input(evento: InputEvent) -> void:
 	if evento is InputEventKey and evento.echo:
 		return
-	if evento.is_action_pressed("DIARIO"):
-		if diario.abierto:
-			get_viewport().set_input_as_handled()
-			cerrar_diario()
-		elif not pausa.abierta and puede_abrir():
-			get_viewport().set_input_as_handled()
-			abrir_diario(false)
-	elif evento.is_action_pressed("PAUSA"):
-		if diario.abierto:
-			get_viewport().set_input_as_handled()
-			cerrar_diario()
-		elif pausa.abierta:
+	if evento.is_action_pressed("PAUSA"):
+		if pausa.abierta:
 			get_viewport().set_input_as_handled()
 			if not pausa.atras():
 				cerrar_pausa()
 		elif puede_abrir():
 			get_viewport().set_input_as_handled()
 			abrir_pausa()
-
-
-# --- Diario ---
-
-func abrir_diario(desde_pausa: bool = false) -> void:
-	if diario.abierto or (not desde_pausa and not puede_abrir()):
-		return
-	_diario_desde_pausa = desde_pausa and pausa.abierta
-	if _diario_desde_pausa:
-		pausa.ocultar_panel(true)
-	diario.abrir()
-	_actualizar_pausa()
-
-
-func cerrar_diario() -> void:
-	if not diario.abierto:
-		return
-	diario.cerrar()
-	if _diario_desde_pausa and pausa.abierta:
-		pausa.ocultar_panel(false)   # vuelve al menú de pausa
-	_diario_desde_pausa = false
-	_actualizar_pausa()
 
 
 # --- Pausa ---
@@ -103,9 +61,6 @@ func abrir_pausa() -> void:
 
 
 func cerrar_pausa() -> void:
-	if diario.abierto:
-		diario.cerrar()
-	_diario_desde_pausa = false
 	pausa.cerrar()
 	_actualizar_pausa()
 
@@ -121,8 +76,7 @@ func volver_al_titulo() -> void:
 
 ## El árbol está en pausa exactamente mientras haya un menú abierto.
 func _actualizar_pausa() -> void:
-	var debe := hay_menu()
-	if debe:
+	if hay_menu():
 		_pausando = true
 		get_tree().paused = true
 	elif _pausando:

@@ -1,10 +1,11 @@
 extends Node
-## Evaluación inicial ("pre") y final ("post") de ECOS: el banco de preguntas, el barajado, el registro de
+## Evaluación inicial ("pre") y final ("post") de MINUTO CERO: el banco de preguntas, el barajado, el registro de
 ## respuestas, los puntajes y la comparación antes/después.
 ##
-## Las preguntas están en Resources/Cuestionario/preguntas.json (editable sin tocar código): 7 de trivia
-## (una por emoción, la opción 0 es la correcta), 7 de situaciones (la opción 0 es la más sana) y 2 de
-## escala (1 a 5). Cada fase se hace con 16 preguntas en este orden: 7 trivia, 7 situaciones, 2 escala.
+## Las preguntas están en Resources/contenido/preguntas.json (editable sin tocar código): 7 de trivia
+## (la opción 0 es la correcta), 5 de situaciones (la opción 0 es la más segura) y 2 de escala (1 a 5).
+## Cada fase se hace con 14 preguntas en este orden: 7 trivia, 5 situaciones, 2 escala.
+## Puntajes: trivia 0 a 7, situaciones 0 a 5, escala 2 a 10, total (sin escala) 0 a 12.
 ##
 ## Las respuestas se guardan por id con el índice ORIGINAL de la opción (el del archivo), no su posición en
 ## pantalla: las opciones de trivia y situaciones se barajan con una semilla distinta por fase. En las
@@ -16,7 +17,7 @@ extends Node
 
 signal fase_terminada(fase: String)
 
-const RUTA_PREGUNTAS := "res://Resources/Cuestionario/preguntas.json"
+const RUTA_PREGUNTAS := "res://Resources/contenido/preguntas.json"
 const FASES := ["pre", "post"]
 const BLOQUES := ["trivia", "situaciones", "escala"]
 const ALFABETO := "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
@@ -36,7 +37,7 @@ var pre: Dictionary = {}
 var post: Dictionary = {}
 ## Cuándo empezó a jugar (al terminar el "pre"), en segundos unix. Sirve para calcular la duración.
 var momento_inicio_juego := 0.0
-## true mientras hay un cuestionario en pantalla (el diario, la pausa y las habilidades no se abren).
+## true mientras hay un cuestionario en pantalla (la libreta y la pausa no se abren).
 var cuestionario_activo := false
 
 ## La valoración del jugador sobre el juego (ver Valoracion): {id_participante, fecha_iso, version_juego, respuestas,
@@ -50,7 +51,7 @@ var _exportado := false
 func _ready() -> void:
 	cargar_banco()
 	reiniciar()
-	GameState.partida_reiniciada.connect(reiniciar)
+	Estado.partida_reiniciada.connect(reiniciar)
 	fase_terminada.connect(_on_fase_terminada)
 
 
@@ -202,8 +203,8 @@ func guardar_valoracion(datos: Dictionary) -> void:
 
 # --- Preguntas ---
 
-## Las 16 preguntas de la fase, en orden: 7 trivia, 7 situaciones, 2 escala. Cada una:
-## {id, bloque, emocion, texto, opciones: [{texto, indice_original}], explicacion}. En trivia y situaciones las
+## Las 14 preguntas de la fase, en orden: 7 trivia, 5 situaciones, 2 escala. Cada una:
+## {id, bloque, texto, opciones: [{texto, indice_original}], explicacion}. En trivia y situaciones las
 ## opciones se barajan con la semilla de la fase; en las escalas van de 1 a 5 (indice_original = el valor).
 func orden_para(fase: String) -> Array[Dictionary]:
 	if not _semillas.has(fase):
@@ -226,7 +227,7 @@ func orden_para(fase: String) -> Array[Dictionary]:
 					opciones[i] = opciones[j]
 					opciones[j] = temporal
 			resultado.append({
-				"id": p["id"], "bloque": bloque, "emocion": str(p.get("emocion", "")), "texto": p["texto"],
+				"id": p["id"], "bloque": bloque, "texto": p["texto"],
 				"opciones": opciones, "explicacion": str(p.get("explicacion", "")),
 				"minimo": str(p.get("minimo", "")), "maximo": str(p.get("maximo", "")),
 			})
@@ -240,7 +241,7 @@ func registrar(fase: String, id: String, indice_original: int) -> void:
 
 # --- Puntajes ---
 
-## Calcula los puntajes de la fase (trivia 0 a 7, situaciones 0 a 7, total 0 a 14, escala 2 a 10), pone la marca
+## Calcula los puntajes de la fase (trivia 0 a 7, situaciones 0 a 5, total 0 a 12, escala 2 a 10), pone la marca
 ## de tiempo y la da por completa si están todas las respuestas. Devuelve los puntajes.
 func calcular(fase: String) -> Dictionary:
 	var f := _fase(fase)
@@ -284,9 +285,8 @@ func puntaje_de(fase: String, id: String) -> int:
 	return 1 if int(respuestas[id]) == int(p["correcta"]) else 0
 
 
-## Compara el "pre" con el "post": diferencias por bloque y por emoción, y la duración del juego.
-## {por_bloque: {bloque: {pre, post, dif}}, por_emocion: {id: {trivia_pre, trivia_post, situacion_pre,
-## situacion_post, dif}}, duracion_segundos, hay_pre, hay_post}
+## Compara el "pre" con el "post": diferencias por bloque y por pregunta, y la duración del juego.
+## {por_bloque: {bloque: {pre, post, dif}}, por_pregunta: {id: {pre, post, dif}}, duracion_segundos, hay_pre, hay_post}
 func comparar() -> Dictionary:
 	var hay_pre := pre_completo()
 	var hay_post := post_completo()
@@ -297,22 +297,20 @@ func comparar() -> Dictionary:
 		var antes := int(a.get(clave, 0))
 		var despues := int(b.get(clave, 0))
 		por_bloque[clave] = {"pre": antes, "post": despues, "dif": despues - antes}
-	var por_emocion := {}
-	for id in GameState.ids_emociones():
-		var t_pre := maxi(puntaje_de("pre", "t_" + id), 0)
-		var t_post := maxi(puntaje_de("post", "t_" + id), 0)
-		var s_pre := maxi(puntaje_de("pre", "s_" + id), 0)
-		var s_post := maxi(puntaje_de("post", "s_" + id), 0)
-		por_emocion[id] = {"trivia_pre": t_pre, "trivia_post": t_post, "situacion_pre": s_pre, "situacion_post": s_post,
-			"dif": (t_post + s_post) - (t_pre + s_pre)}
+	var por_pregunta := {}
+	for bloque in ["trivia", "situaciones"]:
+		for p in banco.get(bloque, []):
+			var antes_p := maxi(puntaje_de("pre", p["id"]), 0)
+			var despues_p := maxi(puntaje_de("post", p["id"]), 0)
+			por_pregunta[p["id"]] = {"pre": antes_p, "post": despues_p, "dif": despues_p - antes_p}
 	var duracion := 0.0
 	if momento_inicio_juego > 0.0 and float(post.get("marca", 0.0)) > 0.0:
 		duracion = float(post["marca"]) - momento_inicio_juego
-	return {"por_bloque": por_bloque, "por_emocion": por_emocion, "duracion_segundos": duracion,
+	return {"por_bloque": por_bloque, "por_pregunta": por_pregunta, "duracion_segundos": duracion,
 		"hay_pre": hay_pre, "hay_post": hay_post}
 
 
-# --- Guardado (dentro del guardado de GameState) ---
+# --- Guardado (dentro del guardado de Estado) ---
 
 ## Lo que va al archivo de guardado. Sin consentimiento NO se escriben respuestas ni puntajes.
 func a_diccionario() -> Dictionary:

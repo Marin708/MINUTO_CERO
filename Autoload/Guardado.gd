@@ -1,10 +1,9 @@
 extends Node
-## Guardado de la partida. Autoguarda cada vez que cambia el estado de una emoción, se recoge un
-## fragmento de memoria o se viaja de época, y muestra un pequeño ícono de "guardado" 1.5 s abajo a
-## la derecha. "Guardar partida" del menú de pausa lo hace a demanda (guardar_ahora()).
+## Guardado de la partida. Autoguarda cuando se registra una decisión, se desbloquea una tarjeta de memoria
+## o cambia el nivel, y muestra un pequeño ícono de "guardado" 1.5 s abajo a la derecha. "Guardar partida"
+## del menú de pausa lo hace a demanda (guardar_ahora()).
 ##
-## Solo autoguarda dentro del mundo (Mundo.tscn): las arenas de prueba y el título no tocan la partida.
-## Guarda también dónde está el jugador, para que "Continuar" lo deje en el mismo sitio.
+## Solo autoguarda dentro de un nivel (grupo "nivel"): el título y los cuestionarios no tocan la partida.
 
 const SEGUNDOS_ICONO := 1.5
 const RUTA_FUENTE := "res://Assets/PixelifySans-VariableFont_wght.ttf"
@@ -18,17 +17,15 @@ var _pendiente := false
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_crear_icono()
-	GameState.emocion_resuelta.connect(func(_id: String, _resultado: String) -> void: _pedir_autoguardado())
-	GameState.fragmento_recogido.connect(func(_id: String) -> void: _pedir_autoguardado())
-	GameState.cofre_abierto.connect(func(_id: String) -> void: _pedir_autoguardado())
-	GameState.compuerta_abierta.connect(func(_id: String) -> void: _pedir_autoguardado())
-	GameState.epoca_cambiada.connect(func(_epoca: String) -> void: _pedir_autoguardado())
+	Estado.decision_registrada.connect(func(_id: String, _segura: bool, _primero: bool) -> void: _pedir_autoguardado())
+	Estado.tarjeta_desbloqueada.connect(func(_id: String) -> void: _pedir_autoguardado())
+	Estado.nivel_cambiado.connect(func(_nivel: int) -> void: _pedir_autoguardado())
 
 
-## true si ahora se puede guardar: dentro del mundo (Mundo.tscn) y con jugador. En las arenas de prueba y
-## en el título no se guarda, para no pisar la partida real con datos de prueba.
+## true si ahora se puede guardar: dentro de un nivel y con jugador. En el título y en los cuestionarios no se
+## guarda, para no pisar la partida real.
 func puede_guardar() -> bool:
-	return get_tree().current_scene is Mundo and get_tree().get_first_node_in_group("player") != null
+	return get_tree().get_first_node_in_group("nivel") != null and get_tree().get_first_node_in_group("player") != null
 
 
 func _pedir_autoguardado() -> void:
@@ -46,11 +43,7 @@ func _autoguardar() -> void:
 
 ## Guarda ya (autoguardado o botón "Guardar partida"). Devuelve true si se pudo guardar.
 func guardar_ahora() -> bool:
-	var jugador := get_tree().get_first_node_in_group("player") as Node2D
-	if jugador != null:
-		GameState.posicion_jugador = jugador.global_position
-		GameState.tiene_posicion = true
-	var bien := GameState.guardar()
+	var bien := Estado.guardar()
 	if bien:
 		_mostrar_icono()
 	else:
@@ -77,10 +70,10 @@ func _crear_icono() -> void:
 	_capa.add_child(_icono)
 
 
-## Un disquete dorado y la palabra "Guardado".
+## Un disquete naranja y la palabra "Guardado".
 func _dibujar_icono() -> void:
-	var dorado := Color("f4c77b")
-	var oscuro := Color("1e1b2e")
+	var dorado := Color("ff8a2a")
+	var oscuro := Color("0f2d38")
 	_icono.draw_rect(Rect2(0, 0, 70, 18), Color(oscuro, 0.9))
 	_icono.draw_rect(Rect2(0, 0, 70, 18), dorado, false, 1.0)
 	# disquete

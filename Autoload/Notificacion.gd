@@ -1,5 +1,5 @@
 extends Node
-## Tarjetas de aviso arriba a la derecha (por ejemplo, "Habilidad desbloqueada").
+## Tarjetas de aviso arriba a la derecha (por ejemplo, "Tarjeta de memoria desbloqueada").
 ## Entran deslizando, se quedan unos segundos y salen con fundido. Si llegan varias, van en cola.
 ##
 ##   Notificacion.mostrar("Título", "Texto de la tarjeta")
@@ -30,8 +30,6 @@ func _ready() -> void:
 	_titulo = _capa.get_node("%Titulo")
 	_texto = _capa.get_node("%Texto")
 	_aplicar_estilo()
-	# Al integrar una emoción se avisa de la habilidad que da
-	GameState.habilidad_desbloqueada.connect(_on_habilidad_desbloqueada)
 
 
 ## Cuántas tarjetas esperan su turno.
@@ -83,20 +81,11 @@ func _mostrar_una(aviso: Dictionary) -> void:
 	_tarjeta.visible = false
 
 
-func _on_habilidad_desbloqueada(habilidad_id: String) -> void:
-	for id in GameState.ids_emociones():
-		var datos := GameState.obtener_datos(id)
-		if datos.habilidad_id == habilidad_id:
-			mostrar("Habilidad desbloqueada: %s" % datos.habilidad_nombre, datos.habilidad_descripcion)
-			return
-	mostrar("Habilidad desbloqueada", habilidad_id)
-
-
-## Mismo estilo que la caja de diálogo: morado oscuro, borde dorado, Pixelify Sans.
+## Mismo estilo que la caja de diálogo: azul petróleo, borde naranja, Pixelify Sans.
 func _aplicar_estilo() -> void:
 	var caja := StyleBoxFlat.new()
 	caja.bg_color = Color("1e1b2e", 0.95)
-	caja.border_color = Color("f4c77b")
+	caja.border_color = Color("ff8a2a")
 	caja.set_border_width_all(2)
 	caja.set_corner_radius_all(4)
 	caja.set_content_margin_all(8)
@@ -108,5 +97,5 @@ func _aplicar_estilo() -> void:
 		_texto.add_theme_font_override("font", fuente)
 	_titulo.add_theme_font_size_override("font_size", 16)
 	_texto.add_theme_font_size_override("font_size", 14)
-	_titulo.add_theme_color_override("font_color", Color("f4c77b"))
+	_titulo.add_theme_color_override("font_color", Color("ff8a2a"))
 	_texto.add_theme_color_override("font_color", Color("fff4dc"))

@@ -1,6 +1,6 @@
 class_name Player
 extends CharacterBody2D
-## Jugador de ECOS: movimiento suave en 8 direcciones, interacción con objetos
+## Sami, el jugador de MINUTO CERO: movimiento suave en 8 direcciones, interacción con objetos
 ## cercanos, sombra, burbuja de ayuda "E" y cámara.
 ##
 ## El origen del nodo está en los PIES del personaje (así funciona bien el y-sort).
@@ -28,7 +28,7 @@ const RUTA_FUENTE := "res://Assets/PixelifySans-VariableFont_wght.ttf"
 ## Dónde flota la burbuja "E" respecto al objeto activo.
 @export var desplazamiento_ayuda: Vector2 = Vector2(0, -44)
 
-## Última dirección de movimiento, normalizada. Vergüenza la usa para saber hacia dónde mira el jugador.
+## Última dirección de movimiento, normalizada (hacia dónde mira Sami).
 var facing: Vector2 = Vector2.DOWN
 
 ## true si el jugador puede moverse e interactuar. Se puede asignar directamente
@@ -44,27 +44,11 @@ var interactuables: Array[Node] = []
 ## El objeto con el que se interactuaría ahora (el más cercano que lo permita).
 var activo: Node = null
 
-## true mientras dura el Impulso (dash).
-var impulsando: bool:
-	get:
-		return _impulso_restante > 0.0
-
 var _cuadro_paso := -1   # último cuadro de caminar visto (para sonar un paso por pisada)
 var _bloqueado := false
 var _dialogo_abierto := false
 var _tiempo_rebote := 0.0
 
-# Impulso (dash)
-const SEPARACION_ESTELA := 0.03   # segundos entre imágenes fantasma
-const SEPARACION_POLVO := 0.05
-var _impulso_restante := 0.0
-var _impulso_direccion := Vector2.ZERO
-var _impulso_velocidad := 0.0
-var _impulso_color := Color.WHITE
-var _impulso_excepciones: Array[PhysicsBody2D] = []  # lo que se rompió: no estorba el resto del dash
-var _impulso_rotos: Array[Node] = []
-var _tiempo_estela := 0.0
-var _tiempo_polvo := 0.0
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var zona: Area2D = $ZonaInteraccion
@@ -76,7 +60,7 @@ var _tiempo_polvo := 0.0
 
 func _ready() -> void:
 	add_to_group("player")
-	# Solo el nodo Objetos de cada época ordena en Y: el jugador es un elemento más (sus hijos, como
+	# Solo el nodo Objetos del nivel ordena en Y: el jugador es un elemento más (sus hijos, como
 	# el sprite que está 29 px más arriba de los pies, no deben ordenarse por su cuenta).
 	y_sort_enabled = false
 	_aplicar_estilo_burbuja()
@@ -96,10 +80,6 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	# Durante el Impulso el jugador va en línea recta y no se controla
-	if _impulso_restante > 0.0:
-		_paso_impulso(delta)
-		return
 	if can_move:
 		var direccion := Input.get_vector("IZQUIERDA", "DERECHA", "ARRIBA", "ABAJO")
 		if direccion != Vector2.ZERO:
@@ -126,15 +106,6 @@ func _unhandled_input(evento: InputEvent) -> void:
 	if evento.is_action_pressed("INTERACTUAR") and activo != null:
 		get_viewport().set_input_as_handled()
 		activo.interactuar()
-	elif evento.is_action_pressed("VIAJAR"):
-		# Solo viaja si está dentro de la zona de un portal o de una grieta
-		for nodo in interactuables:
-			if is_instance_valid(nodo) and nodo.is_in_group("portales"):
-				get_viewport().set_input_as_handled()
-				nodo.interactuar()
-				break
-	elif evento.is_action_pressed("HABILIDAD"):
-		usar_habilidad()
 
 
 # --- Bloqueo ---
@@ -147,107 +118,6 @@ func bloquear() -> void:
 ## Devuelve el control al jugador. No lo libera si todavía hay un diálogo abierto.
 func liberar() -> void:
 	_bloqueado = false
-
-
-# --- Habilidades ---
-
-## Se llama al pulsar la acción HABILIDAD. El autoload Habilidades decide si se puede usar
-## la seleccionada (desbloqueo, espera, diálogos, transiciones) y la ejecuta.
-func usar_habilidad() -> void:
-	Habilidades.usar(self)
-
-
-## Impulso (Rabia): empieza un dash de `distancia` px en la dirección `facing` durante `segundos`.
-## No hace daño. Lo llama HabilidadImpulso.
-func iniciar_impulso(distancia: float, segundos: float, color: Color) -> void:
-	if _impulso_restante > 0.0:
-		return
-	_impulso_direccion = facing.normalized() if facing != Vector2.ZERO else Vector2.DOWN
-	_impulso_velocidad = distancia / segundos
-	_impulso_restante = segundos
-	_impulso_color = color
-	_impulso_rotos.clear()
-	_tiempo_estela = 0.0
-	_tiempo_polvo = 0.0
-	velocity = Vector2.ZERO
-	EfectosHabilidades.polvo(self, global_position, 8)
-	EfectosHabilidades.temblor_camara(self, 2.5, 0.25)
-
-
-## Termina el Impulso (también se llama sola al acabar el tiempo). Se puede llamar varias veces.
-func terminar_impulso() -> void:
-	if _impulso_restante <= 0.0 and _impulso_excepciones.is_empty():
-		return
-	_impulso_restante = 0.0
-	for cuerpo in _impulso_excepciones:
-		if is_instance_valid(cuerpo):
-			remove_collision_exception_with(cuerpo)
-	_impulso_excepciones.clear()
-	velocity = Vector2.ZERO
-	EfectosHabilidades.polvo(self, global_position, 5)
-
-
-## Un paso del Impulso con move_and_collide: no atraviesa muros, agua ni objetos sólidos.
-## Lo que sea del grupo "rompible" recibe romper() y deja pasar; no afecta a las emociones.
-func _paso_impulso(delta: float) -> void:
-	var paso := minf(delta, _impulso_restante)
-	var choque := move_and_collide(_impulso_direccion * _impulso_velocidad * paso)
-	var intentos := 0
-	while choque != null and intentos < 3:
-		intentos += 1
-		var cuerpo := choque.get_collider()
-		var rompible := _como_rompible(cuerpo)
-		if rompible != null:
-			if not _impulso_rotos.has(rompible):
-				_impulso_rotos.append(rompible)
-				rompible.romper()
-			if cuerpo is PhysicsBody2D:
-				add_collision_exception_with(cuerpo)
-				_impulso_excepciones.append(cuerpo)
-			choque = move_and_collide(choque.get_remainder())
-		else:
-			# De frente contra una pared se termina; en diagonal se desliza por ella
-			if choque.get_normal().dot(_impulso_direccion) < -0.9:
-				_impulso_restante = 0.0
-				break
-			choque = move_and_collide(choque.get_remainder().slide(choque.get_normal()))
-			if choque != null:
-				_impulso_restante = 0.0
-				break
-
-	# Estela de fantasmas y polvo
-	_tiempo_estela -= delta
-	if _tiempo_estela <= 0.0:
-		_tiempo_estela = SEPARACION_ESTELA
-		EfectosHabilidades.fantasma(self, _impulso_color)
-	_tiempo_polvo -= delta
-	if _tiempo_polvo <= 0.0:
-		_tiempo_polvo = SEPARACION_POLVO
-		EfectosHabilidades.polvo(self, global_position, 2)
-	_actualizar_animacion(true, delta)
-
-	_impulso_restante -= delta
-	if _impulso_restante <= 0.0:
-		terminar_impulso()
-
-
-## El nodo del grupo "rompible" que corresponde a lo que se tocó (el propio cuerpo o su padre), o null.
-func _como_rompible(objeto: Object) -> Node:
-	if objeto is Node:
-		var nodo := objeto as Node
-		if _puede_romper(nodo):
-			return nodo
-		var padre := nodo.get_parent()
-		if padre != null and _puede_romper(padre):
-			return padre
-	return null
-
-
-## ¿Es rompible y el Impulso tiene el nivel que pide? Las rocas grandes piden `nivel_requerido` 2 (cofre de Rabia).
-func _puede_romper(nodo: Node) -> bool:
-	if not nodo.is_in_group("rompible") or not nodo.has_method("romper"):
-		return false
-	return Habilidades.nivel_de("impulso") >= int(nodo.get("nivel_requerido") if "nivel_requerido" in nodo else 1)
 
 
 # --- Cámara ---
@@ -278,7 +148,7 @@ func _actualizar_animacion(caminando: bool, delta: float = 0.0) -> void:
 			sprite.play(anim)
 		# Un paso cada vez que el pie toca el suelo (cuadros 0 y 2 de la animación de caminar)
 		if sprite.frame != _cuadro_paso and (sprite.frame == 0 or sprite.frame == 2):
-			Audio.paso(global_position)
+			Audio.paso(_en_exterior())
 		_cuadro_paso = sprite.frame
 		# Rebote vertical leve, siempre hacia arriba
 		_tiempo_rebote += delta * rebote_velocidad
@@ -290,6 +160,13 @@ func _actualizar_animacion(caminando: bool, delta: float = 0.0) -> void:
 		_cuadro_paso = -1
 		_tiempo_rebote = 0.0
 		sprite.offset.y = move_toward(sprite.offset.y, 0.0, 20.0 * delta)
+
+
+## true si el nivel actual es al aire libre (suena el paso de calle): la escena del nivel lo marca con
+## set_meta("exterior", true).
+func _en_exterior() -> bool:
+	var escena := get_tree().current_scene
+	return escena != null and bool(escena.get_meta("exterior", false))
 
 
 # --- Sombra ---
@@ -366,8 +243,8 @@ func _actualizar_activo() -> void:
 
 func _aplicar_estilo_burbuja() -> void:
 	var caja := StyleBoxFlat.new()
-	caja.bg_color = Color("1e1b2e", 0.95)
-	caja.border_color = Color("f4c77b")
+	caja.bg_color = Color("0f2d38", 0.95)
+	caja.border_color = Color("ff8a2a")
 	caja.set_border_width_all(1)
 	caja.set_corner_radius_all(3)
 	caja.content_margin_left = 5
@@ -378,7 +255,7 @@ func _aplicar_estilo_burbuja() -> void:
 	if ResourceLoader.exists(RUTA_FUENTE):
 		etiqueta_burbuja.add_theme_font_override("font", load(RUTA_FUENTE))
 	etiqueta_burbuja.add_theme_font_size_override("font_size", 12)
-	etiqueta_burbuja.add_theme_color_override("font_color", Color("f4c77b"))
+	etiqueta_burbuja.add_theme_color_override("font_color", Color("ff8a2a"))
 
 
 ## Muestra la burbuja sobre el objeto activo, flotando suavemente.

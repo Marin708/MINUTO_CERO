@@ -5,8 +5,8 @@ extends Node
 ## con el mismo nombre. No se guarda el nombre ni nada personal. El reporte se guarda SIEMPRE (es local, solo
 ## para el jugador, aunque no haya aceptado guardar sus respuestas): se le dice dónde está por si quiere compartirlo.
 ##
-## Cada reporte lleva: el texto, la escena actual, la época, la posición del jugador, las habilidades y los
-## estados de las emociones, la versión del juego, la duración de la sesión y las últimas 30 líneas del registro
+## Cada reporte lleva: el texto, la escena actual, el nivel, la posición del jugador, las decisiones y las
+## lecciones, la versión del juego, la duración de la sesión y las últimas 30 líneas del registro
 ## del juego (si existe).
 ##
 ## TECLA: F8 es un atajo del editor de Godot (detiene o pasa por el depurador). Al ejecutar desde el editor
@@ -77,12 +77,12 @@ func _construir() -> void:
 	var panel := PanelContainer.new()
 	panel.position = Vector2(130, 70)
 	panel.size = Vector2(380, 220)
-	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("1e1b2e", 0.97), EstiloUI.DORADO, 2, 12, 5))
+	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("1e1b2e", 0.97), EstiloUI.NARANJA, 2, 12, 5))
 	raiz.add_child(panel)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 6)
 	panel.add_child(v)
-	v.add_child(EstiloUI.etiqueta("Reportar un problema", 15, EstiloUI.DORADO))
+	v.add_child(EstiloUI.etiqueta("Reportar un problema", 15, EstiloUI.NARANJA))
 	v.add_child(EstiloUI.etiqueta("No se guarda tu nombre ni nada personal.", 11, EstiloUI.GRIS))
 	var pregunta := EstiloUI.etiqueta("¿Qué pasó? Cuéntanos lo que viste.", 12, EstiloUI.CREMA)
 	v.add_child(pregunta)
@@ -154,18 +154,15 @@ func guardar(texto: String, captura: Image = null) -> String:
 	var nombre := "reporte_%s_%s" % [fecha.replace(":", "-"), id]
 	var jugador := get_tree().get_first_node_in_group("player") as Node2D
 	var escena := get_tree().current_scene
-	var emociones := {}
-	for e in GameState.ids_emociones():
-		emociones[e] = GameState.estado.get(e, "pendiente")
 	var datos := {
 		"id": id,
 		"fecha_iso": fecha,
 		"texto": texto.substr(0, MAXIMO),
 		"escena": escena.scene_file_path if escena != null else "",
-		"epoca": GameState.epoca,
+		"nivel": Estado.nivel_actual,
 		"posicion_jugador": [snappedf(jugador.global_position.x, 0.1), snappedf(jugador.global_position.y, 0.1)] if jugador != null else null,
-		"habilidades": GameState.habilidades,
-		"estado_emociones": emociones,
+		"decisiones": Estado.decisiones,
+		"lecciones": Estado.lecciones,
 		"version_juego": str(ProjectSettings.get_setting("application/config/version", "0")),
 		"duracion_sesion_min": snappedf(Time.get_ticks_msec() / 60000.0, 0.1),
 		"registro": _ultimas_lineas_del_registro(),

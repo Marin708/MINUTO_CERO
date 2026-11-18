@@ -1,11 +1,11 @@
 extends Node
-## Punto único para mostrar diálogos en ECOS (usa Dialogue Manager por debajo).
+## Punto único para mostrar diálogos en MINUTO CERO (usa Dialogue Manager por debajo).
 ##
 ##   await Dialogo.mostrar(load("res://Dialogos/rabia.dialogue"), "start")
 ##   var elegida: int = await Dialogo.mostrar_texto("Rabia", "¿Qué haces?", ["Opción A", "Opción B"])
 ##
 ## Una escena puede pasarse a sí misma como estado extra para que el .dialogue llame a sus funciones:
-##   await Dialogo.mostrar(recurso, "start", [self])   # y en el .dialogue:  $> mostrar_emocion("rabia")
+##   await Dialogo.mostrar(recurso, "start", [self])   # y en el .dialogue:  $> mostrar_tarjeta("D1")
 
 ## Lo que devuelve mostrar() si el jugador canceló la conversación ("Ahora no" o ESC).
 ## Cancelar NO es una decisión del juego: el que llama no debe cambiar ningún estado.
@@ -39,7 +39,7 @@ var cancelada := false
 var respuesta_de_prueba := -99
 
 ## Retratos opcionales por nombre de personaje, para que el balloon los muestre a la izquierda.
-## Ejemplo: Dialogo.retratos["Guía"] = textura. (Quien lo registre debe quitarlo al terminar.)
+## Ejemplo: Dialogo.retratos["Lucía"] = textura. (Quien lo registre debe quitarlo al terminar.)
 var retratos: Dictionary = {}
 
 ## Cuántos diálogos hay abiertos ahora mismo.
@@ -98,7 +98,7 @@ func mostrar(recurso_dialogo: DialogueResource, titulo: String = "start", estado
 ## mensaje que no venga de un archivo .dialogue.
 ##
 ##   await Dialogo.mostrar_texto("Rabia", "Hola.")                          un texto
-##   await Dialogo.mostrar_texto("Guía", ["Primera.", "Segunda."])          varias páginas seguidas
+##   await Dialogo.mostrar_texto("Lucía", ["Primera.", "Segunda."])          varias páginas seguidas
 ##   var i := await Dialogo.mostrar_texto("Rabia", "¿Y ahora?", ["Otro", "Gracias"])   con opciones
 ##
 ## nombre: lo que sale en la etiqueta ("" = narrador, sin etiqueta). texto: un String o una lista de páginas.

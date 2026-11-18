@@ -1,11 +1,11 @@
 extends Node
 ## Opciones del juego: volumen de Música y de Efectos y pantalla completa. Se guardan aparte de la
-## partida (user://ecos_opciones.cfg), así que valen para todas las partidas.
+## partida (user://minutocero_opciones.cfg), así que valen para todas las partidas.
 ##
 ## Los buses de audio "Musica" y "Efectos" se crean aquí si no existen (los dos salen por "Master"):
 ## quien reproduzca música debe poner su AudioStreamPlayer en el bus "Musica", y los sonidos en "Efectos".
 
-const RUTA := "user://ecos_opciones.cfg"
+const RUTA := "user://minutocero_opciones.cfg"
 const BUS_MUSICA := "Musica"
 const BUS_EFECTOS := "Efectos"
 const VOLUMEN_POR_DEFECTO := 0.8

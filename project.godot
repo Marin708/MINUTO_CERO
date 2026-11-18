@@ -10,14 +10,14 @@ config_version=5
 
 [application]
 
-config/name="ECOS"
-config/version="1.0.0"
+config/name="MINUTO CERO"
+config/version="0.1.0"
 run/main_scene="res://Scenes/UI/ClicParaEmpezar.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
-boot_splash/bg_color=Color(0.117647, 0.105882, 0.180392, 1)
+boot_splash/bg_color=Color(0.062745, 0.211765, 0.266667, 1)
 boot_splash/use_filter=false
 boot_splash/image="res://Assets/UI/fondo_titulo.png"
-config/icon="res://icon.svg"
+config/icon="res://Assets/UI/icono_juego.png"
 
 [audio]
 
@@ -25,11 +25,10 @@ general/default_playback_type.web=0
 
 [autoload]
 
-GameState="*uid://l6tdsafb5sht"
+Estado="*res://Autoload/Estado.gd"
 DialogueManager="*res://addons/dialogue_manager/dialogue_manager.gd"
-Dialogo="*uid://bhf8rrh0owlqe"
+Dialogo="*res://Autoload/Dialogo.gd"
 Notificacion="*res://Autoload/Notificacion.gd"
-Habilidades="*res://Autoload/Habilidades.gd"
 Opciones="*res://Autoload/Opciones.gd"
 Audio="*res://Autoload/Audio.gd"
 Guardado="*res://Autoload/Guardado.gd"
@@ -97,37 +96,6 @@ PAUSA={
 "events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":4194305,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
 ]
 }
-VIAJAR={
-"deadzone": 0.2,
-"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":81,"key_label":0,"unicode":113,"location":0,"echo":false,"script":null)
-]
-}
-HABILIDAD={
-"deadzone": 0.2,
-"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":32,"key_label":0,"unicode":32,"location":0,"echo":false,"script":null)
-]
-}
-BRUJULA={
-"deadzone": 0.2,
-"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":71,"key_label":0,"unicode":103,"location":0,"echo":false,"script":null)
-]
-}
-HAB_SIGUIENTE={
-"deadzone": 0.2,
-"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":82,"key_label":0,"unicode":114,"location":0,"echo":false,"script":null)
-, Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":10,"pressure":0.0,"pressed":false,"script":null)
-]
-}
-HAB_ANTERIOR={
-"deadzone": 0.2,
-"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":70,"key_label":0,"unicode":102,"location":0,"echo":false,"script":null)
-, Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":9,"pressure":0.0,"pressed":false,"script":null)
-]
-}
-
-[internationalization]
-
-locale/translations_pot_files=PackedStringArray("res://Dialogos/culpa.dialogue", "res://Dialogos/final.dialogue", "res://Dialogos/miedo.dialogue", "res://Dialogos/onboarding.dialogue", "res://Dialogos/rabia.dialogue", "res://Dialogos/soledad.dialogue", "res://Dialogos/tristeza.dialogue", "res://Dialogos/ansiedad.dialogue", "res://Dialogos/verguenza.dialogue", "res://Dialogos/guia.dialogue")
 
 [layer_names]
 
@@ -142,4 +110,4 @@ locale/translations_pot_files=PackedStringArray("res://Dialogos/culpa.dialogue",
 
 textures/canvas_textures/default_texture_filter=0
 rendering_device/driver.windows="d3d12"
-environment/defaults/default_clear_color=Color(0.105882, 0.0823529, 0.188235, 1)
+environment/defaults/default_clear_color=Color(0.0627451, 0.211765, 0.266667, 1)

@@ -8,7 +8,7 @@ extends CanvasLayer
 ## Uso:   await Consentimiento.mostrar(get_tree())
 
 const ESCENA := "res://Scenes/UI/Consentimiento.tscn"
-const TEXTO := "ECOS es un juego educativo sobre emociones. Antes y después de jugar te haremos algunas preguntas para saber qué aprendiste. Tus respuestas se guardan de forma anónima en este computador y solo se usan para evaluar el juego. No es un test psicológico ni da diagnósticos. Puedes dejar de jugar cuando quieras."
+const TEXTO := "MINUTO CERO es un juego educativo sobre qué hacer antes, durante y después de un sismo. Antes y después de jugar te haremos algunas preguntas para saber qué aprendiste. Tus respuestas se guardan de forma anónima en este computador y solo se usan para evaluar el juego. No es un examen oficial ni reemplaza la orientación de las autoridades de gestión del riesgo. Puedes dejar de jugar cuando quieras."
 
 signal decidido(acepta: bool)
 
@@ -37,12 +37,12 @@ func _ready() -> void:
 	var panel := PanelContainer.new()
 	panel.position = Vector2(168, 52)
 	panel.size = Vector2(452, 256)
-	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("1e1b2e", 0.96), EstiloUI.DORADO, 2, 16, 5))
+	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("1e1b2e", 0.96), EstiloUI.NARANJA, 2, 16, 5))
 	_raiz.add_child(panel)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 12)
 	panel.add_child(v)
-	v.add_child(EstiloUI.etiqueta("Antes de empezar", 16, EstiloUI.DORADO))
+	v.add_child(EstiloUI.etiqueta("Antes de empezar", 16, EstiloUI.NARANJA))
 	var texto := EstiloUI.etiqueta(TEXTO, 12, EstiloUI.CREMA)
 	texto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	texto.custom_minimum_size = Vector2(410, 110)
@@ -57,9 +57,9 @@ func _ready() -> void:
 	acepto.grab_focus()
 
 
-# ESC, TAB y la habilidad no hacen nada aquí
+# ESC y TAB no hacen nada aquí
 func _input(evento: InputEvent) -> void:
-	for accion in ["PAUSA", "DIARIO", "HABILIDAD", "ui_cancel"]:
+	for accion in ["PAUSA", "DIARIO", "ui_cancel"]:
 		if evento.is_action_pressed(accion):
 			get_viewport().set_input_as_handled()
 			return

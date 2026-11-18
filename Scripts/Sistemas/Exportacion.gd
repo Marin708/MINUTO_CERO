@@ -3,19 +3,19 @@ extends RefCounted
 ## Exportación de los resultados de la evaluación. SOLO si el jugador aceptó guardar
 ## (Evaluacion.consentimiento_guardar); si no, no escribe ningún archivo.
 ##
-## Al terminar la fase "post" (lo dispara Evaluacion) se agrega una fila a user://ecos_resultados.csv (UTF-8, con
+## Al terminar la fase "post" (lo dispara Evaluacion) se agrega una fila a user://minutocero_resultados.csv (UTF-8, con
 ## coma; con encabezado si el archivo no existe) y se escribe un JSON detallado en user://sesiones/<id>.json.
-## Si el archivo ya existe pero con otras columnas (cambió el banco de preguntas) se usa ecos_resultados_v2.csv
+## Si el archivo ya existe pero con otras columnas (cambió el banco de preguntas) se usa minutocero_resultados_v2.csv
 ## (v3, v4... si hiciera falta) en vez de mezclar formatos.
 ##
-## Columnas: id_participante, fecha_iso, duracion_min, final, integradas, atacadas, ignoradas, pendientes,
-## fragmentos, habilidades, pre_trivia, pre_situaciones, pre_escala, post_trivia, post_situaciones, post_escala y,
+## Columnas: id_participante, fecha_iso, duracion_min, final, seguras (primer intento), resueltas, lecciones,
+## D1..D15_primer (1 segura, 0 no) y D1..D15_intentos, pre_trivia, pre_situaciones, pre_escala, post_trivia, post_situaciones, post_escala y,
 ## por cada pregunta del banco: pre_<id>, post_<id> (índice ORIGINAL elegido; en escala, el valor 1-5) y, solo en
 ## trivia y situaciones, pre_ok_<id> y post_ok_<id> (1 si es correcta o sana, 0 si no).
 
-const RUTA_CSV := "user://ecos_resultados.csv"
+const RUTA_CSV := "user://minutocero_resultados.csv"
 const CARPETA_SESIONES := "user://sesiones"
-const NOMBRE_EXPORTADO := "ECOS_resultados.csv"
+const NOMBRE_EXPORTADO := "MINUTOCERO_resultados.csv"
 
 ## El CSV donde se escribió por última vez (para exportarlo).
 static var ultima_ruta := ""
@@ -23,9 +23,14 @@ static var ultima_ruta := ""
 
 ## Las columnas, en orden (dependen del banco de preguntas).
 static func columnas() -> Array[String]:
-	var c: Array[String] = ["id_participante", "fecha_iso", "duracion_min", "final", "integradas", "atacadas", "ignoradas",
-		"pendientes", "fragmentos", "habilidades", "pre_trivia", "pre_situaciones", "pre_escala", "post_trivia",
-		"post_situaciones", "post_escala"]
+	var c: Array[String] = ["id_participante", "fecha_iso", "duracion_min", "final", "seguras", "resueltas", "lecciones",
+		"pre_trivia", "pre_situaciones", "pre_escala", "post_trivia", "post_situaciones", "post_escala"]
+	for id in Estado.ids_decisiones():
+		c.append(id + "_primer")
+		c.append(id + "_intentos")
+	for id in Estado.ids_decisiones():
+		c.append(id + "_primer")
+		c.append(id + "_intentos")
 	for bloque in Evaluacion.BLOQUES:
 		for p in Evaluacion.banco.get(bloque, []):
 			c.append("pre_" + str(p["id"]))
@@ -43,18 +48,16 @@ static func columnas() -> Array[String]:
 ## La fila de esta partida como diccionario columna -> valor.
 static func fila() -> Dictionary:
 	var comparacion := Evaluacion.comparar()
-	var contar := {"integrada": 0, "atacada": 0, "ignorada": 0, "pendiente": 0}
-	for id in GameState.ids_emociones():
-		contar[GameState.estado.get(id, "pendiente")] += 1
 	var f := {
 		"id_participante": Evaluacion.participante_id,
 		"fecha_iso": Time.get_datetime_string_from_system(false),
 		"duracion_min": snappedf(float(comparacion["duracion_segundos"]) / 60.0, 0.1),
-		"final": GameState.calcular_final(),
-		"integradas": contar["integrada"], "atacadas": contar["atacada"], "ignoradas": contar["ignorada"], "pendientes": contar["pendiente"],
-		"fragmentos": GameState.cantidad_fragmentos(),
-		"habilidades": GameState.habilidades.size(),
+		"final": Estado.calcular_final(),
+		"seguras": Estado.cantidad_seguras(), "resueltas": Estado.cantidad_resueltas(), "lecciones": Estado.cantidad_lecciones(),
 	}
+	for id in Estado.ids_decisiones():
+		f[id + "_primer"] = (1 if Estado.primer_intento_de(id) else 0) if Estado.decision_resuelta(id) else ""
+		f[id + "_intentos"] = Estado.intentos_de(id) if Estado.decision_resuelta(id) else ""
 	for fase in Evaluacion.FASES:
 		var puntajes: Dictionary = Evaluacion._fase(fase).get("puntajes", {})
 		f["%s_trivia" % fase] = int(puntajes.get("trivia", 0))
@@ -196,9 +199,8 @@ static func _escribir_sesion(f: Dictionary) -> void:
 		"fecha_iso": f["fecha_iso"],
 		"final": f["final"],
 		"duracion_min": f["duracion_min"],
-		"estado_emociones": GameState.estado,
-		"habilidades": GameState.habilidades,
-		"fragmentos": GameState.fragmentos,
+		"decisiones": Estado.decisiones,
+		"lecciones": Estado.lecciones,
 		"pre": Evaluacion.pre,
 		"post": Evaluacion.post,
 		"comparacion": Evaluacion.comparar(),
@@ -219,7 +221,7 @@ static func descargar(ruta_usuario: String, nombre: String, mime: String) -> boo
 	return true
 
 
-## En la web no hay carpeta Documentos: el botón DESCARGA el CSV (ECOS_resultados.csv) y el JSON de la sesión.
+## En la web no hay carpeta Documentos: el botón DESCARGA el CSV (MINUTOCERO_resultados.csv) y el JSON de la sesión.
 static func _exportar_descargando() -> Dictionary:
 	var resultado := {"ok": false, "ruta": "", "ruta_usuario": ""}
 	var origen := ultima_ruta if ultima_ruta != "" else RUTA_CSV
@@ -229,11 +231,11 @@ static func _exportar_descargando() -> Dictionary:
 		resultado["ok"] = true
 		resultado["ruta"] = "descargas de tu navegador (%s)" % NOMBRE_EXPORTADO
 		var sesion := "%s/%s.json" % [CARPETA_SESIONES, Evaluacion.participante_id]
-		descargar(sesion, "ECOS_sesion_%s.json" % Evaluacion.participante_id, "application/json;charset=utf-8")
+		descargar(sesion, "MINUTOCERO_sesion_%s.json" % Evaluacion.participante_id, "application/json;charset=utf-8")
 	return resultado
 
 
-## Copia el CSV a la carpeta Documentos del usuario como ECOS_resultados.csv. Devuelve
+## Copia el CSV a la carpeta Documentos del usuario como MINUTOCERO_resultados.csv. Devuelve
 ## {ok, ruta (donde quedó), ruta_usuario (la carpeta de user:// en el disco)}.
 static func exportar_a_documentos() -> Dictionary:
 	if OS.has_feature("web"):

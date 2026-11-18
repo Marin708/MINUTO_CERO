@@ -3,22 +3,24 @@ extends RefCounted
 ## El código de resultados: una línea de texto que el jugador puede copiar y pegar en un formulario de Google
 ## (sin servidor). Nunca se escribe en ningún archivo: solo se muestra en pantalla y el jugador decide si lo comparte.
 ##
-## Formato:  "ECOS1:" + base64 seguro para URL de (JSON compacto comprimido con DEFLATE) + CRC32 (8 hex)
+## Formato:  "MC1:" + base64 seguro para URL de (JSON compacto comprimido con DEFLATE) + CRC32 (8 hex)
 ## El CRC32 va al final y se calcula sobre el texto base64 (sin el prefijo): detecta códigos cortados o mal copiados.
 ## Para decodificar fuera del juego: tools/decodificar_codigos.py (zlib + base64 + zlib.crc32).
 ##
 ## Contenido (claves cortas para que el código mida menos de 600 caracteres):
-##   v versión del formato · id participante · f fecha · g versión del juego · fin final (b, n, d) ·
-##   i, a, ig, p integradas, atacadas, ignoradas y pendientes · d duración en minutos ·
+##   v versión del formato · id participante · f fecha · g versión del juego · fin final (p, e, r) ·
+##   s decisiones seguras al primer intento (0 a 15) · l lecciones aprendidas · dp una cifra por decisión D1 a D15
+##   (1 = segura al primer intento, 0 = no, "-" = sin resolver) · di intentos de cada decisión (una cifra, máximo 9) ·
+##   d duración en minutos ·
 ##   pre y post: puntajes [trivia, situaciones, escala] · rp y rq: respuestas del pre y del post, una cifra por
 ##   pregunta en el orden del banco (índice ORIGINAL elegido; en escala, el valor 1 a 5; "-" si no hay) ·
 ##   val: la valoración numérica (u: u1..u6, n: nota, fr: frecuencia 0-2, s: SUS, sp: puntaje SUS), si existe.
 ## Los comentarios libres NO van en el código (el jugador los escribe en el formulario).
 
-const PREFIJO := "ECOS1:"
+const PREFIJO := "MC1:"
 const VERSION_FORMATO := 1
 const RUTA_CONFIG := "res://Resources/config_formulario.json"
-const FINALES := {"bueno": "b", "neutro": "n", "dificil": "d"}
+const FINALES := {"preparado": "p", "encamino": "e", "reforzar": "r"}
 const FRECUENCIAS := ["Nunca", "A veces", "Seguido"]
 
 static var _tabla_crc: PackedInt64Array = PackedInt64Array()
@@ -27,16 +29,14 @@ static var _tabla_crc: PackedInt64Array = PackedInt64Array()
 ## Los datos de la partida actual, en forma compacta.
 static func datos_actuales() -> Dictionary:
 	var comparacion := Evaluacion.comparar()
-	var contar := {"integrada": 0, "atacada": 0, "ignorada": 0, "pendiente": 0}
-	for id in GameState.ids_emociones():
-		contar[GameState.estado.get(id, "pendiente")] += 1
 	var d := {
 		"v": VERSION_FORMATO,
 		"id": Evaluacion.participante_id,
 		"f": Time.get_datetime_string_from_system(false).substr(0, 16),
 		"g": str(ProjectSettings.get_setting("application/config/version", "0")),
-		"fin": FINALES.get(GameState.calcular_final(), "n"),
-		"i": contar["integrada"], "a": contar["atacada"], "ig": contar["ignorada"], "p": contar["pendiente"],
+		"fin": FINALES.get(Estado.calcular_final(), "r"),
+		"s": Estado.cantidad_seguras(), "l": Estado.cantidad_lecciones(),
+		"dp": _decisiones(false), "di": _decisiones(true),
 		"d": snappedf(float(comparacion["duracion_segundos"]) / 60.0, 0.1),
 		"pre": _puntajes("pre"),
 		"post": _puntajes("post"),
@@ -60,6 +60,20 @@ static func datos_actuales() -> Dictionary:
 			"s": s, "sp": snappedf(float(v.get("sus_puntaje", -1.0)), 0.1),
 		}
 	return d
+
+
+## Una cifra por decisión (D1 a D15): con `intentos`, el número de intentos (máximo 9); si no, 1 si fue segura al
+## primer intento y 0 si no. "-" si la decisión no se resolvió.
+static func _decisiones(intentos: bool) -> String:
+	var s := ""
+	for id in Estado.ids_decisiones():
+		if not Estado.decision_resuelta(id):
+			s += "-"
+		elif intentos:
+			s += str(mini(Estado.intentos_de(id), 9))
+		else:
+			s += "1" if Estado.primer_intento_de(id) else "0"
+	return s
 
 
 static func _puntajes(fase: String) -> Array:
@@ -94,7 +108,7 @@ static func codificar(datos: Dictionary) -> String:
 static func decodificar(codigo: String) -> Dictionary:
 	var texto := codigo.strip_edges()
 	if not texto.begins_with(PREFIJO):
-		return {"ok": false, "error": "Falta el prefijo ECOS1:", "datos": {}}
+		return {"ok": false, "error": "Falta el prefijo MC1:", "datos": {}}
 	var cuerpo := texto.substr(PREFIJO.length())
 	if cuerpo.length() <= 8:
 		return {"ok": false, "error": "El código está cortado", "datos": {}}
@@ -110,7 +124,7 @@ static func decodificar(codigo: String) -> Dictionary:
 		return {"ok": false, "error": "No se pudo descomprimir", "datos": {}}
 	var datos: Variant = JSON.parse_string(crudo.get_string_from_utf8())
 	if typeof(datos) != TYPE_DICTIONARY or int(datos.get("v", 0)) != VERSION_FORMATO:
-		return {"ok": false, "error": "El contenido no es un código de ECOS válido", "datos": {}}
+		return {"ok": false, "error": "El contenido no es un código de MINUTO CERO válido", "datos": {}}
 	return {"ok": true, "error": "", "datos": datos}
 
 

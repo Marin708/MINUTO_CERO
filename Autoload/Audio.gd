@@ -1,16 +1,16 @@
 extends Node
-## Sistema de audio de ECOS. Los archivos están en Assets/Audio/{Efectos,Ambiente,Musica}/ y el nombre
+## Sistema de audio de MINUTO CERO. Los archivos están en Assets/Audio/{Efectos,Ambiente,Musica}/ y el nombre
 ## del archivo (sin extensión) es el identificador del sonido; se aceptan .wav, .ogg y .mp3.
 ##
 ##   Audio.efecto("ui_aceptar")                 un efecto suelto (varias voces a la vez)
-##   Audio.musica("musica_pasado", 1.5)         música, con fundido cruzado de 1.5 s
-##   Audio.ambiente("amb_presente")             sonido ambiente en bucle (por el bus de efectos)
+##   Audio.musica("musica_antes", 1.5)           música, con fundido cruzado de 1.5 s
+##   Audio.ambiente("amb_casa")                 sonido ambiente en bucle (por el bus de efectos)
 ##
 ## Los efectos y ambientes salen por el bus "Efectos" y la música por "Musica" (ver Opciones). Todo
 ## sigue sonando con el juego en pausa (para los sonidos del menú).
 ##
-## Escucha las señales del juego (emociones, habilidades, fragmentos, diálogos...) y suena sin que cada
-## objeto tenga que saber de audio. Lo que depende de un lugar concreto (pasos, acertijos, bloqueos,
+## Escucha las señales del juego (decisiones, tarjetas de memoria, diálogos...) y suena sin que cada
+## objeto tenga que saber de audio. Lo que depende de un lugar concreto (pasos, sismo,
 ## menús) llama a efecto() desde su propio script. Si falta un archivo, no pasa nada: se avisa una
 ## vez en la consola y aparece en el panel de depuración (tecla M).
 
@@ -20,47 +20,31 @@ const CARPETAS := ["Efectos", "Ambiente", "Musica"]
 
 const EFECTOS := [
 	"dialogo_blip_guia", "dialogo_abrir", "dialogo_cerrar", "dialogo_opciones",
-	"ui_mover", "ui_aceptar", "ui_elegir", "ui_cancelar", "diario_abrir", "diario_cerrar", "guardar",
-	"emo_rabia", "emo_miedo", "emo_tristeza", "emo_soledad", "emo_culpa", "emo_ansiedad", "emo_verguenza",
-	"emo_rabia_integrada", "emo_miedo_integrada", "emo_tristeza_integrada", "emo_soledad_integrada",
-	"emo_culpa_integrada", "emo_ansiedad_integrada", "emo_verguenza_integrada",
-	"integrar_exito", "atacar_ignorar", "habilidad_desbloqueada", "fragmento_recogido", "viaje_epoca", "bloqueo_abre",
-	"hab_impulso", "hab_vision", "hab_calma", "hab_vinculo", "hab_reparar", "hab_pausa", "hab_revelar", "hab_denegada",
-	"paso", "paso_piedra",
-	"roca_rompe", "planta_florece", "placa_activa", "porton_repara", "puente_aparece", "niebla_disipa",
-	"titulo_comenzar", "luz_blanca",
-	"cofre_abre", "mejora_habilidad", "compuerta_abre", "pista",
+	"ui_mover", "ui_aceptar", "ui_elegir", "ui_cancelar", "diario_abrir", "diario_cerrar", "guardar", "pista",
+	"sismo_aviso", "sismo_fin", "replica", "objeto_cae", "estante_cae", "vidrio_roto", "escombros",
+	"radio_estatica", "radio_aviso", "valvula", "linterna_on", "item_recoge", "correcto", "ojo", "silbato",
+	"ascensor_no", "puerta_abre", "paso_piso", "paso_calle", "llegada_punto",
 ]
-const AMBIENTES := ["amb_pasado", "amb_presente", "amb_lluvia", "portal_activo"]
-const MUSICAS := ["musica_titulo", "musica_pasado", "musica_presente", "final_bueno", "final_neutro", "final_dificil"]
+const AMBIENTES := ["amb_casa", "amb_sismo", "amb_calle"]
+const MUSICAS := ["musica_titulo", "musica_antes", "musica_despues", "final_preparado", "final_encamino", "final_reforzar"]
 
 ## Volumen de cada efecto (dB) respecto a como quedó normalizado el archivo. Los que no estén aquí usan
 ## VOLUMEN_POR_DEFECTO. Se ajusta aquí, sin tocar el resto del código.
 const VOLUMEN_POR_DEFECTO := -6.0
 const VOLUMEN_DB := {
 	"dialogo_blip_guia": -13.0,
-	"paso": -9.0, "paso_piedra": -9.0,
+	"paso_piso": -9.0, "paso_calle": -9.0,
 	"ui_mover": -9.0, "ui_aceptar": -6.0, "ui_elegir": -6.0, "ui_cancelar": -6.0,
-	"emo_rabia": -5.0, "emo_miedo": -5.0, "emo_tristeza": -5.0, "emo_soledad": -5.0,
-	"emo_culpa": -5.0, "emo_ansiedad": -5.0, "emo_verguenza": -5.0,
 }
 const VOLUMEN_MUSICA_DB := -2.0
 const VOLUMEN_AMBIENTE_DB := -4.0
 
-## Habilidad -> efecto que suena al usarla.
-const SONIDO_DE_HABILIDAD := {
-	"impulso": "hab_impulso", "vision": "hab_vision", "calma": "hab_calma", "vinculo": "hab_vinculo",
-	"reparacion": "hab_reparar", "pausa": "hab_pausa", "revelar": "hab_revelar",
-}
 const NUMERO_DE_VOCES := 14
-## UN SOLO sonido de texto para todos los que hablan (Guía, emociones, aliadas, bloqueos, recuerdos, consejos, cuestionarios...):
-## el blip del Guía, siempre con el mismo volumen y el mismo tono (sin variación por hablante).
+## UN SOLO sonido de texto para todos los que hablan (Lucía, Mamá, Doña Rosa, cuestionarios...):
+## el blip de dialogo_blip_guia, siempre con el mismo volumen y el mismo tono (sin variación por hablante).
 const SONIDO_TEXTO := "dialogo_blip_guia"
-## Suelos duros (adoquines, ruinas, muros, roca, acantilado): ahí suena paso_piedra.
-const SUELOS_DUROS := "auMRC"
 ## Cada cuántas letras escritas suena un blip del diálogo.
 const LETRAS_POR_BLIP := 2
-const DISTANCIA_PORTAL := 280.0
 
 ## Sonó un efecto (para depurar y probar).
 signal efecto_reproducido(nombre: String)
@@ -75,7 +59,6 @@ var _voces: Array[AudioStreamPlayer] = []
 var _ultima_vez: Dictionary = {}     # nombre -> ms de la última vez que sonó
 var _musica := Capa.new()
 var _ambiente := Capa.new()
-var _portal: AudioStreamPlayer
 var _letras := 0
 ## La voz propia del blip de texto (así se puede cortar cuando el texto se completa de golpe).
 var _voz_blip: AudioStreamPlayer
@@ -100,7 +83,6 @@ func _ready() -> void:
 	for i in 2:
 		_musica.jugadores.append(_crear_jugador("Musica"))
 		_ambiente.jugadores.append(_crear_jugador("Efectos"))
-	_portal = _crear_jugador("Efectos")
 	_revisar_catalogo()
 	_conectar_senales()
 	_crear_panel()
@@ -117,7 +99,6 @@ func _notification(que: int) -> void:
 func salir() -> void:
 	_detener(_musica, 0.05)
 	_detener(_ambiente, 0.05)
-	_portal.stop()
 	for v in _voces:
 		v.stop()
 	await get_tree().create_timer(0.2, true, false, true).timeout
@@ -154,7 +135,7 @@ func _revisar_catalogo() -> void:
 	faltan.clear()
 	var todos: Array = EFECTOS + AMBIENTES + MUSICAS
 	for nombre in todos:
-		if _cargar(nombre) == null:
+		if _cargar(nombre) == null and not faltan.has(nombre):
 			faltan.append(nombre)
 	if not faltan.is_empty():
 		push_warning("Audio: faltan %d archivos de audio: %s" % [faltan.size(), ", ".join(faltan)])
@@ -188,7 +169,7 @@ func _cargar(nombre: String) -> AudioStream:
 # --- Efectos ---
 
 ## El sonido de una pista suave (el aviso junto a una compuerta, la pista al interactuar con ella y la respuesta
-## de la Guía): -6 dB, tono +-5 % y como mucho una vez cada 5 s (se repite mucho).
+## de Lucía): -6 dB, tono +-5 % y como mucho una vez cada 5 s (se repite mucho).
 const SEGUNDOS_ENTRE_PISTAS := 5.0
 var _ultima_pista := -INF
 
@@ -242,13 +223,9 @@ func _anotar(nombre: String) -> void:
 		historial.pop_back()
 
 
-## El paso del jugador en `posicion` (global): suena distinto sobre piedra que sobre hierba o tierra.
-func paso(posicion: Vector2) -> void:
-	var mundo := get_tree().get_first_node_in_group("mundo")
-	var suelo := ""
-	if mundo != null and mundo.has_method("suelo_en"):
-		suelo = mundo.suelo_en(posicion)
-	efecto("paso_piedra" if suelo != "" and SUELOS_DUROS.contains(suelo) else "paso", NAN, 0.08)
+## El paso del jugador: dentro del apartamento suena paso_piso; en la calle y el parque, paso_calle.
+func paso(en_exterior: bool = false) -> void:
+	efecto("paso_calle" if en_exterior else "paso_piso", NAN, 0.08)
 
 
 # --- Música y ambiente ---
@@ -278,10 +255,10 @@ func ambiente_actual() -> String:
 	return _ambiente.nombre
 
 
-## Música y ambiente de una época (Mundo lo llama al mostrarla).
-func ambientar_epoca(epoca: String) -> void:
-	musica("musica_presente" if epoca == "presente" else "musica_pasado")
-	ambiente("amb_presente" if epoca == "presente" else "amb_pasado")
+## Música y ambiente de cada nivel (el nivel lo llama al mostrarse).
+func ambientar_nivel(nivel: int) -> void:
+	musica("musica_despues" if nivel == 3 else "musica_antes")
+	ambiente("amb_calle" if nivel == 3 else "amb_casa")
 
 
 func _reproducir(capa: Capa, nombre: String, fundido: float, volumen_db: float) -> void:
@@ -325,14 +302,8 @@ func _detener(capa: Capa, fundido: float) -> void:
 # --- Señales del juego ---
 
 func _conectar_senales() -> void:
-	GameState.emocion_resuelta.connect(_on_emocion_resuelta)
-	GameState.habilidad_desbloqueada.connect(func(_id: String) -> void: efecto("habilidad_desbloqueada"))
-	GameState.fragmento_recogido.connect(func(_id: String) -> void: efecto("fragmento_recogido"))
-	# Mejora de habilidad: suena 0.9 s después del cofre, justo cuando sale la tarjeta de la mejora
-	GameState.cofre_abierto.connect(func(_id: String) -> void: efecto("mejora_habilidad", NAN, 0.0, 0.9))
-	GameState.compuerta_abierta.connect(func(_id: String) -> void: efecto("compuerta_abre"))
-	Habilidades.habilidad_usada.connect(func(id: String) -> void: efecto(SONIDO_DE_HABILIDAD.get(id, "")))
-	Habilidades.uso_denegado.connect(func(_id: String) -> void: efecto("hab_denegada"))
+	Estado.decision_registrada.connect(_on_decision)
+	Estado.tarjeta_desbloqueada.connect(func(_id: String) -> void: efecto("pista"))
 	Dialogo.dialogo_abierto.connect(func() -> void: efecto("dialogo_abrir"))
 	Dialogo.dialogo_cerrado.connect(func() -> void: efecto("dialogo_cerrar"))
 	Dialogo.opciones_mostradas.connect(func() -> void: efecto("dialogo_opciones"))
@@ -342,13 +313,9 @@ func _conectar_senales() -> void:
 	Dialogo.linea_terminada.connect(cortar_blip)   # el texto se completó (solo o de golpe con INTERACTUAR): el blip se corta
 
 
-func _on_emocion_resuelta(id: String, resultado: String) -> void:
-	match resultado:
-		"integrada":
-			efecto("integrar_exito")
-			efecto("emo_%s_integrada" % id, NAN, 0.0, 0.25)
-		"atacada", "ignorada":
-			efecto("atacar_ignorar")
+## Una decisión recibe su retroalimentación: suena "correcto" si fue segura y "ojo" si no.
+func _on_decision(_id: String, segura: bool, _primer_intento: bool) -> void:
+	efecto("correcto" if segura else "ojo")
 
 
 ## El blip de texto: el MISMO para todos los que hablan. Suena una vez cada 2 letras, no en los espacios ni en la puntuación.
@@ -386,37 +353,14 @@ func cortar_blip() -> void:
 		_voz_blip.stop()
 
 
-# --- Portal: suena más fuerte cuanto más cerca estás ---
+# --- Panel de depuración ---
 
 func _process(delta: float) -> void:
-	_actualizar_portal()
 	if _panel.visible:
 		_tiempo_panel -= delta
 		if _tiempo_panel <= 0.0:
 			_tiempo_panel = 0.25
 			_actualizar_panel()
-
-
-func _actualizar_portal() -> void:
-	var jugador := get_tree().get_first_node_in_group("player") as Node2D
-	var cerca := INF
-	if jugador != null and get_tree().current_scene is Mundo:
-		for portal in get_tree().get_nodes_in_group("portales"):
-			if portal is Node2D and portal.is_visible_in_tree():
-				cerca = minf(cerca, jugador.global_position.distance_to(portal.global_position))
-	if cerca >= DISTANCIA_PORTAL:
-		if _portal.playing:
-			_portal.stop()
-		return
-	var flujo := _cargar("portal_activo")
-	if flujo == null:
-		return
-	if not _portal.playing:
-		_portal.stream = flujo
-		_portal.volume_db = -40.0
-		_portal.play()
-	var cercania := 1.0 - cerca / DISTANCIA_PORTAL
-	_portal.volume_db = lerpf(-40.0, -8.0, cercania * cercania)
 
 
 # --- Panel de depuración (tecla M, solo en compilaciones de depuración) ---
@@ -429,7 +373,7 @@ func _crear_panel() -> void:
 	add_child(_panel)
 	_texto_panel = EstiloUI.etiqueta("", 10, EstiloUI.CREMA)
 	_texto_panel.position = Vector2(6, 4)
-	_texto_panel.add_theme_color_override("font_outline_color", EstiloUI.MORADO_OSCURO)
+	_texto_panel.add_theme_color_override("font_outline_color", EstiloUI.PETROLEO_OSCURO)
 	_texto_panel.add_theme_constant_override("outline_size", 4)
 	_panel.add_child(_texto_panel)
 
@@ -459,7 +403,6 @@ func _actualizar_panel() -> void:
 	if not faltan.is_empty():
 		lineas.append("Faltan: " + ", ".join(faltan.slice(0, 12)) + (" ..." if faltan.size() > 12 else ""))
 	lineas.append("Música: %s    Ambiente: %s" % [_musica.nombre if _musica.nombre != "" else "-", _ambiente.nombre if _ambiente.nombre != "" else "-"])
-	lineas.append("Portal: %s" % ("%.0f dB" % _portal.volume_db if _portal.playing else "apagado"))
 	lineas.append("Volumen   Música %d%%   Efectos %d%%" % [roundi(Opciones.volumen_musica * 100.0), roundi(Opciones.volumen_efectos * 100.0)])
 	lineas.append("Voces de efectos en uso: %d de %d" % [_voces.filter(func(v: AudioStreamPlayer) -> bool: return v.playing).size(), _voces.size()])
 	lineas.append("")

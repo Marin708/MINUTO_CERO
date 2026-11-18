@@ -1,12 +1,12 @@
 class_name Resultados
 extends CanvasLayer
 ## Pantalla de resultados, al terminar la fase "post" (capa 12). Muestra "Tu viaje en números":
-##   - tres bloques con barras animadas ANTES (gris violáceo) y DESPUÉS (dorado): Conocimiento (trivia, 0 a 7),
-##     Cómo reaccionas (situaciones, 0 a 7) y Cómo te sientes con tus emociones (escala, 2 a 10), con un texto
+##   - tres bloques con barras animadas ANTES (gris azulado) y DESPUÉS (naranja): Conocimiento (trivia, 0 a 7),
+##     Cómo reaccionas (situaciones, 0 a 5) y Tu confianza para prepararte (escala, 2 a 10), con un texto
 ##     cálido según el cambio (nunca un reproche);
-##   - una sección por emoción: su estado final, si acertó la trivia antes y después, la opción elegida en la
-##     situación y la explicación de la trivia (aquí se revelan las respuestas correctas);
-##   - un resumen de la partida (tiempo, emociones, fragmentos, habilidades y final);
+##   - una sección por pregunta de conocimiento y de situaciones: si acertó antes y después, la respuesta
+##     recomendada y la explicación (aquí se revelan las respuestas correctas);
+##   - un resumen de la partida (tiempo, decisiones seguras al primer intento, lecciones y final);
 ##   - botones: Exportar mis resultados, Ver créditos, Jugar de nuevo y Salir.
 ## Navegable con teclado (flechas, TAB, ENTER; arriba y abajo desplazan) y con ratón.
 ##
@@ -14,17 +14,14 @@ extends CanvasLayer
 ##        "" = a ninguna parte todavía, "nueva" = nueva partida, "salir", "prueba").
 
 const ESCENA := "res://Scenes/UI/Resultados.tscn"
-const ESCENA_ONBOARDING := "res://Scenes/Intro/Onboarding.tscn"
-const GRIS_VIOLACEO := Color("8a7fa3")
-const DORADO := Color("f4c77b")
-const COLOR_ESTADO := {"integrada": Color("8fd19e"), "atacada": Color("e0a070"), "ignorada": Color("9aa3c4"), "pendiente": Color("8a7fa3")}
-const NOMBRE_ESTADO := {"integrada": "Integrada", "atacada": "Atacada", "ignorada": "Ignorada", "pendiente": "Pendiente"}
-const NOMBRE_FINAL := {"bueno": "Final bueno", "neutro": "Final neutro", "dificil": "Final difícil"}
+const ESCENA_TITULO := "res://Scenes/UI/PantallaTitulo.tscn"
+const GRIS_VIOLACEO := Color("9db0b8")
+const NARANJA := Color("ff8a2a")
 ## Qué bloques hay: clave, título, mínimo y máximo del puntaje.
 const BLOQUES := [
 	["trivia", "Conocimiento", 0, 7],
-	["situaciones", "Cómo reaccionas", 0, 7],
-	["escala", "Cómo te sientes con tus emociones", 2, 10],
+	["situaciones", "Cómo reaccionas", 0, 5],
+	["escala", "Tu confianza para prepararte", 2, 10],
 ]
 
 signal cerrada
@@ -61,7 +58,7 @@ class BarraRes extends Control:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	func _draw() -> void:
-		draw_rect(Rect2(Vector2(0, 1), Vector2(size.x, 8)), Color("2d2845"))
+		draw_rect(Rect2(Vector2(0, 1), Vector2(size.x, 8)), Color("14414f"))
 		draw_rect(Rect2(Vector2(0, 1), Vector2(size.x * clampf(fraccion, 0.0, 1.0), 8)), color)
 		draw_rect(Rect2(Vector2(0, 1), Vector2(size.x, 8)), Color(color, 0.35), false, 1.0)
 
@@ -91,9 +88,9 @@ func _ready() -> void:
 	_boton_exportar.grab_focus.call_deferred()
 
 
-# ESC, TAB y la habilidad no hacen nada; arriba y abajo desplazan los resultados
+# ESC y TAB no hacen nada; arriba y abajo desplazan los resultados
 func _input(evento: InputEvent) -> void:
-	for accion in ["PAUSA", "DIARIO", "HABILIDAD", "ui_cancel"]:
+	for accion in ["PAUSA", "DIARIO", "ui_cancel"]:
 		if evento.is_action_pressed(accion):
 			get_viewport().set_input_as_handled()
 			return
@@ -116,12 +113,12 @@ func _construir() -> void:
 	var panel := PanelContainer.new()
 	panel.position = Vector2(16, 10)
 	panel.size = Vector2(608, 340)
-	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("1e1b2e", 0.97), EstiloUI.DORADO, 2, 12, 5))
+	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("0f2d38", 0.97), EstiloUI.NARANJA, 2, 12, 5))
 	_raiz.add_child(panel)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 5)
 	panel.add_child(v)
-	var titulo := EstiloUI.etiqueta("Tu viaje en números", 18, EstiloUI.DORADO)
+	var titulo := EstiloUI.etiqueta("Tu viaje en números", 18, EstiloUI.NARANJA)
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(titulo)
 
@@ -140,18 +137,19 @@ func _construir() -> void:
 		contenido.add_child(_texto("No tengo tus respuestas del principio (jugaste sin guardarlas), pero estas son las de ahora.", 10, GRIS_VIOLACEO))
 	for b in BLOQUES:
 		contenido.add_child(_bloque(b, c))
-	contenido.add_child(EstiloUI.etiqueta("Tus emociones", 14, EstiloUI.DORADO))
-	for id in GameState.ids_emociones():
-		contenido.add_child(_fila_emocion(id))
-	contenido.add_child(EstiloUI.etiqueta("Tu partida", 14, EstiloUI.DORADO))
+	contenido.add_child(EstiloUI.etiqueta("Tus respuestas", 14, EstiloUI.NARANJA))
+	for bloque in ["trivia", "situaciones"]:
+		for p in Evaluacion.banco.get(bloque, []):
+			contenido.add_child(_fila_pregunta(p, bloque))
+	contenido.add_child(EstiloUI.etiqueta("Tu partida", 14, EstiloUI.NARANJA))
 	contenido.add_child(_resumen(c))
-	contenido.add_child(EstiloUI.etiqueta("Tu código de resultados", 14, EstiloUI.DORADO))
+	contenido.add_child(EstiloUI.etiqueta("Tu código de resultados", 14, EstiloUI.NARANJA))
 	contenido.add_child(_seccion_codigo())
 
 	_estado = _texto("", 10, EstiloUI.CREMA)
 	_estado.custom_minimum_size = Vector2(580, 0)
 	v.add_child(_estado)
-	var recordatorio := _texto("Esto no es un test psicológico ni da diagnósticos: solo te muestra cómo te fue en este juego.", 9, GRIS_VIOLACEO)
+	var recordatorio := _texto("Esto no es un examen oficial: solo te muestra cómo te fue en este juego.", 9, GRIS_VIOLACEO)
 	recordatorio.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(recordatorio)
 
@@ -203,8 +201,8 @@ func _bloque(b: Array, c: Dictionary) -> Control:
 	v.add_child(EstiloUI.etiqueta(b[1], 13, EstiloUI.CREMA))
 	if c["hay_pre"]:
 		v.add_child(_fila_barra("Antes", int(datos["pre"]), minimo, maximo, GRIS_VIOLACEO))
-	v.add_child(_fila_barra("Después", int(datos["post"]), minimo, maximo, DORADO))
-	v.add_child(_texto(_mensaje(clave, int(datos["dif"]), c["hay_pre"]), 11, Color("d9cfe8")))
+	v.add_child(_fila_barra("Después", int(datos["post"]), minimo, maximo, NARANJA))
+	v.add_child(_texto(_mensaje(clave, int(datos["dif"]), c["hay_pre"]), 11, Color("d6e2e7")))
 	return v
 
 
@@ -229,94 +227,48 @@ func _mensaje(clave: String, dif: int, hay_pre: bool) -> String:
 	if not hay_pre:
 		return "Estas son tus respuestas de ahora."
 	if dif > 0:
-		return "Subiste %d punto%s respecto al principio. ¡Se nota lo que escuchaste!" % [dif, "" if dif == 1 else "s"]
+		return "Subiste %d punto%s respecto al principio. ¡Se nota lo que aprendiste!" % [dif, "" if dif == 1 else "s"]
 	if dif == 0:
 		return "Te mantuviste igual que al principio: eso también es una base firme."
 	match clave:
 		"trivia":
 			return "A veces el juego hace pensar y cuestionar lo que creíamos saber, y eso también es aprender."
 		"situaciones":
-			return "A veces, al conocer mejor cada emoción, dudamos de lo que solíamos hacer. Esa duda también es aprender."
+			return "A veces, al conocer mejor los riesgos, dudamos de lo que solíamos hacer. Esa duda también es aprender."
 		_:
-			return "Mirar de cerca lo que sentimos puede mostrarnos cuánto hay por descubrir. Eso también es aprender."
+			return "Darnos cuenta de cuánto hay por preparar también es aprender, y se puede practicar en familia."
 
 
-## Una emoción: ícono, estado final, trivia (antes y después), la situación y la explicación.
-func _fila_emocion(id: String) -> Control:
-	var datos := GameState.obtener_datos(id)
-	var estado: String = GameState.estado.get(id, "pendiente")
+## Una pregunta: su texto, si acertó antes y después, la opción recomendada y (en trivia) la explicación.
+func _fila_pregunta(p: Dictionary, bloque: String) -> Control:
+	var id := str(p["id"])
 	var hay_pre: bool = Evaluacion.pre_completo() and not Evaluacion.pre["respuestas"].is_empty()
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("17141f"), Color(datos.color, 0.5), 1, 7, 3))
-	var fila := HBoxContainer.new()
-	fila.add_theme_constant_override("separation", 10)
-	panel.add_child(fila)
-	var icono := TextureRect.new()
-	if datos.frames != null:
-		icono.texture = datos.frames.get_frame_texture(&"idle", 0)
-	icono.custom_minimum_size = Vector2(44, 44)
-	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	icono.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	fila.add_child(icono)
+	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("0b222b"), Color(EstiloUI.NARANJA, 0.5), 1, 7, 3))
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 2)
-	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	fila.add_child(col)
-
-	var cabecera := HBoxContainer.new()
-	cabecera.add_theme_constant_override("separation", 8)
-	cabecera.add_child(EstiloUI.etiqueta(datos.nombre, 13, datos.color.lightened(0.3)))
-	cabecera.add_child(EstiloUI.etiqueta(NOMBRE_ESTADO[estado], 11, COLOR_ESTADO[estado]))
-	col.add_child(cabecera)
-
-	# Trivia: marcas de antes y después
-	var trivia := HBoxContainer.new()
-	trivia.add_theme_constant_override("separation", 6)
-	trivia.add_child(EstiloUI.etiqueta("Trivia:", 10, GRIS_VIOLACEO))
+	panel.add_child(col)
+	col.add_child(_texto(str(p["texto"]), 11, EstiloUI.CREMA))
+	var marcas := HBoxContainer.new()
+	marcas.add_theme_constant_override("separation", 6)
 	if hay_pre:
-		trivia.add_child(EstiloUI.etiqueta("antes", 10, GRIS_VIOLACEO))
-		trivia.add_child(_marca(Evaluacion.puntaje_de("pre", "t_" + id)))
-	trivia.add_child(EstiloUI.etiqueta("después", 10, DORADO))
-	trivia.add_child(_marca(Evaluacion.puntaje_de("post", "t_" + id)))
-	col.add_child(trivia)
-
-	# Situación: la opción elegida antes y después
-	if hay_pre:
-		col.add_child(_linea_situacion("Antes", "pre", id, GRIS_VIOLACEO))
-	col.add_child(_linea_situacion("Después", "post", id, DORADO))
-
-	# La respuesta correcta de la trivia y su explicación
-	var pregunta := Evaluacion.pregunta("t_" + id)
-	if not pregunta.is_empty():
-		col.add_child(_texto("Respuesta correcta: %s" % pregunta["opciones"][int(pregunta["correcta"])], 10, EstiloUI.CREMA))
-		col.add_child(_texto(str(pregunta.get("explicacion", "")), 10, Color("d9cfe8")))
+		marcas.add_child(EstiloUI.etiqueta("antes", 10, GRIS_VIOLACEO))
+		marcas.add_child(_marca(Evaluacion.puntaje_de("pre", id)))
+	marcas.add_child(EstiloUI.etiqueta("después", 10, NARANJA))
+	marcas.add_child(_marca(Evaluacion.puntaje_de("post", id)))
+	col.add_child(marcas)
+	# En situaciones se muestra además la opción que eligió al final
+	var respuestas: Dictionary = Evaluacion._fase("post")["respuestas"]
+	if bloque == "situaciones" and respuestas.has(id):
+		col.add_child(_texto("Elegiste: %s" % str(p["opciones"][int(respuestas[id])]), 10, GRIS_VIOLACEO))
+	col.add_child(_texto("Lo recomendado: %s" % str(p["opciones"][int(p["correcta"])]), 10, EstiloUI.CREMA))
+	if str(p.get("explicacion", "")) != "":
+		col.add_child(_texto(str(p["explicacion"]), 10, Color("d6e2e7")))
 	return panel
 
 
-func _linea_situacion(rotulo: String, fase: String, id: String, color: Color) -> Control:
-	var fila := HBoxContainer.new()
-	fila.add_theme_constant_override("separation", 6)
-	var respuestas: Dictionary = Evaluacion._fase(fase)["respuestas"]
-	var pregunta := Evaluacion.pregunta("s_" + id)
-	var texto := "(sin respuesta)"
-	if respuestas.has("s_" + id) and not pregunta.is_empty():
-		texto = str(pregunta["opciones"][int(respuestas["s_" + id])])
-	var punto := Evaluacion.puntaje_de(fase, "s_" + id)
-	var etiqueta_rotulo := EstiloUI.etiqueta("%s:" % rotulo, 10, color)
-	etiqueta_rotulo.custom_minimum_size = Vector2(46, 0)
-	fila.add_child(etiqueta_rotulo)
-	fila.add_child(_marca(punto, true))
-	var e := _texto(texto, 10, EstiloUI.CREMA)
-	e.custom_minimum_size = Vector2(380, 0)
-	fila.add_child(e)
-	return fila
-
-
 ## Una marca simple: visto verde si acertó (o fue la opción más sana), cruz suave si no, guion si no hay dato.
-## `suave`: en las situaciones no se marca "mal": solo un puntito neutro (no hay respuestas buenas ni malas).
-func _marca(valor: int, suave: bool = false) -> Control:
+func _marca(valor: int) -> Control:
 	var m := Control.new()
 	m.custom_minimum_size = Vector2(16, 14)
 	m.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -325,8 +277,6 @@ func _marca(valor: int, suave: bool = false) -> Control:
 			m.draw_line(Vector2(3, 8), Vector2(12, 8), GRIS_VIOLACEO, 2.0)
 		elif valor == 1:
 			m.draw_polyline(PackedVector2Array([Vector2(2, 8), Vector2(6, 12), Vector2(14, 3)]), Color("8fd19e"), 2.5, true)
-		elif suave:
-			m.draw_circle(Vector2(8, 8), 3.0, GRIS_VIOLACEO)
 		else:
 			m.draw_line(Vector2(3, 3), Vector2(13, 13), Color("e0a070"), 2.5, true)
 			m.draw_line(Vector2(13, 3), Vector2(3, 13), Color("e0a070"), 2.5, true))
@@ -334,14 +284,12 @@ func _marca(valor: int, suave: bool = false) -> Control:
 
 
 func _resumen(c: Dictionary) -> Control:
-	var total := GameState.ids_emociones().size()
 	var minutos := float(c["duracion_segundos"]) / 60.0
 	var lineas: Array[String] = []
 	lineas.append("Tiempo jugado: %s" % ("%d minutos" % int(round(minutos)) if minutos >= 1.0 else ("menos de un minuto" if minutos > 0.0 else "no disponible")))
-	lineas.append("Emociones integradas: %d de %d" % [GameState.cantidad_integradas(), total])
-	lineas.append("Fragmentos de memoria: %d de %d" % [GameState.cantidad_fragmentos(), total])
-	lineas.append("Habilidades: %d de %d" % [GameState.habilidades.size(), total])
-	lineas.append("Tu final: %s" % NOMBRE_FINAL.get(GameState.calcular_final(), GameState.calcular_final()))
+	lineas.append("Decisiones seguras al primer intento: %d de %d" % [Estado.cantidad_seguras(), Estado.TOTAL_DECISIONES])
+	lineas.append("Lecciones aprendidas: %d" % Estado.cantidad_lecciones())
+	lineas.append("Tu final: %s" % str(Estado.datos_final().get("nombre", "")))
 	return _texto("\n".join(lineas), 12, EstiloUI.CREMA)
 
 
@@ -359,7 +307,7 @@ func _seccion_codigo() -> Control:
 	_campo_codigo.custom_minimum_size = Vector2(540, 28)
 	_campo_codigo.add_theme_font_size_override("font_size", 10)
 	v.add_child(_campo_codigo)
-	v.add_child(_texto("Copia este código y pégalo en la última pregunta del formulario. Solo se comparte si tú lo pegas. No contiene tu nombre ni datos personales.", 10, Color("d9cfe8")))
+	v.add_child(_texto("Copia este código y pégalo en la última pregunta del formulario. Solo se comparte si tú lo pegas. No contiene tu nombre ni datos personales.", 10, Color("d6e2e7")))
 	var fila := HFlowContainer.new()
 	fila.add_theme_constant_override("h_separation", 8)
 	_boton(fila, "Copiar código", _copiar_codigo)
@@ -433,12 +381,12 @@ func _jugar_de_nuevo() -> void:
 		return
 	_cerrando = true
 	ultimo_destino = "nueva"
-	GameState.nueva_partida()
+	Estado.nueva_partida()
 	var t := create_tween()
 	t.tween_property(_raiz, "modulate:a", 0.0, 0.4)
 	await t.finished
 	Evaluacion.cuestionario_activo = false
-	get_tree().change_scene_to_file(ESCENA_ONBOARDING)
+	get_tree().change_scene_to_file(ESCENA_TITULO)
 	queue_free()
 
 

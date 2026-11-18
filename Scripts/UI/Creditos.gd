@@ -28,7 +28,7 @@ static func mostrar(arbol: SceneTree) -> void:
 func _ready() -> void:
 	layer = 13
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	FondoEvaluacion.crear(self).hide()   # solo el fondo; sin el Guía
+	FondoEvaluacion.crear(self).hide()   # solo el fondo; sin Lucía
 	_raiz = Control.new()
 	_raiz.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_raiz.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -67,7 +67,7 @@ func _leer_texto() -> void:
 			if _columna.get_child_count() == 0 and l != "# Juego":
 				continue
 			_columna.add_child(_espacio(18))
-			var titulo := EstiloUI.etiqueta(l.substr(2), 16, EstiloUI.DORADO)
+			var titulo := EstiloUI.etiqueta(l.substr(2), 16, EstiloUI.NARANJA)
 			titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			_columna.add_child(titulo)
 		elif l == "":

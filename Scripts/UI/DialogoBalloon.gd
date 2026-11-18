@@ -1,11 +1,11 @@
 class_name DialogoBalloon
 extends CanvasLayer
-## Balloon propio de ECOS para Dialogue Manager.
+## Balloon propio de MINUTO CERO para Dialogue Manager.
 ## Caja morada con borde dorado, fuente Pixelify Sans, texto letra por letra,
 ## nombre de quien habla arriba de la caja y retrato opcional a la izquierda.
 ##
 ## Retrato (opcional): en el .dialogue, agrega una etiqueta a la línea:
-##   Guía: [#retrato=res://Assets/Personajes/guia.png] Hola.
+##   Lucía: Hola.
 ## También se puede registrar un retrato por personaje en Dialogo.retratos["Nombre"].
 ## Si no hay ni etiqueta ni retrato registrado, el espacio se oculta.
 
@@ -25,7 +25,7 @@ const ACCION_SIGUIENTE := &"INTERACTUAR"
 const ACCION_CANCELAR := &"PAUSA"
 const SEGUNDOS_PARA_SALIR := 0.7
 const TEXTO_CANCELAR := "Ahora no"
-const COLOR_CANCELAR := Color("8a7fa3")        # gris violáceo apagado
+const COLOR_CANCELAR := Color("9db0b8")        # gris violáceo apagado
 const COLOR_CANCELAR_FOCO := Color("c9bfe0")
 
 ## Recurso .dialogue y cue inicial (los rellena DialogueManager o Dialogo.mostrar).
@@ -339,9 +339,9 @@ func _crear_caja(fondo: Color, borde: Color, grosor: int, margen: int) -> StyleB
 
 
 func _aplicar_estilo() -> void:
-	caja.add_theme_stylebox_override("panel", _crear_caja(Color("1e1b2e", 0.95), Color("f4c77b"), 2, 8))
-	caja_nombre.add_theme_stylebox_override("panel", _crear_caja(Color("2d2845"), Color("f4c77b"), 2, 4))
-	etiqueta_nombre.add_theme_color_override("font_color", Color("f4c77b"))
+	caja.add_theme_stylebox_override("panel", _crear_caja(Color("1e1b2e", 0.95), Color("ff8a2a"), 2, 8))
+	caja_nombre.add_theme_stylebox_override("panel", _crear_caja(Color("14414f"), Color("ff8a2a"), 2, 4))
+	etiqueta_nombre.add_theme_color_override("font_color", Color("ff8a2a"))
 
 	var tema := Theme.new()
 	if ResourceLoader.exists(RUTA_FUENTE):
@@ -359,13 +359,13 @@ func _aplicar_estilo() -> void:
 	tema.set_color("default_color", "RichTextLabel", Color("fff4dc"))
 	tema.set_color("font_color", "Label", Color("fff4dc"))
 	tema.set_color("font_color", "Button", Color("d9cfe8"))
-	tema.set_color("font_hover_color", "Button", Color("f4c77b"))
-	tema.set_color("font_focus_color", "Button", Color("f4c77b"))
+	tema.set_color("font_hover_color", "Button", Color("ff8a2a"))
+	tema.set_color("font_focus_color", "Button", Color("ff8a2a"))
 
-	tema.set_stylebox("normal", "Button", _crear_caja(Color("2d2845"), Color("2d2845"), 1, 3))
-	tema.set_stylebox("hover", "Button", _crear_caja(Color("3a3358"), Color("f4c77b"), 1, 3))
-	tema.set_stylebox("pressed", "Button", _crear_caja(Color("4a4170"), Color("f4c77b"), 1, 3))
-	tema.set_stylebox("focus", "Button", _crear_caja(Color("3a3358"), Color("f4c77b"), 1, 3))
+	tema.set_stylebox("normal", "Button", _crear_caja(Color("14414f"), Color("14414f"), 1, 3))
+	tema.set_stylebox("hover", "Button", _crear_caja(Color("1d5566"), Color("ff8a2a"), 1, 3))
+	tema.set_stylebox("pressed", "Button", _crear_caja(Color("2a6c80"), Color("ff8a2a"), 1, 3))
+	tema.set_stylebox("focus", "Button", _crear_caja(Color("1d5566"), Color("ff8a2a"), 1, 3))
 	tema.set_stylebox("disabled", "Button", _crear_caja(Color("24203a"), Color("24203a"), 1, 3))
 	raiz.theme = tema
 

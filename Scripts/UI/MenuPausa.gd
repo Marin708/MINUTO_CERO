@@ -1,7 +1,7 @@
 class_name MenuPausa
 extends CanvasLayer
 ## Menú de pausa (capa 9). Con el juego en pausa muestra la imagen del juego desenfocada y oscurecida,
-## y un panel con: Continuar, Diario, Controles, Opciones, Guardar partida y Volver al título (con
+## y un panel con: Continuar, Controles, Opciones, Guardar partida y Volver al título (con
 ## confirmación). Se maneja con teclado (flechas o W y S, ENTER) y con ratón; el foco es dorado.
 ##
 ## No pausa el árbol ni decide cuándo se abre: lo hace el autoload Menus, que sigue las reglas de ESC
@@ -9,7 +9,6 @@ extends CanvasLayer
 ## transición de época). El menú trabaja con el juego en pausa (process_mode = siempre).
 
 signal reanudar_pedido
-signal diario_pedido
 signal volver_al_titulo_pedido
 
 enum Pagina { PRINCIPAL, CONTROLES, OPCIONES, CONFIRMAR }
@@ -20,12 +19,9 @@ const SEGUNDOS_ENTRADA := 0.15
 ## Teclas del juego para la pantalla de Controles: [tecla, qué hace].
 const CONTROLES := [
 	["W A S D o flechas", "Moverse"],
-	["E", "Hablar, recoger y usar portales y grietas para viajar entre el Pasado y el Presente"],
-	["ESPACIO", "Usar la habilidad elegida (Reparar: mantenlo pulsado; Visión: enciende y apaga)"],
-	["1 a 7 y rueda del ratón", "Elegir habilidad (también R y F)"],
-	["G", "Brújula: una flecha hacia donde te sugiere la Guía (tras pedirle una pista)"],
+	["E", "Hablar, revisar y usar objetos (en el sismo, mantenla pulsada para agacharte, cubrirte y sujetarte)"],
 	["F8", "Reportar un problema (si juegas desde el editor de Godot, la tecla Y)"],
-	["TAB", "Diario"],
+	["TAB", "Libreta"],
 	["ESC", "Pausa"],
 ]
 
@@ -151,12 +147,12 @@ func _construir() -> void:
 	_raiz.add_child(centro)
 	_panel = PanelContainer.new()
 	_panel.custom_minimum_size = Vector2(300, 0)
-	_panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color(EstiloUI.MORADO_OSCURO, 0.96), EstiloUI.DORADO, 2, 14, 5))
+	_panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color(EstiloUI.PETROLEO_OSCURO, 0.96), EstiloUI.NARANJA, 2, 14, 5))
 	centro.add_child(_panel)
 	var marco := VBoxContainer.new()
 	marco.add_theme_constant_override("separation", 8)
 	_panel.add_child(marco)
-	var titulo := EstiloUI.etiqueta("Pausa", 20, EstiloUI.DORADO)
+	var titulo := EstiloUI.etiqueta("Pausa", 20, EstiloUI.NARANJA)
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	marco.add_child(titulo)
 
@@ -194,7 +190,6 @@ func _construir_principal() -> VBoxContainer:
 	v.add_theme_constant_override("separation", 5)
 	var continuar := _boton("Continuar", func() -> void: reanudar_pedido.emit(), "")
 	v.add_child(continuar)
-	v.add_child(_boton("Diario", func() -> void: diario_pedido.emit(), ""))
 	v.add_child(_boton("Controles", func() -> void: _ir_a(Pagina.CONTROLES)))
 	v.add_child(_boton("Opciones", func() -> void: _ir_a(Pagina.OPCIONES)))
 	_boton_guardar = _boton("Guardar partida", _on_guardar)
@@ -212,7 +207,7 @@ func _construir_controles() -> VBoxContainer:
 	rejilla.add_theme_constant_override("h_separation", 14)
 	rejilla.add_theme_constant_override("v_separation", 4)
 	for fila in CONTROLES:
-		rejilla.add_child(EstiloUI.etiqueta(fila[0], 11, EstiloUI.DORADO))
+		rejilla.add_child(EstiloUI.etiqueta(fila[0], 11, EstiloUI.NARANJA))
 		var que := EstiloUI.etiqueta(fila[1], 11, EstiloUI.CREMA)
 		que.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		que.custom_minimum_size = Vector2(170, 0)
@@ -230,7 +225,7 @@ func _construir_controles() -> VBoxContainer:
 		# En la web no hay carpeta que abrir: la partida vive en el almacenamiento de este navegador
 		carpeta.hide()
 		_etiqueta_carpeta.text = "En la web, tu partida se guarda en este navegador."
-		_etiqueta_carpeta.add_theme_color_override("font_color", EstiloUI.DORADO)
+		_etiqueta_carpeta.add_theme_color_override("font_color", EstiloUI.NARANJA)
 	v.add_child(carpeta)
 	v.add_child(_etiqueta_carpeta)
 	var volver := _boton("Volver", func() -> void: _ir_a(Pagina.PRINCIPAL), "ui_cancelar")

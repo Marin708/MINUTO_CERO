@@ -3,7 +3,7 @@ extends CanvasLayer
 ## Valoración del jugador (capa 12): su opinión sobre el juego. Se abre desde la pantalla de Resultados con
 ## "Dar mi opinión sobre el juego". Es OPCIONAL: se puede cerrar con "Ahora no" o con ESC sin perder nada (en
 ## ese caso no se guarda nada). Mismo estilo que el Cuestionario (fondo oscurecido, caja morada con borde
-## dorado, el Guía escribiendo la introducción).
+## dorado, Lucía escribiendo la introducción).
 ##
 ## Bloques: (opcional, si Resources/config_valoracion.json tiene "usar_sus": true) las 10 afirmaciones de la escala
 ## de usabilidad SUS; 1) seis afirmaciones de 1 a 5; 2) nota general (1 a 5 estrellas) y frecuencia con la que se
@@ -17,7 +17,7 @@ const RUTA_CONFIG := "res://Resources/config_valoracion.json"
 const MAXIMO_TEXTO := 300
 
 const INTRO := ["Antes de despedirnos, ¿me cuentas cómo fue tu experiencia?", "Es opcional y puedes salir cuando quieras, sin perder nada."]
-const GRACIAS := "Gracias por contarnos tu experiencia. Tus palabras ayudan a que ECOS aprenda a escuchar mejor lo que sentimos."
+const GRACIAS := "Gracias por contarnos tu experiencia. Tus palabras ayudan a mejorar MINUTO CERO."
 const GRACIAS_SIN_GUARDAR := "Como elegiste jugar sin guardar, no se escribió nada en ningún archivo."
 
 ## Las 10 afirmaciones de la escala SUS, adaptadas al juego. Las impares son positivas y las pares, negativas.
@@ -39,7 +39,7 @@ const USABILIDAD := [
 	["u3", "El juego se veía y sonaba bien."],
 	["u4", "Los textos y las pistas me ayudaron cuando no sabía qué hacer."],
 	["u5", "Me dieron ganas de seguir jugando."],
-	["u6", "El juego me hizo pensar en cómo manejo mis emociones."],
+	["u6", "El juego me hizo pensar en cómo prepararme para un sismo."],
 ]
 const FRECUENCIAS := ["Nunca", "A veces", "Seguido"]
 const COMENTARIOS := [
@@ -106,7 +106,7 @@ func _ready() -> void:
 	_caja = PanelContainer.new()
 	_caja.position = Vector2(168, 24)
 	_caja.size = Vector2(452, 312)
-	_caja.add_theme_stylebox_override("panel", EstiloUI.caja(Color("1e1b2e", 0.96), EstiloUI.DORADO, 2, 14, 5))
+	_caja.add_theme_stylebox_override("panel", EstiloUI.caja(Color("1e1b2e", 0.96), EstiloUI.NARANJA, 2, 14, 5))
 	_raiz.add_child(_caja)
 	_contenido = VBoxContainer.new()
 	_contenido.add_theme_constant_override("separation", 8)
@@ -119,7 +119,7 @@ func _ready() -> void:
 
 # ESC cancela (no se pierde nada: simplemente no se envía)
 func _input(evento: InputEvent) -> void:
-	if evento.is_action_pressed("DIARIO") or evento.is_action_pressed("HABILIDAD"):
+	if evento.is_action_pressed("DIARIO"):
 		get_viewport().set_input_as_handled()
 	elif evento.is_action_pressed("PAUSA") or evento.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
@@ -161,10 +161,10 @@ func _limpiar() -> void:
 	_textos.clear()
 
 
-## El Guía escribe unas líneas de introducción.
+## Lucía escribe unas líneas de introducción.
 func _intro() -> void:
 	_limpiar()
-	_contenido.add_child(EstiloUI.etiqueta("Guía", 12, EstiloUI.DORADO))
+	_contenido.add_child(EstiloUI.etiqueta("Lucía", 12, EstiloUI.NARANJA))
 	var texto := _etiqueta_larga("\n\n".join(INTRO), 15)
 	texto.custom_minimum_size = Vector2(410, 120)
 	texto.visible_characters = 0
@@ -273,7 +273,7 @@ func _pagina_frecuencia() -> void:
 
 ## Tres comentarios libres (todos opcionales, hasta 300 caracteres).
 func _pagina_textos() -> void:
-	_contenido.add_child(EstiloUI.etiqueta("En tus palabras (todo es opcional)", 13, EstiloUI.DORADO))
+	_contenido.add_child(EstiloUI.etiqueta("En tus palabras (todo es opcional)", 13, EstiloUI.NARANJA))
 	for c in COMENTARIOS:
 		_contenido.add_child(EstiloUI.etiqueta(c[1], 11, EstiloUI.CREMA))
 		var campo := TextEdit.new()
@@ -303,7 +303,7 @@ func _pagina_textos() -> void:
 
 func _gracias() -> void:
 	_limpiar()
-	_contenido.add_child(EstiloUI.etiqueta("Guía", 12, EstiloUI.DORADO))
+	_contenido.add_child(EstiloUI.etiqueta("Lucía", 12, EstiloUI.NARANJA))
 	var texto := GRACIAS + ("\n\n" + GRACIAS_SIN_GUARDAR if not Evaluacion.consentimiento_guardar else "")
 	var e := _etiqueta_larga(texto, 15)
 	e.custom_minimum_size = Vector2(410, 130)
@@ -406,4 +406,4 @@ class BotonEstrellas extends Button:
 				var radio := 5.0 if k % 2 == 0 else 2.2
 				var a := -PI / 2.0 + k * PI / 5.0
 				puntos.append(c + Vector2(cos(a), sin(a)) * radio)
-			draw_colored_polygon(puntos, Color("f4c77b"))
+			draw_colored_polygon(puntos, Color("ff8a2a"))

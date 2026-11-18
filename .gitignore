@@ -1,4 +1,4 @@
-# Godot 4+ specific ignores
+﻿# Godot 4+ specific ignores
 .godot/
 /android/
 
@@ -14,12 +14,11 @@ Thumbs.db
 __pycache__/
 *.pyc
 
-# Audios originales descargados (se conservan fuera de Assets y no se suben al repositorio)
+# Audios originales descargados (se conservan fuera de Assets y no se suben)
 audio_originales/
 
-# Datos reales de participantes (no subir al repositorio público)
+# Datos reales de participantes (no subir)
 docs/analisis/datos_reales/
 
 # Exportación web
 build/
-docs/analisis/resultados/ECOS_resultados_desde_formulario.csv

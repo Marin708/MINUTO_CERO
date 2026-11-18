@@ -32,10 +32,10 @@ func _ready() -> void:
 	caja.add_theme_constant_override("separation", 14)
 	caja.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(caja)
-	caja.add_child(_etiqueta("ECOS", 40, Color("f4c77b")))
+	caja.add_child(_etiqueta("MINUTO CERO", 40, Color("ff8a2a")))
 	var clic := _etiqueta("Haz clic para empezar", 16, Color("fff4dc"))
 	caja.add_child(clic)
-	caja.add_child(_etiqueta("ECOS se juega con teclado y con sonido: sube el volumen.", 10, Color("b8aed0")))
+	caja.add_child(_etiqueta("MINUTO CERO se juega con teclado y con sonido: sube el volumen.", 10, Color("9db0b8")))
 	# La invitación a hacer clic late suavemente
 	var latido := clic.create_tween().set_loops()
 	latido.tween_property(clic, "modulate:a", 0.45, 0.9).set_trans(Tween.TRANS_SINE)

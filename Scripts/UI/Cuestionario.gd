@@ -1,9 +1,9 @@
 class_name Cuestionario
 extends CanvasLayer
-## Pantalla de preguntas de la evaluación (capa 12). Una pregunta a la vez, con progreso ("Pregunta 5 de 16") y
+## Pantalla de preguntas de la evaluación (capa 12). Una pregunta a la vez, con progreso ("Pregunta 5 de 14") y
 ## una barra discreta. Es una pantalla de EVALUACIÓN: no se puede cancelar (ESC no hace nada y no abre la
-## pausa), ni abrir el diario, ni usar habilidades; no hay "Ahora no", no se puede saltar ni volver atrás. Nunca
-## dice si una respuesta es correcta. Antes de cada bloque el Guía dice unas líneas (trivia, situaciones,
+## pausa), ni abrir la libreta; no hay "Ahora no", no se puede saltar ni volver atrás. Nunca
+## dice si una respuesta es correcta. Antes de cada bloque Lucía dice unas líneas (trivia, situaciones,
 ## escala). Al terminar llama a Evaluacion.calcular y emite fase_terminada(fase).
 ##
 ## Uso:   await Cuestionario.mostrar(get_tree(), "pre")   (o "post")
@@ -13,13 +13,13 @@ signal fase_terminada(fase: String)
 const ESCENA := "res://Scenes/UI/Cuestionario.tscn"
 const SEGUNDOS_FUNDIDO := 0.5
 
-## Lo que dice el Guía antes de cada bloque (cada elemento es una línea).
+## Lo que dice Lucía antes de cada bloque (cada elemento es una línea).
 const INTRO := {
-	"trivia": ["Primero, cuánto sabes de lo que sientes.", "Aquí está bien equivocarse: no es un examen, solo queremos saber qué sabes hoy."],
-	"situaciones": ["Ahora, cómo reaccionas normalmente.", "En esta parte no hay respuestas buenas ni malas. Elige la que más se parezca a ti."],
-	"escala": ["Y por último, cómo te sientes con esto.", "Piensa en una escala del 1 al 5."],
+	"trivia": ["Primero, cuánto sabes sobre qué hacer en un sismo.", "Aquí está bien equivocarse: no es un examen, solo queremos saber qué sabes hoy."],
+	"situaciones": ["Ahora, qué harías en distintas situaciones.", "Elige lo que harías en ese momento."],
+	"escala": ["Y por último, cómo te sientes con la preparación.", "Piensa en una escala del 1 al 5."],
 }
-const INTRO_POST := "Hemos llegado al final de este viaje. Te haré las mismas preguntas del principio. "
+const INTRO_POST := "Hemos llegado al final de este recorrido. Te haré las mismas preguntas del principio. "
 
 var fase := ""
 
@@ -65,22 +65,22 @@ func _ready() -> void:
 	_ejecutar()
 
 
-# Se tragan ESC (pausa), TAB (diario) y la tecla de habilidad mientras dura la evaluación
+# Se tragan ESC (pausa) y TAB (libreta) mientras dura la evaluación
 func _input(evento: InputEvent) -> void:
-	for accion in ["PAUSA", "DIARIO", "HABILIDAD", "ui_cancel"]:
+	for accion in ["PAUSA", "DIARIO", "ui_cancel"]:
 		if evento.is_action_pressed(accion):
 			get_viewport().set_input_as_handled()
 			return
 
 
 func _construir() -> void:
-	# Panel de la intro de cada bloque: el Guía habla
+	# Panel de la intro de cada bloque: Lucía habla
 	_panel_intro = _caja(Rect2(168, 70, 452, 220))
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 14)
 	v.alignment = BoxContainer.ALIGNMENT_CENTER
 	_panel_intro.get_child(0).add_child(v)
-	v.add_child(EstiloUI.etiqueta("Guía", 12, EstiloUI.DORADO))
+	v.add_child(EstiloUI.etiqueta("Lucía", 12, EstiloUI.NARANJA))
 	_texto_intro = EstiloUI.etiqueta("", 16, EstiloUI.CREMA)
 	_texto_intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_texto_intro.custom_minimum_size = Vector2(410, 100)
@@ -103,10 +103,10 @@ func _construir() -> void:
 	_progreso = EstiloUI.etiqueta("", 11, EstiloUI.GRIS)
 	q.add_child(_progreso)
 	_barra_fondo = ColorRect.new()
-	_barra_fondo.color = Color("3a3358")
+	_barra_fondo.color = Color("1d5566")
 	_barra_fondo.custom_minimum_size = Vector2(0, 3)
 	_barra = ColorRect.new()
-	_barra.color = EstiloUI.DORADO
+	_barra.color = EstiloUI.NARANJA
 	_barra.set_anchors_preset(Control.PRESET_LEFT_WIDE)
 	_barra_fondo.add_child(_barra)
 	q.add_child(_barra_fondo)
@@ -126,7 +126,7 @@ func _caja(rect: Rect2) -> Control:
 	var panel := PanelContainer.new()
 	panel.position = rect.position
 	panel.size = rect.size
-	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("1e1b2e", 0.96), EstiloUI.DORADO, 2, 14, 5))
+	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("1e1b2e", 0.96), EstiloUI.NARANJA, 2, 14, 5))
 	_raiz.add_child(panel)
 	var margen := MarginContainer.new()
 	panel.add_child(margen)
@@ -158,7 +158,7 @@ func _ejecutar() -> void:
 	queue_free()
 
 
-## El Guía dice unas líneas antes de cada bloque.
+## Lucía dice unas líneas antes de cada bloque.
 func _intro(bloque: String) -> void:
 	_panel_pregunta.hide()
 	var lineas: Array = INTRO[bloque]
