@@ -1,7 +1,7 @@
 class_name Resultados
 extends CanvasLayer
 ## Pantalla de resultados, al terminar la fase "post" (capa 12), presentada como el carné de brigadista actualizado y el
-## informe de la brigada, sobre papel. Muestra "Tu viaje en números":
+## informe de la brigada, sobre papel. Muestra "Tu avance en números":
 ##   - tres bloques con barras animadas ANTES (gris azulado) y DESPUÉS (naranja): Conocimiento (trivia, 0 a 7),
 ##     Cómo reaccionas (situaciones, 0 a 5) y Tu confianza para prepararte (escala, 2 a 10), con un texto
 ##     cálido según el cambio (nunca un reproche);
@@ -119,7 +119,7 @@ func _construir() -> void:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 5)
 	panel.add_child(v)
-	var titulo := EstiloUI.titulo("Tu viaje en números", 14, EstiloUI.TINTA)
+	var titulo := EstiloUI.titulo("Tu avance en números", 14, EstiloUI.TINTA)
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(titulo)
 

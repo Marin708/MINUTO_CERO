@@ -169,7 +169,7 @@ func _cuestionarios_y_resultados() -> void:
 	var r := _buscar(Resultados) as Resultados
 	await get_tree().process_frame
 	var t := _textos(r)
-	_ok(t.contains("Tu viaje en números") and t.contains("Conocimiento"), "muestra los bloques con sus barras")
+	_ok(t.contains("Tu avance en números") and t.contains("Conocimiento"), "muestra los bloques con sus barras")
 	_ok(t.contains("Tus 15 decisiones") and t.contains("Seguras al primer intento: 12 de 15"), "resume las 15 decisiones y las seguras al primer intento")
 	_ok(t.contains("D1") and t.contains("D15"), "lista de D1 a D15")
 	_ok(t.contains("Lo recomendado") and t.contains("Para reforzar") or t.contains("Segura al primer intento"), "muestra lo recomendado y el estado de cada decisión")

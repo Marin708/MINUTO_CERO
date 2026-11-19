@@ -13,12 +13,12 @@ Textos que escribió o adaptó el equipo de desarrollo y **no están literalment
 | 7 | `Scripts/UI/Cuestionario.gd`, `INTRO` y `INTRO_POST` | Frases de Lucía antes de cada bloque | Adaptadas de ECOS |
 | 8 | `Scripts/UI/Consentimiento.gd` | Texto de consentimiento | Adaptado de ECOS |
 | 9 | `Scripts/UI/Valoracion.gd` | Texto de gracias y afirmación u6 | Adaptados de ECOS |
-| 10 | `Scripts/UI/Resultados.gd` | Mensajes de «Tu viaje en números» y nota «Esto no es un examen oficial…» | Adaptados de ECOS |
+| 10 | `Scripts/UI/Resultados.gd` | Mensajes de «Tu avance en números» y nota «Esto no es un examen oficial…» | Adaptados de ECOS |
 | 11 | `Scripts/UI/MenuPausa.gd` | Texto de controles | Nuevo |
 | 12 | `Resources/creditos.txt` | Créditos y nota final | Nuevo (faltan nombres: [COMPLETAR]) |
 | 13 | `Scripts/UI/PantallaTitulo.gd` | Subtítulo «Prepararte hoy puede cambiar el minuto cero.» | Frase central del maestro |
 | 14 | `docs/DISENO_MAESTRO.md`, D12 | «[REVISAR primeros auxilios]» | Ya marcado en el maestro |
-| 15 | `Scripts/UI/Introduccion.gd` | Los 4 textos de la introducción de Lucía | Nuevos |
+| 15 | `Scripts/UI/Introduccion.gd` | Boletín de la brigada (5 mensajes de Lucía), texto de la inscripción y del cierre | Nuevos (voz de brigada) |
 | 16 | `Scripts/Mundo/Nivel1.gd` | Narración inicial, diálogos de Mamá y de Lucía, pistas de «¿Qué hago ahora?» | Nuevos |
 | 17 | `Scripts/Mundo/Nivel2.gd` | Narración del sismo, mensaje «¡Está temblando!…», textos de después del sismo | Nuevos |
 | 18 | `Scripts/Mundo/Nivel3.gd` | Diálogos de Doña Rosa, Tomás, Mamá y Lucía; **mensaje de radio oficial** (`TEXTO_RADIO`) | Nuevos; el radio debe ser fiel a lo que dicen las autoridades |
@@ -33,3 +33,12 @@ Textos que escribió o adaptó el equipo de desarrollo y **no están literalment
 | 28 | `Scripts/UI/Resultados.gd` | «Para reforzar», «Segura al primer intento» y los mensajes de la lista de 15 decisiones | Nuevos |
 | 29 | `Resources/creditos.txt` | Créditos (plan gratuito de ElevenLabs, uso no comercial, etc.) | Según lo pedido; completar [COMPLETAR] |
 | 22 | `Scripts/Mundo/Nivel1.gd` | **Lucía** aparece como personaje en el pasillo del nivel 1 (no como cuadro de radio) | Cambio de diseño: el maestro dice «cuadro de radio o teléfono» |
+| 30 | `Scripts/UI/TarjetaNivel.gd` | Rótulos «NIVEL 1 · ANTES», «NIVEL 2 · DURANTE», «NIVEL 3 · DESPUÉS» y frases «Deja la casa lista.», «Actúa cuando tiembla.», «Revisa y ayuda con seguridad.» | Los rótulos vienen del maestro; las frases son nuevas |
+| 31 | `Scripts/UI/Introduccion.gd` | «BOLETÍN DE LA BRIGADA», «INSCRIPCIÓN», «BIENVENIDO/A A LA BRIGADA» y el carné («Brigadista voluntario/a», «pendiente», «BRIGADISTA») | Nuevos |
+| 32 | `Scripts/UI/Consentimiento.gd` | Título «Acuerdo de la brigada», frase «No es un test psicológico.» y «Sin nombre: tu respuesta es anónima.» | Nuevos; el resto del texto sigue igual |
+| 33 | `Scripts/UI/Cuestionario.gd` | Sellos «EVALUACIÓN DE INGRESO», «EVALUACIÓN DE SALIDA» y «RECIBIDA»; «LUCÍA · CANAL 3 · BRIGADA» | Nuevos |
+| 34 | `Scripts/UI/Resultados.gd` | «Tu avance en números», «Informe de la brigada» y su texto, sello «BRIGADISTA» | Nuevos |
+| 35 | `Scripts/UI/PantallaTitulo.gd` | Subtítulo «Aprende a actuar ante un sismo» (la frase central pasa al pie) | Subtítulo pedido por el equipo |
+| 36 | `Scripts/UI/IndicadorTecla.gd`, `Prop.gd`, `Npc.gd`, `ObjetoSuelo.gd` | Verbos junto a la tecla E: «Revisar», «Hablar», «Abrir», «Tomar», «Mantén» | Nuevos |
+| 37 | `Scripts/UI/MenuPausa.gd` | Descripciones de los controles («Moverte», «Hablar, revisar y recoger…») | Reescritas con voz de brigada |
+| 38 | `Assets/Audio/Efectos/despertador.wav` | Sonido de despertador **sintetizado por nosotros** (provisional) | Reemplazar por un sonido de ElevenLabs si se prefiere |

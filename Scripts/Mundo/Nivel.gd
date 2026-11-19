@@ -294,6 +294,6 @@ func esperar(segundos: float) -> void:
 func terminar_nivel() -> void:
 	var tarjeta := Estado.desbloquear_tarjeta_de_nivel(numero)
 	if tarjeta != "":
-		Notificacion.mostrar("Memoria de 1999", "Nueva tarjeta en tu libreta (TAB).")
+		Notificacion.mostrar("Memoria de 1999", "Nueva tarjeta en tu libreta (Tab).")
 	await esperar(0.8)
 	Flujo.terminar_nivel(numero)

@@ -161,8 +161,8 @@ func _process(delta: float) -> void:
 			return
 	_tiempo_salida = 0.0
 	if _pista != null:
-		_pista.text = "Mantén ESC para salir"
-		_pista.modulate.a = 0.45
+		_pista.text = "Mantén Esc para salir"
+		_pista.modulate.a = 0.6
 
 
 ## Cierra la conversación sin elegir nada. NO es una decisión del juego: no se ejecuta ninguna
@@ -326,7 +326,7 @@ func _crear_cancelacion() -> void:
 	contenedor.add_child(_boton_cancelar)
 
 	_pista = Label.new()
-	_pista.text = "Mantén ESC para salir"
+	_pista.text = "Mantén Esc para salir"
 	_pista.size_flags_horizontal = Control.SIZE_SHRINK_END
 	_pista.add_theme_font_size_override("font_size", 10)
 	_pista.add_theme_color_override("font_color", COLOR_CANCELAR)

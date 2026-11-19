@@ -21,7 +21,7 @@ const INTRO := {
 	"situaciones": ["Ahora, qué harías en distintas situaciones.", "Elige lo que harías en ese momento."],
 	"escala": ["Y por último, cómo te sientes con la preparación.", "Piensa en una escala del 1 al 5."],
 }
-const INTRO_POST := "Hemos llegado al final de este recorrido. Te haré las mismas preguntas del principio. "
+const INTRO_POST := "Llegamos al final. Te haré las mismas preguntas del principio. "
 
 var fase := ""
 

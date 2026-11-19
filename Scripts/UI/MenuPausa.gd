@@ -18,11 +18,11 @@ const SEGUNDOS_ENTRADA := 0.15
 
 ## Teclas del juego para la pantalla de Controles: [tecla, qué hace].
 const CONTROLES := [
-	["W A S D o flechas", "Moverse"],
-	["E", "Hablar, revisar y usar objetos (en el sismo, mantenla pulsada para agacharte, cubrirte y sujetarte)"],
-	["F8", "Reportar un problema (si juegas desde el editor de Godot, la tecla Y)"],
-	["TAB", "Libreta"],
-	["ESC", "Pausa"],
+	["W A S D o flechas", "Moverte"],
+	["E", "Hablar, revisar y recoger. En el sismo, mantenla pulsada: agáchate, cúbrete y sujétate."],
+	["F8", "Reportar un problema (desde el editor de Godot, la tecla Y)"],
+	["Tab", "Libreta"],
+	["Esc", "Pausa"],
 ]
 
 var abierta := false

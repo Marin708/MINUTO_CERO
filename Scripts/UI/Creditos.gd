@@ -40,7 +40,7 @@ func _ready() -> void:
 	_columna.custom_minimum_size = Vector2(ANCHO, 0)
 	_raiz.add_child(_columna)
 	_leer_texto()
-	var pie := EstiloUI.etiqueta("ENTER o ESC para salir", 9, EstiloUI.GRIS)
+	var pie := EstiloUI.etiqueta("Enter o Esc para salir", 11, EstiloUI.GRIS)
 	pie.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	pie.offset_top = -16.0
 	pie.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -67,7 +67,7 @@ func _leer_texto() -> void:
 			if _columna.get_child_count() == 0 and l != "# Juego":
 				continue
 			_columna.add_child(_espacio(18))
-			var titulo := EstiloUI.etiqueta(l.substr(2), 16, EstiloUI.NARANJA)
+			var titulo := EstiloUI.titulo(l.substr(2), 12, EstiloUI.NARANJA)
 			titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			_columna.add_child(titulo)
 		elif l == "":
@@ -83,7 +83,7 @@ func _leer_texto() -> void:
 		else:
 			if _columna.get_child_count() == 0:
 				continue
-			var e := EstiloUI.etiqueta(l, 12, EstiloUI.CREMA if not l.begins_with("[COMPLETAR") else Color("e0a070"))
+			var e := EstiloUI.etiqueta(l, 12, EstiloUI.CREMA if not l.begins_with("[COMPLETAR") else EstiloUI.AMBAR)
 			e.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			e.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			e.custom_minimum_size = Vector2(ANCHO, 0)
