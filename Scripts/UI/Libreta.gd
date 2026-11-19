@@ -22,6 +22,8 @@ var _raiz: Control
 var _contenido: VBoxContainer
 var _scroll: ScrollContainer
 var _botones: Array[Button] = []
+var _modal: ModalBase
+var _lomo_cuaderno: ColorRect
 
 
 func _ready() -> void:
@@ -36,27 +38,16 @@ func _ready() -> void:
 	velo.color = Color(0.03, 0.12, 0.16, 0.7)
 	velo.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_raiz.add_child(velo)
-	# El cuaderno: hoja crema con el lomo de espiral a la izquierda y los separadores de colores arriba
-	var panel := PanelContainer.new()
-	panel.position = Vector2(50, 20)
-	panel.size = Vector2(540, 320)
-	panel.add_theme_stylebox_override("panel", EstiloUI.caja(EstiloUI.CREMA, EstiloUI.TINTA, 2, 0))
-	_raiz.add_child(panel)
-	var cuerpo := HBoxContainer.new()
-	cuerpo.add_theme_constant_override("separation", 0)
-	panel.add_child(cuerpo)
-	cuerpo.add_child(_lomo())
-	var margen := MarginContainer.new()
-	margen.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	for lado in ["left", "right", "top", "bottom"]:
-		margen.add_theme_constant_override("margin_" + lado, 8)
-	cuerpo.add_child(margen)
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 6)
-	margen.add_child(v)
+	# El cuaderno sobre ModalBase: separadores de colores fijos arriba, la pestaña con scroll y el pie con la ayuda
+	_modal = ModalBase.crear()
+	_modal.ancho_deseado = 540.0
+	var hoja := EstiloUI.caja(EstiloUI.CREMA, EstiloUI.TINTA, 2, 8)
+	hoja.content_margin_left = 32   # el lomo de espiral va a la izquierda
+	_modal.panel.add_theme_stylebox_override("panel", hoja)
+	_modal.color_separadores(Color(EstiloUI.TINTA_SUAVE, 0.6))
 	var fila := HBoxContainer.new()
 	fila.add_theme_constant_override("separation", 4)
-	v.add_child(fila)
+	_modal.cabecera.add_child(fila)
 	for i in PESTANAS.size():
 		var b := Button.new()
 		b.text = PESTANAS[i]
@@ -66,15 +57,28 @@ func _ready() -> void:
 		b.pressed.connect(_elegir.bind(i))
 		fila.add_child(b)
 		_botones.append(b)
-	_scroll = ScrollContainer.new()
-	_scroll.custom_minimum_size = Vector2(488, 246)
-	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	v.add_child(_scroll)
-	_contenido = VBoxContainer.new()
-	_contenido.add_theme_constant_override("separation", 8)
-	_contenido.custom_minimum_size = Vector2(470, 0)
-	_scroll.add_child(_contenido)
-	v.add_child(EstiloUI.etiqueta("Tab o Esc para cerrar · flechas izquierda y derecha cambian de pestaña", 11, EstiloUI.TINTA_SUAVE))
+	_scroll = _modal.scroll
+	_contenido = _modal.cuerpo
+	_modal.pie.add_child(EstiloUI.etiqueta("Tab o Esc para cerrar · flechas izquierda y derecha cambian de pestaña", 11, EstiloUI.TINTA_SUAVE))
+	_raiz.add_child(_modal)
+	_lomo_cuaderno = _lomo()
+	_raiz.add_child(_lomo_cuaderno)
+	_modal.reajustado.connect(_colocar_lomo)
+
+
+## El lomo se pega al borde izquierdo del cuaderno y mide lo mismo que él.
+func _colocar_lomo() -> void:
+	_lomo_cuaderno.position = _modal.panel.position + Vector2(2, 2)
+	_lomo_cuaderno.size = Vector2(22, _modal.panel.size.y - 4)
+	for h in _lomo_cuaderno.get_children():
+		h.queue_free()
+	for i in int((_lomo_cuaderno.size.y - 20) / 30):
+		var agujero := ColorRect.new()
+		agujero.color = EstiloUI.CREMA
+		agujero.size = Vector2(10, 5)
+		agujero.position = Vector2(6, 14 + i * 30)
+		agujero.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_lomo_cuaderno.add_child(agujero)
 
 
 ## El lomo del cuaderno: una tira azul petróleo con los agujeros de la espiral.
@@ -82,13 +86,6 @@ func _lomo() -> Control:
 	var lomo := ColorRect.new()
 	lomo.color = EstiloUI.PETROLEO
 	lomo.custom_minimum_size = Vector2(22, 0)
-	for i in 10:
-		var agujero := ColorRect.new()
-		agujero.color = EstiloUI.CREMA
-		agujero.size = Vector2(10, 5)
-		agujero.position = Vector2(6, 14 + i * 30)
-		agujero.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		lomo.add_child(agujero)
 	return lomo
 
 

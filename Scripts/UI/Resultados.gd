@@ -32,6 +32,7 @@ static var ultimo_destino := ""
 
 var _raiz: Control
 var _scroll: ScrollContainer
+var _modal: ModalBase
 var _estado: Label
 var _boton_exportar: Button
 var _boton_carpeta: Button
@@ -89,50 +90,34 @@ func _ready() -> void:
 	_boton_exportar.grab_focus.call_deferred()
 
 
-# ESC y TAB no hacen nada; arriba y abajo desplazan los resultados
+# ESC y TAB no hacen nada (el scroll lo maneja ModalBase: ruedita, flechas, AvPág y RePág)
 func _input(evento: InputEvent) -> void:
 	for accion in ["PAUSA", "DIARIO", "ui_cancel"]:
 		if evento.is_action_pressed(accion):
 			get_viewport().set_input_as_handled()
 			return
-	if evento is InputEventKey and evento.pressed and _scroll != null:
-		var paso := 0
-		match evento.keycode:
-			KEY_UP: paso = -44
-			KEY_DOWN: paso = 44
-			KEY_PAGEUP: paso = -200
-			KEY_PAGEDOWN: paso = 200
-		if paso != 0:
-			_scroll.scroll_vertical += paso
-			get_viewport().set_input_as_handled()
 
 
 # --- Construcción ---
 
 func _construir() -> void:
 	var c := Evaluacion.comparar()
-	var panel := PanelContainer.new()
-	panel.position = Vector2(16, 10)
-	panel.size = Vector2(608, 340)
-	panel.add_theme_stylebox_override("panel", EstiloUI.caja(EstiloUI.PAPEL, EstiloUI.TINTA, 2, 12))
-	_raiz.add_child(panel)
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 5)
-	panel.add_child(v)
+	# Sobre ModalBase: título fijo, el informe en el cuerpo con scroll y los botones siempre visibles en el pie
+	_modal = ModalBase.crear()
+	_modal.ancho_deseado = 608.0
+	_modal.configurar(EstiloUI.PAPEL, EstiloUI.TINTA, 12)
+	_modal.color_separadores(Color(EstiloUI.TINTA_SUAVE, 0.6))
+	var v := VBoxContainer.new()   # el pie: estado, recordatorio y botones
+	v.add_theme_constant_override("separation", 4)
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_modal.pie.add_child(v)
 	var titulo := EstiloUI.titulo("Tu avance en números", 14, EstiloUI.TINTA)
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	v.add_child(titulo)
+	_modal.cabecera.add_child(titulo)
 
-	_scroll = ScrollContainer.new()
-	_scroll.custom_minimum_size = Vector2(580, 200)
-	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_scroll.focus_mode = Control.FOCUS_NONE
-	_scroll.follow_focus = true   # al navegar con el teclado, el desplazamiento sigue al botón enfocado
-	v.add_child(_scroll)
-	var contenido := VBoxContainer.new()
+	_scroll = _modal.scroll
+	var contenido := _modal.cuerpo
 	contenido.add_theme_constant_override("separation", 10)
-	contenido.custom_minimum_size = Vector2(560, 0)
-	_scroll.add_child(contenido)
 
 	contenido.add_child(_carne_actualizado())
 	if not c["hay_pre"]:
@@ -150,12 +135,13 @@ func _construir() -> void:
 	contenido.add_child(EstiloUI.titulo("Tu código de resultados", 10, EstiloUI.PETROLEO))
 	contenido.add_child(_seccion_codigo())
 
-	_estado = _texto("", 10, EstiloUI.TINTA)
-	_estado.custom_minimum_size = Vector2(580, 0)
+	_estado = _texto("", 11, EstiloUI.TINTA)
+	_estado.custom_minimum_size = Vector2(120, 0)
 	v.add_child(_estado)
-	var recordatorio := _texto("Esto no es un examen oficial: solo te muestra cómo te fue en este juego.", 9, GRIS_VIOLACEO)
+	var recordatorio := _texto("Esto no es un examen oficial: solo te muestra cómo te fue en este juego.", 11, GRIS_VIOLACEO)
+	recordatorio.custom_minimum_size = Vector2(120, 0)
 	recordatorio.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	v.add_child(recordatorio)
+	contenido.add_child(recordatorio)   # al final del informe (el pie queda solo con el estado y los botones)
 
 	var fila := HFlowContainer.new()
 	fila.add_theme_constant_override("h_separation", 8)
@@ -171,6 +157,8 @@ func _construir() -> void:
 	_boton(fila, "Jugar de nuevo", _jugar_de_nuevo)
 	if not OS.has_feature("web"):   # en la web no se puede cerrar la pestaña desde el juego
 		_boton(fila, "Salir", _salir)
+	_modal.boton_principal = _boton_exportar
+	_raiz.add_child(_modal)
 
 
 ## El carné de brigadista actualizado (con el final y el sello) junto al informe de la brigada.
@@ -203,8 +191,8 @@ func _boton(padre: Control, texto: String, accion: Callable) -> Button:
 	var b := Button.new()
 	b.text = texto
 	b.add_theme_font_override("font", EstiloUI.fuente_texto())   # etiquetas largas: Pixelify se lee mejor que Silkscreen
-	b.add_theme_font_size_override("font_size", 12)
-	b.custom_minimum_size = Vector2(0, 26)
+	b.add_theme_font_size_override("font_size", 11)
+	b.custom_minimum_size = Vector2(0, 24)
 	b.pressed.connect(func() -> void:
 		Audio.efecto("ui_elegir")
 		accion.call())

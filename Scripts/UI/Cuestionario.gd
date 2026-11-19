@@ -24,6 +24,8 @@ const INTRO := {
 const INTRO_POST := "Llegamos al final. Te haré las mismas preguntas del principio. "
 
 var fase := ""
+## SOLO pruebas de interfaz (probar_modales): arma la pantalla sin recorrer el cuestionario.
+var solo_vista := false
 
 var _preguntas: Array[Dictionary] = []
 var _raiz: Control
@@ -32,7 +34,9 @@ var _texto_intro: Label
 var _boton_seguir: Button
 var _panel_pregunta: Control
 var _progreso: Label
-var _tablilla: Tablilla
+var _modal_intro: ModalBase
+var _modal_pregunta: ModalBase
+var _clip: Control
 var _casillas: Array[Casilla] = []
 var _fila_progreso: HBoxContainer
 var _sello_titulo: Sello
@@ -67,7 +71,8 @@ func _ready() -> void:
 	_raiz.modulate.a = 0.0
 	add_child(_raiz)
 	_construir()
-	_ejecutar()
+	if not solo_vista:
+		_ejecutar()
 
 
 # Se tragan ESC (pausa) y TAB (libreta) mientras dura la evaluación
@@ -79,24 +84,10 @@ func _input(evento: InputEvent) -> void:
 
 
 func _construir() -> void:
-	# Intro de cada bloque: Lucía habla por radio (marco de transmisión con su retrato)
-	_panel_intro = PanelContainer.new()
-	_panel_intro.position = Vector2(70, 80)
-	_panel_intro.custom_minimum_size = Vector2(500, 0)
-	_panel_intro.add_theme_stylebox_override("panel", EstiloUI.caja(EstiloUI.PETROLEO_OSCURO, EstiloUI.NARANJA, 2, 10))
-	_raiz.add_child(_panel_intro)
-	var fila_radio := HBoxContainer.new()
-	fila_radio.add_theme_constant_override("separation", 12)
-	_panel_intro.add_child(fila_radio)
-	_retrato_intro = TextureRect.new()
-	_retrato_intro.custom_minimum_size = Vector2(96, 96)
-	_retrato_intro.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	_retrato_intro.texture = Retratos.obtener("lucia_neutral")
-	fila_radio.add_child(_retrato_intro)
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 8)
-	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	fila_radio.add_child(v)
+	# Intro de cada bloque: Lucía habla por radio (marco de transmisión con su retrato); «Seguir» en el pie
+	_modal_intro = ModalBase.crear()
+	_modal_intro.ancho_deseado = 500.0
+	_modal_intro.configurar(EstiloUI.PETROLEO_OSCURO, EstiloUI.NARANJA, 10)
 	var cabecera := HBoxContainer.new()
 	cabecera.add_theme_constant_override("separation", 6)
 	cabecera.add_child(EstiloUI.titulo("LUCÍA · CANAL 3 · BRIGADA", 8, EstiloUI.NARANJA))
@@ -105,46 +96,83 @@ func _construir() -> void:
 	franjas_radio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	franjas_radio.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	cabecera.add_child(franjas_radio)
-	v.add_child(cabecera)
+	_modal_intro.cabecera.add_child(cabecera)
+	var fila_radio := HBoxContainer.new()
+	fila_radio.add_theme_constant_override("separation", 12)
+	_modal_intro.cuerpo.add_child(fila_radio)
+	_retrato_intro = TextureRect.new()
+	_retrato_intro.custom_minimum_size = Vector2(96, 96)
+	_retrato_intro.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	_retrato_intro.texture = Retratos.obtener("lucia_neutral")
+	fila_radio.add_child(_retrato_intro)
 	_texto_intro = EstiloUI.radio("", 22, EstiloUI.CREMA)
 	_texto_intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_texto_intro.custom_minimum_size = Vector2(340, 100)
-	v.add_child(_texto_intro)
+	_texto_intro.custom_minimum_size = Vector2(120, 0)
+	_texto_intro.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fila_radio.add_child(_texto_intro)
+	var espacio := Control.new()
+	espacio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_modal_intro.pie.add_child(espacio)
 	_boton_seguir = EstiloUI.boton_senal("Seguir", 120, 26, 9)
-	_boton_seguir.size_flags_horizontal = Control.SIZE_SHRINK_END
 	_boton_seguir.pressed.connect(func() -> void:
 		Audio.efecto("ui_elegir")
 		_seguir.emit())
 	_boton_seguir.focus_entered.connect(func() -> void: Audio.efecto("ui_mover"))
-	v.add_child(_boton_seguir)
+	_modal_intro.pie.add_child(_boton_seguir)
+	_modal_intro.boton_principal = _boton_seguir
+	_raiz.add_child(_modal_intro)
+	_panel_intro = _modal_intro
 
-	# La tablilla con la hoja de la pregunta
-	_tablilla = Tablilla.new()
-	_tablilla.position = Vector2(80, 14)
-	_tablilla.size = Vector2(480, 332)
-	_raiz.add_child(_tablilla)
-	_panel_pregunta = _tablilla
-	var q := _tablilla.contenido
-	q.add_theme_constant_override("separation", 6)
-	var cabecera_hoja := HBoxContainer.new()
-	cabecera_hoja.add_theme_constant_override("separation", 8)
-	q.add_child(cabecera_hoja)
+	# La tablilla: tablero de petróleo con una hoja de papel. La cabecera (progreso) y el cuerpo (pregunta y opciones) son la hoja
+	_modal_pregunta = ModalBase.crear()
+	_modal_pregunta.ancho_deseado = 480.0
+	var tablero := EstiloUI.caja(EstiloUI.PETROLEO, EstiloUI.TINTA, 2, 10)
+	tablero.content_margin_top = 24
+	_modal_pregunta.panel.add_theme_stylebox_override("panel", tablero)
+	_modal_pregunta.fondo_cuerpo(EstiloUI.caja(EstiloUI.PAPEL, EstiloUI.TINTA_SUAVE, 2, 10))
+	_modal_pregunta.color_separadores(Color(EstiloUI.TINTA_SUAVE, 0.0))
+	var hoja := PanelContainer.new()
+	hoja.add_theme_stylebox_override("panel", EstiloUI.caja(EstiloUI.PAPEL, EstiloUI.TINTA_SUAVE, 2, 10))
+	_modal_pregunta.cabecera.add_child(hoja)
+	var cab := VBoxContainer.new()
+	cab.add_theme_constant_override("separation", 5)
+	hoja.add_child(cab)
 	_progreso = EstiloUI.titulo("", 8, EstiloUI.TINTA_SUAVE)
-	_progreso.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cabecera_hoja.add_child(_progreso)
-	# El progreso: una checklist de casillas, una por pregunta
+	cab.add_child(_progreso)
 	_fila_progreso = HBoxContainer.new()
 	_fila_progreso.add_theme_constant_override("separation", 5)
-	q.add_child(_fila_progreso)
+	cab.add_child(_fila_progreso)
 	_texto_pregunta = EstiloUI.etiqueta("", 15, EstiloUI.TINTA)
 	_texto_pregunta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_texto_pregunta.custom_minimum_size = Vector2(430, 52)
-	q.add_child(_texto_pregunta)
+	_texto_pregunta.custom_minimum_size = Vector2(120, 40)
+	_modal_pregunta.cuerpo.add_child(_texto_pregunta)
 	_contenedor_opciones = VBoxContainer.new()
 	_contenedor_opciones.add_theme_constant_override("separation", 5)
-	q.add_child(_contenedor_opciones)
+	_modal_pregunta.cuerpo.add_child(_contenedor_opciones)
+	_raiz.add_child(_modal_pregunta)
+	_panel_pregunta = _modal_pregunta
+	# La pinza metálica de la tablilla, pegada al borde de arriba del tablero
+	_clip = PanelContainer.new()
+	_clip.add_theme_stylebox_override("panel", EstiloUI.caja(EstiloUI.GRIS, EstiloUI.TINTA, 2, 0))
+	_clip.custom_minimum_size = Vector2(70, 16)
+	_clip.size = Vector2(70, 16)
+	_clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var agujero := ColorRect.new()
+	agujero.color = EstiloUI.TINTA
+	agujero.custom_minimum_size = Vector2(26, 4)
+	agujero.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	agujero.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_clip.add_child(agujero)
+	_raiz.add_child(_clip)
+	_modal_pregunta.reajustado.connect(_colocar_pinza)
 	_panel_pregunta.hide()
 	_panel_intro.hide()
+	_clip.hide()
+
+
+func _colocar_pinza() -> void:
+	_clip.position = Vector2(_modal_pregunta.panel.position.x + (_modal_pregunta.panel.size.x - 70.0) / 2.0, _modal_pregunta.panel.position.y + 6.0)
+	_clip.visible = _panel_pregunta.visible
 
 
 ## Estilo de una opción: casilla de papel a la izquierda, texto oscuro y un recuadro naranja al enfocar.
@@ -213,6 +241,7 @@ func _sellar(texto: String, color: Color, sobre_hoja_vacia: bool = false) -> voi
 	if is_instance_valid(_sello_titulo):
 		_sello_titulo.queue_free()
 	_panel_pregunta.hide()
+	_clip.hide()
 	_panel_intro.hide()
 	_sello_titulo = Sello.crear(texto, color, 18, -0.12)
 	_sello_titulo.position = Vector2((640.0 - _sello_titulo.size.x) / 2.0, 150.0)
@@ -225,6 +254,7 @@ func _sellar(texto: String, color: Color, sobre_hoja_vacia: bool = false) -> voi
 ## Lucía dice unas líneas antes de cada bloque.
 func _intro(bloque: String) -> void:
 	_panel_pregunta.hide()
+	_clip.hide()
 	var lineas: Array = INTRO[bloque]
 	var texto := "\n\n".join(lineas)
 	if fase == "post" and bloque == "trivia":
@@ -245,20 +275,7 @@ func _intro(bloque: String) -> void:
 ## Una pregunta: se espera a que el jugador elija; la respuesta se anota con su índice original.
 func _preguntar(indice: int) -> void:
 	var p := _preguntas[indice]
-	_progreso.text = "Pregunta %d de %d" % [indice + 1, _preguntas.size()]
-	_texto_pregunta.text = str(p["texto"])
-	for hijo in _contenedor_opciones.get_children():
-		hijo.queue_free()
-	_botones.clear()
-	_respondida = false
-	if p["bloque"] == "escala":
-		_construir_escala(p)
-	else:
-		for opcion in p["opciones"]:
-			_botones.append(_boton_opcion(str(opcion["texto"]), int(opcion["indice_original"])))
-	_panel_pregunta.modulate.a = 0.0
-	_panel_pregunta.show()
-	create_tween().tween_property(_panel_pregunta, "modulate:a", 1.0, 0.2)
+	_mostrar_pregunta(indice)
 	await get_tree().process_frame
 	if not _botones.is_empty():
 		_botones[0].grab_focus()
@@ -272,12 +289,41 @@ func _preguntar(indice: int) -> void:
 	await t.finished
 
 
+## SOLO pruebas de interfaz: muestra la pregunta `indice` de la fase sin esperar respuesta.
+func previsualizar(indice: int) -> void:
+	Evaluacion.iniciar_fase(fase)
+	_preguntas = Evaluacion.orden_para(fase)
+	_crear_checklist()
+	_mostrar_pregunta(indice)
+	_raiz.modulate.a = 1.0
+
+
+## Arma y muestra la pregunta (texto y opciones) sin esperar.
+func _mostrar_pregunta(indice: int) -> void:
+	var p := _preguntas[indice]
+	_progreso.text = "Pregunta %d de %d" % [indice + 1, _preguntas.size()]
+	_texto_pregunta.text = str(p["texto"])
+	for hijo in _contenedor_opciones.get_children():
+		hijo.queue_free()
+	_botones.clear()
+	_respondida = false
+	if p["bloque"] == "escala":
+		_construir_escala(p)
+	else:
+		for opcion in p["opciones"]:
+			_botones.append(_boton_opcion(str(opcion["texto"]), int(opcion["indice_original"])))
+	_panel_pregunta.modulate.a = 0.0
+	_panel_pregunta.show()
+	_clip.show()
+	create_tween().tween_property(_panel_pregunta, "modulate:a", 1.0, 0.2)
+
+
 func _boton_opcion(texto: String, indice_original: int) -> Button:
 	var b := Button.new()
 	b.text = texto
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	b.custom_minimum_size = Vector2(430, 36)
+	b.custom_minimum_size = Vector2(120, 36)
 	_estilo_opcion(b)
 	b.pressed.connect(_al_elegir.bind(indice_original, b))
 	b.focus_entered.connect(func() -> void: Audio.efecto("ui_mover"))

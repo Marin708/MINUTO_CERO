@@ -31,7 +31,7 @@ var pagina: Pagina = Pagina.PRINCIPAL
 var _raiz: Control
 var _fondo: ColorRect
 var _material: ShaderMaterial
-var _panel: PanelContainer
+var _panel: Control
 var _paginas: Dictionary = {}   # Pagina -> VBoxContainer
 var _primer_foco: Dictionary = {}   # Pagina -> Control que recibe el foco al entrar
 var _boton_guardar: Button
@@ -141,39 +141,36 @@ func _construir() -> void:
 	_fondo.material = _material
 	_raiz.add_child(_fondo)
 
-	var centro := CenterContainer.new()
-	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
-	centro.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_raiz.add_child(centro)
-	_panel = PanelContainer.new()
-	_panel.custom_minimum_size = Vector2(300, 0)
-	_panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color(EstiloUI.PETROLEO_OSCURO, 0.97), EstiloUI.NARANJA, 2, 12))
-	centro.add_child(_panel)
-	var marco := VBoxContainer.new()
-	marco.add_theme_constant_override("separation", 8)
-	_panel.add_child(marco)
-	# Franjas de precaución arriba y abajo, y el título «Pausa» en Silkscreen
+	# El panel de pausa sobre ModalBase: título con franjas fijo, páginas en el cuerpo (con scroll si no caben) y aviso en el pie
+	var modal := ModalBase.crear()
+	modal.ancho_deseado = 340.0
+	modal.confirmar_activo = false   # el menú maneja sus propias teclas
+	modal.configurar(Color(EstiloUI.PETROLEO_OSCURO, 0.97), EstiloUI.NARANJA, 12)
+	_panel = modal
 	var franjas_arriba := Franjas.new()
 	franjas_arriba.custom_minimum_size = Vector2(0, 8)
-	marco.add_child(franjas_arriba)
+	modal.cabecera.add_child(franjas_arriba)
 	var titulo := EstiloUI.titulo("Pausa", 20, EstiloUI.CREMA)
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	marco.add_child(titulo)
-
+	modal.cabecera.add_child(titulo)
 	_paginas[Pagina.PRINCIPAL] = _construir_principal()
 	_paginas[Pagina.CONTROLES] = _construir_controles()
 	_paginas[Pagina.OPCIONES] = _construir_opciones()
 	_paginas[Pagina.CONFIRMAR] = _construir_confirmacion()
 	for p in _paginas.values():
-		marco.add_child(p)
+		modal.cuerpo.add_child(p)
 		p.visible = false
-
+	var pie := VBoxContainer.new()
+	pie.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pie.add_theme_constant_override("separation", 6)
+	modal.pie.add_child(pie)
 	_aviso = EstiloUI.etiqueta("", 11, EstiloUI.GRIS)
 	_aviso.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	marco.add_child(_aviso)
+	pie.add_child(_aviso)
 	var franjas_abajo := Franjas.new()
 	franjas_abajo.custom_minimum_size = Vector2(0, 8)
-	marco.add_child(franjas_abajo)
+	pie.add_child(franjas_abajo)
+	_raiz.add_child(modal)
 
 
 ## `sonido` es el efecto que suena al pulsarlo ("" = ninguno: lo pone otro, como al abrir el diario).

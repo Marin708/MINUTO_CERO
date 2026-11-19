@@ -1,6 +1,6 @@
 class_name Creditos
 extends CanvasLayer
-## Créditos: un texto que se desplaza suavemente sobre el fondo del título (capa 13). El contenido se edita en
+## Créditos: un texto que baja solo, despacio, dentro de un modal con el botón «Cerrar» siempre visible (capa 13). El contenido se edita en
 ## Resources/creditos.txt (secciones con "# ", líneas de texto, espacios en blanco y una nota final con "> ").
 ## Se cierra solo al terminar, o con ENTER, ESPACIO, ESC o un clic. Flecha abajo acelera el desplazamiento.
 ##
@@ -15,7 +15,10 @@ signal cerrados
 
 var _raiz: Control
 var _columna: VBoxContainer
-var _y := 0.0
+var _modal: ModalBase
+var _fraccion := 0.0
+var _espera := 1.5       # segundos de calma antes de empezar a bajar
+var _al_final := 0.0     # segundos que lleva el texto en el final
 var _cerrando := false
 
 
@@ -28,30 +31,32 @@ static func mostrar(arbol: SceneTree) -> void:
 func _ready() -> void:
 	layer = 13
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	FondoEvaluacion.crear(self).hide()   # solo el fondo; sin Lucía
+	FondoEvaluacion.crear(self)
 	_raiz = Control.new()
 	_raiz.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_raiz.mouse_filter = Control.MOUSE_FILTER_STOP
+	_raiz.theme = EstiloUI.tema()
 	_raiz.modulate.a = 0.0
-	_raiz.clip_contents = true
 	add_child(_raiz)
-	_columna = VBoxContainer.new()
+	# Sobre ModalBase: título fijo, los créditos en el cuerpo (que baja solo, despacio) y el botón siempre visible
+	_modal = ModalBase.crear()
+	_modal.ancho_deseado = ANCHO + 56.0
+	_modal.configurar(Color(EstiloUI.AZUL_NOCHE, 0.96), EstiloUI.NARANJA, 12)
+	_modal.cabecera.add_child(EstiloUI.titulo("CRÉDITOS", 14, EstiloUI.CREMA))
+	_columna = _modal.cuerpo
 	_columna.add_theme_constant_override("separation", 6)
-	_columna.custom_minimum_size = Vector2(ANCHO, 0)
-	_raiz.add_child(_columna)
 	_leer_texto()
-	var pie := EstiloUI.etiqueta("Enter o Esc para salir", 11, EstiloUI.GRIS)
-	pie.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	pie.offset_top = -16.0
-	pie.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	pie.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_raiz.add_child(pie)
+	var cerrar := EstiloUI.boton_senal("Cerrar", 130, 28, 10)
+	cerrar.pressed.connect(_cerrar)
+	var espacio := Control.new()
+	espacio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_modal.pie.add_child(EstiloUI.etiqueta("Enter o Esc para salir", 11, EstiloUI.GRIS))
+	_modal.pie.add_child(espacio)
+	_modal.pie.add_child(cerrar)
+	_modal.boton_principal = cerrar
+	_raiz.add_child(_modal)
 	create_tween().tween_property(_raiz, "modulate:a", 1.0, 0.6)
-	await get_tree().process_frame
-	await get_tree().process_frame
-	_columna.size = Vector2(ANCHO, _columna.get_combined_minimum_size().y)
-	_y = _raiz.size.y + 10.0   # empieza justo debajo de la pantalla
-	_columna.position = Vector2((_raiz.size.x - ANCHO) / 2.0, _y)
+	cerrar.grab_focus.call_deferred()
 
 
 ## Lee Resources/creditos.txt y crea una etiqueta por línea.
@@ -88,7 +93,7 @@ func _leer_texto() -> void:
 			e.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			e.custom_minimum_size = Vector2(ANCHO, 0)
 			_columna.add_child(e)
-	_columna.add_child(_espacio(120))
+	_columna.add_child(_espacio(20))
 
 
 func _espacio(alto: int) -> Control:
@@ -98,21 +103,30 @@ func _espacio(alto: int) -> Control:
 
 
 func _process(delta: float) -> void:
-	if _cerrando or _columna == null or _y == 0.0:
+	if _cerrando or _modal == null:
 		return
+	if _espera > 0.0:
+		_espera -= delta
+		return
+	# Baja solo y despacio; la flecha abajo acelera. Quien desplaza a mano (rueda, flechas, AvPág) se suma a esto
 	var rapido := Input.is_key_pressed(KEY_DOWN)
-	_y -= VELOCIDAD * (4.0 if rapido else 1.0) * delta
-	_columna.position.y = _y
-	if _y + _columna.size.y < -10.0:
-		_cerrar()
+	_fraccion += VELOCIDAD * (4.0 if rapido else 1.0) * delta
+	var paso := int(_fraccion)
+	_fraccion -= paso
+	_modal.scroll.scroll_vertical += paso
+	var barra := _modal.scroll.get_v_scroll_bar()
+	if _modal.scroll.scroll_vertical >= barra.max_value - barra.page - 1.0:
+		_al_final += delta
+		if _al_final > 4.0:
+			_cerrar()
+	else:
+		_al_final = 0.0
 
 
 func _input(evento: InputEvent) -> void:
 	if _cerrando:
 		return
 	var salir := evento.is_action_pressed("ui_accept") or evento.is_action_pressed("ui_cancel") or evento.is_action_pressed("PAUSA")
-	if evento is InputEventMouseButton and evento.pressed and evento.button_index == MOUSE_BUTTON_LEFT:
-		salir = true
 	if salir:
 		get_viewport().set_input_as_handled()
 		_cerrar()
