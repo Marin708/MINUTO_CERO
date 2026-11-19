@@ -37,9 +37,17 @@ var _capa_polvo: CanvasLayer
 @onready var suelo: Node2D = $Suelo
 @onready var objetos: Node2D = $Objetos
 @onready var marcadores: Node2D = $Marcadores
+## Capa de objetos planos o de suelo (escombros bajos, tapetes, charcos, manchas, cintas): SIN y-sort, justo encima del
+## mapa y siempre debajo del jugador. Los altos e interactivos viven en `objetos` (con y_sort_enabled).
+var suelo_objetos: Node2D
 
 
 func _ready() -> void:
+	suelo_objetos = Node2D.new()
+	suelo_objetos.name = "SueloObjetos"
+	suelo_objetos.y_sort_enabled = false
+	add_child(suelo_objetos)
+	move_child(suelo_objetos, objetos.get_index())   # después de Suelo y antes de Objetos: se dibuja debajo de todo lo alto
 	_construir_mapa()
 	_colocar_marcadores()
 	_colocar_jugador()
@@ -83,7 +91,8 @@ func _colocar_marcadores() -> void:
 				p.interactuable = etiqueta != "" and _es_interactuable(etiqueta)
 				p.position = m.position
 				p.name = m.name
-				objetos.add_child(p)
+				# Plano y sin interacción: a la capa de suelo. Todo lo demás, dentro del nodo con y-sort.
+				(suelo_objetos if (p.tipo in Prop.PLANOS and not p.interactuable) else objetos).add_child(p)
 				props.append(p)
 				p.interactuado.connect(_on_prop)
 			"npc":

@@ -49,6 +49,9 @@ const DATOS := {
 
 ## Tipos altos: sobresalen hacia arriba y pueden tapar a quien esté detrás (se vuelven semitransparentes).
 const ALTOS: Array[String] = ["arbol", "poste", "edificio", "carpa", "armario", "estante", "nevera", "puerta_salida"]
+## Tipos planos o bajos (no se ordenan con Sami: se dibujan en la capa de suelo, siempre debajo del jugador).
+## Si uno se vuelve interactivo, pasa solo a la capa con y-sort (ningún interactivo cuelga de un padre sin y-sort).
+const PLANOS: Array[String] = ["escombros"]
 const ALPHA_TAPANDO := 0.45
 const SEGUNDOS_FUNDIDO := 0.15
 ## Alto de la colisión de la base (px del mundo) y fracción del ancho visible que ocupa.

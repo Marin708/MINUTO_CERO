@@ -64,6 +64,29 @@ func _hasta(condicion: Callable, limite: float = 20.0) -> bool:
 	return condicion.call()
 
 
+## Orden de dibujo: lo plano en la capa de suelo (sin y-sort, debajo del jugador); lo alto e interactivo, dentro del nodo con y-sort.
+func _orden_de_dibujo(n: Nivel) -> void:
+	var mal := 0
+	var planos := 0
+	for p in n.props:
+		if p.tipo in Prop.PLANOS and not p.interactuable:
+			planos += 1
+			if p.get_parent() != n.suelo_objetos:
+				mal += 1
+		elif p.get_parent() != n.objetos:
+			mal += 1
+	for i in n.items:
+		if i.get_parent() != n.objetos:
+			mal += 1
+	for npc in n.npcs:
+		if npc.get_parent() != n.objetos:
+			mal += 1
+	_ok(mal == 0, "nivel %d: los planos van en el suelo y los altos e interactivos dentro del y-sort (%d planos)" % [n.numero, planos])
+	_ok(not n.suelo_objetos.y_sort_enabled and n.objetos.y_sort_enabled, "nivel %d: la capa de suelo no ordena y Objetos sí" % n.numero)
+	_ok(n.suelo_objetos.get_index() < n.objetos.get_index() and n.suelo.get_index() < n.suelo_objetos.get_index(), "nivel %d: suelo, objetos planos y luego objetos con y-sort" % n.numero)
+	_ok(n.jugador.get_parent() == n.objetos, "nivel %d: el jugador va dentro del y-sort" % n.numero)
+
+
 func _escena() -> Node:
 	return get_tree().current_scene
 
@@ -114,6 +137,7 @@ func _recorrido_completo() -> void:
 	_ok(await _hasta(_es("Nivel1")), "Introducción y paso al nivel 1")
 	var n1: Nivel1 = _escena()
 	await _hasta(func() -> bool: return not n1.ocupado)
+	_orden_de_dibujo(n1)
 	for p in n1.props:
 		if p.interactuable and p.etiqueta in ["D1", "D2", "D3", "D4", "kit"]:
 			await n1._on_prop(p)
@@ -145,6 +169,7 @@ func _recorrido_completo() -> void:
 	_ok(await _hasta(_es("Nivel3")), "paso al nivel 3")
 	var n3: Nivel3 = _escena()
 	await _hasta(func() -> bool: return not n3.ocupado)
+	_orden_de_dibujo(n3)
 	await n3._on_npc(n3.npc_de("rosa"))
 	await n3._peligro()
 	await n3._on_npc(n3.npc_de("tomas"))
