@@ -46,6 +46,17 @@ var activo: Node = null
 
 var _cuadro_paso := -1   # último cuadro de caminar visto (para sonar un paso por pisada)
 var _bloqueado := false
+## Indicador de la tecla E (con el verbo de la acción) que flota sobre lo que se puede usar.
+var indicador: IndicadorTecla
+## Mantener E: de 0 a 1 muestra el anillo de avance sobre Sami (-1 = no hay nada que mantener). Lo pone el nivel.
+var progreso_mantener := -1.0:
+	set(v):
+		_progreso = v
+		_vigencia = 0.25   # si el nivel deja de ponerlo, el anillo desaparece solo
+	get:
+		return _progreso if _vigencia > 0.0 else -1.0
+var _progreso := -1.0
+var _vigencia := 0.0
 var _dialogo_abierto := false
 var _tiempo_rebote := 0.0
 
@@ -95,7 +106,8 @@ func _physics_process(delta: float) -> void:
 	_actualizar_activo()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_vigencia = maxf(_vigencia - delta, 0.0)
 	_actualizar_burbuja()
 
 
@@ -242,32 +254,31 @@ func _actualizar_activo() -> void:
 # --- Burbuja de ayuda ("E") ---
 
 func _aplicar_estilo_burbuja() -> void:
-	var caja := StyleBoxFlat.new()
-	caja.bg_color = Color("0f2d38", 0.95)
-	caja.border_color = Color("ff8a2a")
-	caja.set_border_width_all(1)
-	caja.set_corner_radius_all(3)
-	caja.content_margin_left = 5
-	caja.content_margin_right = 5
-	caja.content_margin_top = 1
-	caja.content_margin_bottom = 1
-	panel_burbuja.add_theme_stylebox_override("panel", caja)
-	if ResourceLoader.exists(RUTA_FUENTE):
-		etiqueta_burbuja.add_theme_font_override("font", load(RUTA_FUENTE))
-	etiqueta_burbuja.add_theme_font_size_override("font_size", 12)
-	etiqueta_burbuja.add_theme_color_override("font_color", Color("ff8a2a"))
+	# Un panel transparente con el indicador de tecla (keycap E + verbo) en lugar de la etiqueta de texto
+	panel_burbuja.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	etiqueta_burbuja.hide()
+	indicador = IndicadorTecla.new()
+	panel_burbuja.add_child(indicador)
 
 
 ## Muestra la burbuja sobre el objeto activo, flotando suavemente.
 func _actualizar_burbuja() -> void:
-	var visible_ahora := activo != null and is_instance_valid(activo) and can_move
+	var manteniendo := progreso_mantener >= 0.0
+	var visible_ahora := (activo != null and is_instance_valid(activo) and can_move) or manteniendo
 	burbuja.visible = visible_ahora
 	if not visible_ahora:
 		return
 	var base := global_position
-	if activo is Node2D:
-		base = activo.global_position
+	var verbo := "Mantén"
+	if manteniendo:
+		base = global_position + Vector2(0, -62)
+	else:
+		if activo is Node2D:
+			base = activo.global_position
+		verbo = activo.verbo() if activo != null and activo.has_method("verbo") else "Revisar"
+	indicador.verbo = verbo
+	indicador.progreso = progreso_mantener
 	var flote := sin(Time.get_ticks_msec() / 1000.0 * 4.0) * 2.0
-	burbuja.global_position = (base + desplazamiento_ayuda + Vector2(0, flote)).round()
-	# Centra el panel sobre ese punto
-	panel_burbuja.position = -panel_burbuja.size / 2.0
+	burbuja.global_position = (base + (Vector2.ZERO if manteniendo else desplazamiento_ayuda) + Vector2(0, flote)).round()
+	# Centra el indicador sobre ese punto
+	panel_burbuja.position = -indicador.size / 2.0

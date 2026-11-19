@@ -120,6 +120,8 @@ func _vigilar(delta: float) -> void:
 		_fallar("Quedarse junto a la ventana")
 		return
 	_mostrar_mensaje(TEXTO_AGACHARSE if en_mesa else "Ve a la mesa del comedor.")
+	if en_mesa:
+		jugador.progreso_mantener = clampf(_sujeto_t / (Sismo.SEGUNDOS_FUERTE - SEGUNDOS_LLEGADA), 0.0, 1.0)
 	if sujeto:
 		_sujeto_t += delta
 	var total := Sismo.SEGUNDOS_FUERTE - SEGUNDOS_LLEGADA
@@ -276,8 +278,10 @@ func _on_prop(prop: Prop) -> void:
 			if Estado.lograda("D10"):
 				await decir("", "Ya te alejaste de la cocina. Avisa desde un lugar seguro.")
 			else:
+				Dialogo.alerta_radio = true   # Lucía se ve en alerta durante la advertencia del gas
 				await decir("", "Huele a gas en la cocina.")
 				await decidir("D10")
+				Dialogo.alerta_radio = false
 		"salida":
 			if not (Estado.lograda("D9") and Estado.lograda("D10")):
 				await decir("", "Antes de salir, termina lo que falta: los zapatos, la mochila y la linterna, y el olor a gas.")

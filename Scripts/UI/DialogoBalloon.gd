@@ -16,7 +16,6 @@ signal terminado(indice_respuesta: int)
 signal escribiendo_iniciado(personaje: String)
 signal escribiendo_terminado()
 
-const RUTA_FUENTE := "res://Assets/PixelifySans-VariableFont_wght.ttf"
 const TAM_FUENTE := 16
 const FUNDIDO_ENTRADA := 0.2
 const FUNDIDO_SALIDA := 0.15
@@ -25,8 +24,11 @@ const ACCION_SIGUIENTE := &"INTERACTUAR"
 const ACCION_CANCELAR := &"PAUSA"
 const SEGUNDOS_PARA_SALIR := 0.7
 const TEXTO_CANCELAR := "Ahora no"
-const COLOR_CANCELAR := Color("9db0b8")        # gris violáceo apagado
-const COLOR_CANCELAR_FOCO := Color("c9bfe0")
+const COLOR_CANCELAR := EstiloUI.GRIS
+const COLOR_CANCELAR_FOCO := EstiloUI.CREMA
+## Quien habla por radio (marco de transmisión con antena) en vez de globo de cómic.
+const HABLANTE_RADIO := "Lucía"
+const TEXTO_CANAL := "CANAL 3 · BRIGADA"
 
 ## Recurso .dialogue y cue inicial (los rellena DialogueManager o Dialogo.mostrar).
 @export var dialogue_resource: DialogueResource
@@ -57,6 +59,16 @@ var _boton_cancelar: Button
 var _separador: ColorRect
 var _pista: Label
 var _tiempo_salida := 0.0
+## true si quien habla ahora lo hace por la radio (Lucía).
+var _es_radio := false
+## true mientras se escribe la línea (Lucía se ve hablando) y false cuando espera opciones o a que avances.
+var _escribiendo := false
+var _cola: ColaGlobo
+var _antena: AntenaRadio
+var _cabecera_radio: HBoxContainer
+var _retrato_nombre: TextureRect
+var _tema_globo: Theme
+var _tema_radio: Theme
 
 ## Línea actual. Al asignar una línea nula, el diálogo terminó.
 var linea: DialogueLine:
@@ -73,8 +85,9 @@ var linea: DialogueLine:
 
 
 func _ready() -> void:
-	_aplicar_estilo()
 	_crear_cancelacion()
+	_crear_adornos()
+	_aplicar_estilo()
 	raiz.hide()
 	raiz.modulate.a = 0.0
 	retrato.hide()
@@ -136,6 +149,7 @@ func _input(evento: InputEvent) -> void:
 
 
 func _process(delta: float) -> void:
+	_colocar_adornos()
 	# Durante el texto, mantener ESC sale de la conversación
 	if cancelable and raiz.visible and not _cerrando and linea != null and not respuestas.visible:
 		if Input.is_action_pressed(ACCION_CANCELAR):
@@ -183,6 +197,9 @@ func _aplicar_linea() -> void:
 	caja_nombre.visible = not linea.character.is_empty()
 	etiqueta_nombre.text = nombre
 
+	_es_radio = linea.character == HABLANTE_RADIO
+	_escribiendo = false
+	_aplicar_modo(_es_radio)
 	_actualizar_retrato()
 
 	texto.hide()
@@ -195,8 +212,12 @@ func _aplicar_linea() -> void:
 	texto.show()
 	if not linea.text.is_empty():
 		escribiendo_iniciado.emit(linea.character)
+		_escribiendo = true
+		_actualizar_retrato()
 		texto.type_out()
 		await texto.finished_typing
+		_escribiendo = false
+		_actualizar_retrato()
 		escribiendo_terminado.emit()
 		if _cerrando or esta_linea != linea:
 			return  # ya cambió la línea (o se canceló) mientras se escribía
@@ -218,6 +239,9 @@ func _aplicar_linea() -> void:
 		indicador.show()
 
 
+## Retrato de quien habla. Lucía (radio): hablando mientras se escribe, neutral al esperar y alerta durante el sismo, la
+## réplica y la advertencia del gas. Marta, Doña Rosa y Tomás (y Sami): un rostro pequeño junto al nombre, a 1x.
+## Un retrato indicado en la línea (etiqueta retrato=) o registrado en Dialogo.retratos manda sobre los demás.
 func _actualizar_retrato() -> void:
 	var ruta := linea.get_tag_value("retrato")
 	var textura: Texture2D = null
@@ -225,8 +249,19 @@ func _actualizar_retrato() -> void:
 		textura = load(ruta)
 	elif Dialogo.retratos.has(linea.character):
 		textura = Dialogo.retratos[linea.character]  # registrado por la escena (ver Dialogo.retratos)
+	elif _es_radio:
+		var estado := "lucia_alerta" if (Dialogo.alerta_radio or Sismo.esta_activo()) else ("lucia_hablando" if _escribiendo else "lucia_neutral")
+		textura = Retratos.obtener(estado)
 	retrato.texture = textura
 	retrato.visible = textura != null
+	# Los demás personajes: rostro pequeño en la etiqueta del nombre
+	var pequeno: Texture2D = null
+	if textura == null and not _es_radio:
+		var clave: String = Retratos.DE_HABLANTE.get(linea.character, "")
+		if clave != "":
+			pequeno = Retratos.rostro(clave)
+	_retrato_nombre.texture = pequeno
+	_retrato_nombre.visible = pequeno != null
 
 
 ## Hace visible la caja, con fundido si estaba escondida.
@@ -326,48 +361,129 @@ func _on_temporizador_mutacion() -> void:
 		raiz.modulate.a = 0.0
 
 
-# --- Estilo (mismo que el Dialogo anterior, adaptado a 640x360) ---
+# --- Estilo: globo de cómic (crema, tinta, borde recto de 2 px) y marco de transmisión para Lucía ---
 
 func _crear_caja(fondo: Color, borde: Color, grosor: int, margen: int) -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.bg_color = fondo
-	s.border_color = borde
-	s.set_border_width_all(grosor)
-	s.set_corner_radius_all(4)
-	s.set_content_margin_all(margen)
-	return s
+	return EstiloUI.caja(fondo, borde, grosor, margen)
+
+
+func _tema_con(color_texto: Color, fuente: Font, tam: int, fondo_boton: Color, texto_boton: Color, foco_fondo: Color, foco_texto: Color) -> Theme:
+	var tema := Theme.new()
+	tema.default_font = fuente
+	tema.default_font_size = tam
+	for tipo in ["Label", "Button"]:
+		tema.set_font("font", tipo, fuente)
+		tema.set_font_size("font_size", tipo, tam)
+	for nombre in ["normal_font", "bold_font", "italics_font"]:
+		tema.set_font(nombre, "RichTextLabel", fuente)
+		tema.set_font_size(nombre + "_size", "RichTextLabel", tam)
+	tema.set_color("default_color", "RichTextLabel", color_texto)
+	tema.set_color("font_color", "Label", color_texto)
+	tema.set_color("font_color", "Button", texto_boton)
+	for c in ["font_hover_color", "font_focus_color", "font_pressed_color"]:
+		tema.set_color(c, "Button", foco_texto)
+	tema.set_stylebox("normal", "Button", _crear_caja(fondo_boton, fondo_boton, 2, 3))
+	for e in ["hover", "pressed", "focus"]:
+		tema.set_stylebox(e, "Button", _crear_caja(foco_fondo, EstiloUI.TINTA if fondo_boton == EstiloUI.CREMA else foco_fondo, 2, 3))
+	tema.set_stylebox("disabled", "Button", _crear_caja(fondo_boton, fondo_boton, 2, 3))
+	return tema
 
 
 func _aplicar_estilo() -> void:
-	caja.add_theme_stylebox_override("panel", _crear_caja(Color("0f2d38", 0.95), Color("ff8a2a"), 2, 8))
-	caja_nombre.add_theme_stylebox_override("panel", _crear_caja(Color("14414f"), Color("ff8a2a"), 2, 4))
-	etiqueta_nombre.add_theme_color_override("font_color", Color("ff8a2a"))
+	_tema_globo = _tema_con(EstiloUI.TINTA, EstiloUI.fuente_texto(), 16, EstiloUI.CREMA, EstiloUI.TINTA, EstiloUI.NARANJA, EstiloUI.TINTA)
+	_tema_radio = _tema_con(EstiloUI.CREMA, EstiloUI.fuente_radio(), 22, EstiloUI.PETROLEO_OSCURO, EstiloUI.CREMA, EstiloUI.NARANJA, EstiloUI.TINTA)
+	_aplicar_modo(false)
 
-	var tema := Theme.new()
-	if ResourceLoader.exists(RUTA_FUENTE):
-		var fuente: Font = load(RUTA_FUENTE)
-		tema.set_font("font", "Label", fuente)
-		tema.set_font("font", "Button", fuente)
-		tema.set_font("normal_font", "RichTextLabel", fuente)
-		tema.set_font("bold_font", "RichTextLabel", fuente)
-		tema.set_font("italics_font", "RichTextLabel", fuente)
-	for tipo in ["Label", "Button"]:
-		tema.set_font_size("font_size", tipo, TAM_FUENTE)
-	tema.set_font_size("normal_font_size", "RichTextLabel", TAM_FUENTE)
-	tema.set_font_size("bold_font_size", "RichTextLabel", TAM_FUENTE)
-	tema.set_font_size("italics_font_size", "RichTextLabel", TAM_FUENTE)
-	tema.set_color("default_color", "RichTextLabel", Color("fff4dc"))
-	tema.set_color("font_color", "Label", Color("fff4dc"))
-	tema.set_color("font_color", "Button", Color("d9cfe8"))
-	tema.set_color("font_hover_color", "Button", Color("ff8a2a"))
-	tema.set_color("font_focus_color", "Button", Color("ff8a2a"))
 
-	tema.set_stylebox("normal", "Button", _crear_caja(Color("14414f"), Color("14414f"), 1, 3))
-	tema.set_stylebox("hover", "Button", _crear_caja(Color("1d5566"), Color("ff8a2a"), 1, 3))
-	tema.set_stylebox("pressed", "Button", _crear_caja(Color("2a6c80"), Color("ff8a2a"), 1, 3))
-	tema.set_stylebox("focus", "Button", _crear_caja(Color("1d5566"), Color("ff8a2a"), 1, 3))
-	tema.set_stylebox("disabled", "Button", _crear_caja(Color("24203a"), Color("24203a"), 1, 3))
-	raiz.theme = tema
+## Cambia entre el globo de cómic (todos) y el marco de transmisión (Lucía).
+func _aplicar_modo(radio: bool) -> void:
+	raiz.theme = _tema_radio if radio else _tema_globo
+	if radio:
+		caja.add_theme_stylebox_override("panel", _crear_caja(EstiloUI.PETROLEO_OSCURO, EstiloUI.NARANJA, 2, 8))
+		caja_nombre.add_theme_stylebox_override("panel", _crear_caja(EstiloUI.NARANJA, EstiloUI.NARANJA, 2, 3))
+	else:
+		caja.add_theme_stylebox_override("panel", _crear_caja(EstiloUI.CREMA, EstiloUI.TINTA, 2, 8))
+		caja_nombre.add_theme_stylebox_override("panel", _crear_caja(EstiloUI.NARANJA, EstiloUI.TINTA, 2, 3))
+	etiqueta_nombre.add_theme_font_override("font", EstiloUI.fuente_titulo())
+	etiqueta_nombre.add_theme_font_size_override("font_size", 9)
+	etiqueta_nombre.add_theme_color_override("font_color", EstiloUI.TINTA)
+	var color_aviso := EstiloUI.GRIS if radio else EstiloUI.TINTA_SUAVE
+	_pista.add_theme_color_override("font_color", color_aviso)
+	_separador.color = Color(color_aviso, 0.5)
+	_boton_cancelar.add_theme_color_override("font_color", color_aviso)
+	_boton_cancelar.add_theme_color_override("font_hover_color", EstiloUI.CREMA if radio else EstiloUI.TINTA)
+	_boton_cancelar.add_theme_color_override("font_focus_color", EstiloUI.CREMA if radio else EstiloUI.TINTA)
+	_boton_cancelar.add_theme_font_size_override("font_size", 18 if radio else 14)
+	_cola.visible = not radio and not _sin_hablante()
+	_antena.visible = radio
+	_cabecera_radio.visible = radio
+	retrato.custom_minimum_size = Vector2(96, 96) if radio else Vector2(64, 64)
+
+
+func _sin_hablante() -> bool:
+	return linea == null or linea.character.is_empty()
+
+
+## Cola del globo, antena y cabecera «CANAL 3 · BRIGADA» (se crean por código para no editar la escena).
+func _crear_adornos() -> void:
+	_cola = ColaGlobo.new()
+	_cola.hide()
+	raiz.add_child(_cola)
+	_antena = AntenaRadio.new()
+	_antena.hide()
+	raiz.add_child(_antena)
+	var textos_box: Control = texto.get_parent()
+	_cabecera_radio = HBoxContainer.new()
+	_cabecera_radio.add_theme_constant_override("separation", 6)
+	_cabecera_radio.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cabecera_radio.add_child(EstiloUI.titulo(TEXTO_CANAL, 8, EstiloUI.NARANJA))
+	var franjas := Franjas.new()
+	franjas.custom_minimum_size = Vector2(0, 5)
+	franjas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	franjas.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_cabecera_radio.add_child(franjas)
+	_cabecera_radio.hide()
+	textos_box.add_child(_cabecera_radio)
+	textos_box.move_child(_cabecera_radio, 0)
+	# El rostro pequeño va dentro de la etiqueta del nombre
+	var fila := HBoxContainer.new()
+	fila.add_theme_constant_override("separation", 4)
+	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	caja_nombre.add_child(fila)
+	etiqueta_nombre.reparent(fila, false)
+	_retrato_nombre = TextureRect.new()
+	_retrato_nombre.custom_minimum_size = Vector2(48, 48)
+	_retrato_nombre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_retrato_nombre.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_retrato_nombre.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	_retrato_nombre.hide()
+	fila.add_child(_retrato_nombre)
+	fila.move_child(_retrato_nombre, 0)
+
+
+## Pone la cola apuntando al personaje que habla (si está en pantalla) y la antena en la esquina del marco.
+func _colocar_adornos() -> void:
+	if not raiz.visible:
+		return
+	var borde_caja := caja.global_position
+	_antena.position = Vector2(borde_caja.x + caja.size.x - 40.0, borde_caja.y - 24.0)
+	if not _cola.visible or linea == null:
+		return
+	var ancla: Node2D = Dialogo.anclas.get(linea.character)
+	var x := borde_caja.x + caja.size.x * 0.5
+	var lean := 0.0
+	if is_instance_valid(ancla):
+		var pantalla := get_viewport().get_canvas_transform() * ancla.global_position
+		lean = clampf((pantalla.x - x) * 0.2, -6.0, 6.0)
+		x = pantalla.x
+	# Sin pisar la etiqueta del nombre, que ocupa la esquina de arriba a la izquierda del globo
+	var minimo := borde_caja.x + 18.0
+	if caja_nombre.visible:
+		minimo = maxf(minimo, caja_nombre.global_position.x + caja_nombre.size.x + 8.0)
+	x = clampf(x, minimo, borde_caja.x + caja.size.x - 28.0)
+	_cola.lean = lean
+	_cola.queue_redraw()
+	_cola.position = Vector2(x - ColaGlobo.MEDIO_ANCHO, borde_caja.y - ColaGlobo.ALTO + 2.0)
 
 
 ## Triangulito dorado que parpadea cuando se puede avanzar.

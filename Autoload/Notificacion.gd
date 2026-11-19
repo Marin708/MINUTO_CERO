@@ -1,14 +1,13 @@
 extends Node
-## Tarjetas de aviso arriba a la derecha (por ejemplo, "Tarjeta de memoria desbloqueada").
-## Entran deslizando, se quedan unos segundos y salen con fundido. Si llegan varias, van en cola.
+## Avisos como la alerta de un celular: un banner delgado arriba al centro con el ícono «MC» y dos líneas
+## (por ejemplo, "Tarjeta de memoria desbloqueada"). Bajan deslizando, se quedan unos segundos y suben. Si llegan varios, van en cola.
 ##
 ##   Notificacion.mostrar("Título", "Texto de la tarjeta")
 
 const ESCENA := preload("res://Scenes/UI/Notificacion.tscn")
-const RUTA_FUENTE := "res://Assets/PixelifySans-VariableFont_wght.ttf"
 
-const ANCHO := 220.0
-const MARGEN := 12.0
+const ANCHO := 300.0
+const MARGEN := 8.0
 const SEGUNDOS_VISIBLE := 3.0
 const SEGUNDOS_ENTRADA := 0.4
 const SEGUNDOS_SALIDA := 0.5
@@ -63,39 +62,51 @@ func _mostrar_una(aviso: Dictionary) -> void:
 	await get_tree().process_frame
 
 	var ancho_pantalla := _tarjeta.get_viewport_rect().size.x
-	var destino := ancho_pantalla - ANCHO - MARGEN
-	_tarjeta.position = Vector2(ancho_pantalla + 10.0, MARGEN)
+	_tarjeta.position = Vector2((ancho_pantalla - _tarjeta.size.x) / 2.0, -_tarjeta.size.y - 6.0)
 
-	# Entra deslizando desde la derecha
+	# Baja deslizando desde arriba
 	var entrada := create_tween()
-	entrada.tween_property(_tarjeta, "position:x", destino, SEGUNDOS_ENTRADA) \
+	entrada.tween_property(_tarjeta, "position:y", MARGEN, SEGUNDOS_ENTRADA) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	await entrada.finished
 
 	await get_tree().create_timer(SEGUNDOS_VISIBLE).timeout
 
-	# Sale con fundido
+	# Sube y se va
 	var salida := create_tween()
-	salida.tween_property(_tarjeta, "modulate:a", 0.0, SEGUNDOS_SALIDA)
+	salida.tween_property(_tarjeta, "position:y", -_tarjeta.size.y - 6.0, SEGUNDOS_SALIDA)
 	await salida.finished
 	_tarjeta.visible = false
 
 
-## Mismo estilo que la caja de diálogo: azul petróleo, borde naranja, Pixelify Sans.
+## Banner de alerta: fondo azul noche, borde naranja de 2 px, ícono cuadrado «MC» a la izquierda y dos líneas de texto.
 func _aplicar_estilo() -> void:
-	var caja := StyleBoxFlat.new()
-	caja.bg_color = Color("0f2d38", 0.95)
-	caja.border_color = Color("ff8a2a")
-	caja.set_border_width_all(2)
-	caja.set_corner_radius_all(4)
-	caja.set_content_margin_all(8)
-	_tarjeta.add_theme_stylebox_override("panel", caja)
-
-	if ResourceLoader.exists(RUTA_FUENTE):
-		var fuente: Font = load(RUTA_FUENTE)
-		_titulo.add_theme_font_override("font", fuente)
-		_texto.add_theme_font_override("font", fuente)
-	_titulo.add_theme_font_size_override("font_size", 16)
-	_texto.add_theme_font_size_override("font_size", 14)
-	_titulo.add_theme_color_override("font_color", Color("ff8a2a"))
-	_texto.add_theme_color_override("font_color", Color("fff4dc"))
+	_tarjeta.custom_minimum_size = Vector2(ANCHO, 0)
+	_tarjeta.add_theme_stylebox_override("panel", EstiloUI.caja(EstiloUI.PETROLEO_OSCURO, EstiloUI.NARANJA, 2, 5))
+	var contenido: Control = _tarjeta.get_node("Contenido")
+	var fila := HBoxContainer.new()
+	fila.add_theme_constant_override("separation", 8)
+	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tarjeta.add_child(fila)
+	contenido.reparent(fila, false)
+	contenido.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	contenido.add_theme_constant_override("separation", 0)
+	var icono := PanelContainer.new()
+	icono.custom_minimum_size = Vector2(26, 26)
+	icono.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icono.add_theme_stylebox_override("panel", EstiloUI.caja(EstiloUI.NARANJA, EstiloUI.TINTA, 2, 2))
+	var mc := EstiloUI.titulo("MC", 9, EstiloUI.TINTA)
+	mc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mc.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	icono.add_child(mc)
+	fila.add_child(icono)
+	fila.move_child(icono, 0)
+	for e in [_titulo, _texto]:
+		e.custom_minimum_size = Vector2(ANCHO - 56.0, 0)
+	_titulo.add_theme_font_override("font", EstiloUI.fuente_titulo())
+	_titulo.add_theme_font_size_override("font_size", 8)
+	_titulo.add_theme_color_override("font_color", EstiloUI.NARANJA)
+	_texto.add_theme_font_override("font", EstiloUI.fuente_texto())
+	_texto.add_theme_font_size_override("font_size", 12)
+	_texto.add_theme_color_override("font_color", EstiloUI.CREMA)

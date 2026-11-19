@@ -162,6 +162,8 @@ func _vigilar_replica(delta: float) -> void:
 	else:
 		jugador.liberar()
 	jugador.sprite.scale.y = 0.82 if sujeto else 1.0
+	if not cerca_peligro:
+		jugador.progreso_mantener = clampf(Sismo.t_fuerte / SEGUNDOS_REPLICA, 0.0, 1.0) if sujeto else 0.0
 	_mostrar_mensaje(TEXTO_PROTEGERSE if not cerca_peligro else "Estás muy cerca de un edificio o un cable: aléjate.")
 	_actualizar_iconos(2 if sujeto and Sismo.t_fuerte > SEGUNDOS_REPLICA * 0.5 else (1 if sujeto else 0))
 	if cerca_peligro and Sismo.fase == Sismo.Fase.FUERTE and Sismo.t_fuerte > 0.8:

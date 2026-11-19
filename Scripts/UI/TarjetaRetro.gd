@@ -3,14 +3,15 @@ extends CanvasLayer
 ## La tarjeta de retroalimentación de las decisiones (siempre el mismo diseño, capa 13):
 ## título («Muy bien», «Casi» u «Ojo»), «Lo que hiciste», «Lo recomendado», «Por qué» y un botón «Entendido» y,
 ## si la decisión no fue segura, también «Intentar de nuevo». Con el juego en pausa mientras está abierta.
-## El tono es cálido y breve: nunca hay burla ni pantalla de muerte.
+## Diseño de señal de seguridad (pictograma, borde del color del resultado). El tono es cálido y breve: nunca hay burla ni pantalla de muerte.
 ##
 ## La crea Retroalimentacion (autoload) desde Scenes/UI/TarjetaRetro.tscn.
 ## Uso:  var reintentar: bool = await TarjetaRetro.mostrar(get_tree(), "Ojo", hecho, recomendado, por_que, true)
 
 signal cerrada(reintentar: bool)
 
-const COLOR_TITULO := {"Muy bien": Color("8fd19e"), "Casi": Color("ffd166"), "Ojo": Color("ff8a2a")}
+## Color de la señal según el título (acierto, precaución, riesgo). Los pictogramas se dibujan en Pictograma.gd.
+const COLOR_TITULO := {"Muy bien": EstiloUI.TURQUESA, "Casi": EstiloUI.AMBAR, "Ojo": EstiloUI.ROJO}
 
 var _titulo := ""
 var _hecho := ""
@@ -19,6 +20,7 @@ var _por_que := ""
 var _permite_reintento := false
 var _cerrando := false
 var _primer_boton: Button
+var _panel: PanelContainer
 var _fila_botones: HBoxContainer
 var _textos: Array[Label] = []
 
@@ -48,23 +50,55 @@ func _ready() -> void:
 	raiz.theme = EstiloUI.tema()
 	add_child(raiz)
 	var velo := ColorRect.new()
-	velo.color = Color(0.03, 0.12, 0.16, 0.6)
+	velo.color = Color(EstiloUI.AZUL_NOCHE, 0.7)
 	velo.set_anchors_preset(Control.PRESET_FULL_RECT)
 	raiz.add_child(velo)
 
+	# La tarjeta es una señal de seguridad: borde del color del resultado, pictograma y título en la cabecera
+	var color: Color = COLOR_TITULO.get(_titulo, EstiloUI.NARANJA)
 	var panel := PanelContainer.new()
 	panel.position = Vector2(110, 15)
-	panel.size = Vector2(420, 330)
-	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("0f2d38", 0.97), EstiloUI.NARANJA, 2, 14, 5))
+	panel.custom_minimum_size = Vector2(420, 0)
+	_panel = panel
+	panel.add_theme_stylebox_override("panel", EstiloUI.caja(EstiloUI.PETROLEO, color, 2, 0))
 	raiz.add_child(panel)
+	var columna := VBoxContainer.new()
+	columna.add_theme_constant_override("separation", 0)
+	panel.add_child(columna)
+	var cinta := ColorRect.new()
+	cinta.color = color
+	cinta.custom_minimum_size = Vector2(0, 5)
+	columna.add_child(cinta)
+	var cabecera := PanelContainer.new()
+	cabecera.add_theme_stylebox_override("panel", EstiloUI.caja(EstiloUI.PETROLEO_OSCURO, EstiloUI.PETROLEO_OSCURO, 0, 8))
+	columna.add_child(cabecera)
+	var fila_cab := HBoxContainer.new()
+	fila_cab.add_theme_constant_override("separation", 10)
+	cabecera.add_child(fila_cab)
+	fila_cab.add_child(Pictograma.para_titulo(_titulo, 40.0))
+	var titulo := EstiloUI.titulo(_titulo.to_upper(), 16, EstiloUI.CREMA)
+	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	titulo.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	fila_cab.add_child(titulo)
+	# Sami: preocupado cuando es «Ojo», neutral en los demás casos
+	var cara := TextureRect.new()
+	cara.texture = Retratos.rostro("sami_preocupado" if _titulo == "Ojo" else "sami_neutral")
+	cara.custom_minimum_size = Vector2(48, 48)
+	cara.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	cara.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	cara.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fila_cab.add_child(cara)
+	var margen := MarginContainer.new()
+	for lado in ["left", "right", "top", "bottom"]:
+		margen.add_theme_constant_override("margin_" + lado, 12)
+	columna.add_child(margen)
 	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 6)
-	panel.add_child(v)
-	v.add_child(EstiloUI.etiqueta(_titulo, 20, COLOR_TITULO.get(_titulo, EstiloUI.NARANJA)))
+	v.add_theme_constant_override("separation", 7)
+	margen.add_child(v)
 	_textos.append(_bloque(v, "Lo que hiciste", _hecho))
 	_textos.append(_bloque(v, "Lo recomendado", _recomendado))
 	_textos.append(_bloque(v, "Por qué", _por_que))
-	_textos.append(_bloque(v, "Para recordar", "Recuerda: %s" % _recomendado.trim_suffix(".")))
+	_textos.append(_nota(v, "Para recordar", "Recuerda: %s" % _recomendado.trim_suffix(".")))
 	var fila := HBoxContainer.new()
 	fila.alignment = BoxContainer.ALIGNMENT_END
 	fila.add_theme_constant_override("separation", 10)
@@ -83,6 +117,10 @@ func _ready() -> void:
 ## Los textos se escriben letra por letra, con el mismo efecto y el mismo sonido de letras que los diálogos.
 ## Los botones aparecen al terminar (o antes, con E o ENTER, que completa el texto de golpe).
 func _escribir() -> void:
+	# La tarjeta se ajusta a su contenido y queda centrada en la pantalla
+	await get_tree().process_frame
+	_panel.reset_size()
+	_panel.position = Vector2(110, maxf(8.0, (360.0 - _panel.size.y) / 2.0))
 	for e in _textos:
 		var texto := e.text
 		await Dialogo.escribir_etiqueta(e, texto)
@@ -100,14 +138,31 @@ func _mostrar_botones() -> void:
 
 func _bloque(padre: Control, rotulo: String, texto: String) -> Label:
 	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 1)
-	v.add_child(EstiloUI.etiqueta(rotulo, 11, EstiloUI.GRIS))
-	var e := EstiloUI.etiqueta(texto, 12, EstiloUI.CREMA)
+	v.add_theme_constant_override("separation", 2)
+	v.add_child(EstiloUI.titulo(rotulo.to_upper(), 8, EstiloUI.NARANJA))
+	var e := EstiloUI.etiqueta(texto, 13, EstiloUI.CREMA)
 	e.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	e.custom_minimum_size = Vector2(390, 0)
+	e.custom_minimum_size = Vector2(394, 0)
 	e.visible_characters = 0
 	v.add_child(e)
 	padre.add_child(v)
+	return e
+
+
+## La frase para recordar va en una nota de papel crema con texto oscuro.
+func _nota(padre: Control, rotulo: String, texto: String) -> Label:
+	var caja := PanelContainer.new()
+	caja.add_theme_stylebox_override("panel", EstiloUI.caja(EstiloUI.CREMA, EstiloUI.TINTA, 2, 6))
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 2)
+	caja.add_child(v)
+	v.add_child(EstiloUI.titulo(rotulo.to_upper(), 8, EstiloUI.TINTA_SUAVE))
+	var e := EstiloUI.etiqueta(texto, 13, EstiloUI.TINTA)
+	e.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	e.custom_minimum_size = Vector2(380, 0)
+	e.visible_characters = 0
+	v.add_child(e)
+	padre.add_child(caja)
 	return e
 
 

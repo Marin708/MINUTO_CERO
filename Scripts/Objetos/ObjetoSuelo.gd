@@ -62,3 +62,8 @@ func puede_interactuar() -> bool:
 
 func interactuar() -> void:
 	interactuado.emit(self)
+
+
+## El verbo que se muestra junto a la tecla E.
+func verbo() -> String:
+	return "Tomar"

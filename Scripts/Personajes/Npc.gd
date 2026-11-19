@@ -36,6 +36,11 @@ func _ready() -> void:
 	_actualizar_animacion()
 
 
+## El verbo que se muestra junto a la tecla E.
+func verbo() -> String:
+	return "Hablar"
+
+
 ## El nombre que se muestra en el cuadro de diálogo.
 func nombre() -> String:
 	return str(NOMBRES[personaje])

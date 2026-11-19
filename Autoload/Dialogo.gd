@@ -42,6 +42,14 @@ var respuesta_de_prueba := -99
 ## Ejemplo: Dialogo.retratos["Lucía"] = textura. (Quien lo registre debe quitarlo al terminar.)
 var retratos: Dictionary = {}
 
+## Dónde está cada personaje en el mundo, por el nombre que sale en el diálogo ("Mamá", "Doña Rosa", "Sami"...): la cola del
+## globo de cómic apunta a ese nodo. Los niveles lo llenan al empezar y lo vacían al salir.
+var anclas: Dictionary = {}
+
+## true mientras hay una alerta que se avisa por radio (por ejemplo el olor a gas): Lucía se ve en alerta.
+## Durante el sismo y la réplica Lucía se ve en alerta sola (Sismo.esta_activo()).
+var alerta_radio := false
+
 ## Cuántos diálogos hay abiertos ahora mismo.
 var _abiertos := 0
 ## Cuántos de los abiertos NO se pueden cancelar (el cuestionario de entrada y el de salida).

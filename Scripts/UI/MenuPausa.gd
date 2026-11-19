@@ -147,12 +147,16 @@ func _construir() -> void:
 	_raiz.add_child(centro)
 	_panel = PanelContainer.new()
 	_panel.custom_minimum_size = Vector2(300, 0)
-	_panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color(EstiloUI.PETROLEO_OSCURO, 0.96), EstiloUI.NARANJA, 2, 14, 5))
+	_panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color(EstiloUI.PETROLEO_OSCURO, 0.97), EstiloUI.NARANJA, 2, 12))
 	centro.add_child(_panel)
 	var marco := VBoxContainer.new()
 	marco.add_theme_constant_override("separation", 8)
 	_panel.add_child(marco)
-	var titulo := EstiloUI.etiqueta("Pausa", 20, EstiloUI.NARANJA)
+	# Franjas de precaución arriba y abajo, y el título «Pausa» en Silkscreen
+	var franjas_arriba := Franjas.new()
+	franjas_arriba.custom_minimum_size = Vector2(0, 8)
+	marco.add_child(franjas_arriba)
+	var titulo := EstiloUI.titulo("Pausa", 20, EstiloUI.CREMA)
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	marco.add_child(titulo)
 
@@ -164,9 +168,12 @@ func _construir() -> void:
 		marco.add_child(p)
 		p.visible = false
 
-	_aviso = EstiloUI.etiqueta("", 10, EstiloUI.GRIS)
+	_aviso = EstiloUI.etiqueta("", 11, EstiloUI.GRIS)
 	_aviso.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	marco.add_child(_aviso)
+	var franjas_abajo := Franjas.new()
+	franjas_abajo.custom_minimum_size = Vector2(0, 8)
+	marco.add_child(franjas_abajo)
 
 
 ## `sonido` es el efecto que suena al pulsarlo ("" = ninguno: lo pone otro, como al abrir el diario).

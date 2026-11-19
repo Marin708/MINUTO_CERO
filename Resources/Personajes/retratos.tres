@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="Retratos" format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/Retratos.gd" id="1_s"]
+[ext_resource type="Texture2D" path="res://Assets/Personajes/retratos.png" id="2_t"]
+
+[sub_resource type="AtlasTexture" id="at_lucia_neutral"]
+atlas = ExtResource("2_t")
+region = Rect2(0, 0, 96, 96)
+
+[sub_resource type="AtlasTexture" id="at_lucia_hablando"]
+atlas = ExtResource("2_t")
+region = Rect2(96, 0, 96, 96)
+
+[sub_resource type="AtlasTexture" id="at_sami_neutral"]
+atlas = ExtResource("2_t")
+region = Rect2(192, 0, 96, 96)
+
+[sub_resource type="AtlasTexture" id="at_sami_preocupado"]
+atlas = ExtResource("2_t")
+region = Rect2(288, 0, 96, 96)
+
+[sub_resource type="AtlasTexture" id="at_marta"]
+atlas = ExtResource("2_t")
+region = Rect2(0, 96, 96, 96)
+
+[sub_resource type="AtlasTexture" id="at_rosa"]
+atlas = ExtResource("2_t")
+region = Rect2(96, 96, 96, 96)
+
+[sub_resource type="AtlasTexture" id="at_tomas"]
+atlas = ExtResource("2_t")
+region = Rect2(192, 96, 96, 96)
+
+[sub_resource type="AtlasTexture" id="at_lucia_alerta"]
+atlas = ExtResource("2_t")
+region = Rect2(288, 96, 96, 96)
+
+[resource]
+script = ExtResource("1_s")
+lucia_neutral = SubResource("at_lucia_neutral")
+lucia_hablando = SubResource("at_lucia_hablando")
+sami_neutral = SubResource("at_sami_neutral")
+sami_preocupado = SubResource("at_sami_preocupado")
+marta = SubResource("at_marta")
+rosa = SubResource("at_rosa")
+tomas = SubResource("at_tomas")
+lucia_alerta = SubResource("at_lucia_alerta")

@@ -160,6 +160,11 @@ func puede_interactuar() -> bool:
 	return interactuable
 
 
+## El verbo que se muestra junto a la tecla E.
+func verbo() -> String:
+	return "Abrir" if tipo in ["puerta_salida", "armario"] else "Revisar"
+
+
 ## La llama Player al pulsar E.
 func interactuar() -> void:
 	interactuado.emit(self)

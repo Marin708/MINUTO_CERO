@@ -102,6 +102,7 @@ func _colocar_marcadores() -> void:
 				n.name = m.name
 				objetos.add_child(n)
 				npcs.append(n)
+				Dialogo.anclas[Npc.NOMBRES.get(tipo, tipo)] = n
 				n.interactuado.connect(_on_npc)
 			"item":
 				if _usa_items():
@@ -116,11 +117,17 @@ func _colocar_marcadores() -> void:
 				zonas[m.name] = {"pos": m.position, "radio": float(m.get_meta("radio", 48.0)), "tipo": tipo, "etiqueta": etiqueta}
 
 
+func _exit_tree() -> void:
+	Dialogo.anclas.clear()
+	Dialogo.alerta_radio = false
+
+
 func _colocar_jugador() -> void:
 	jugador = ESCENA_PLAYER.instantiate()
 	var spawn := marcadores.get_node_or_null("Spawn") as Marker2D
 	jugador.position = spawn.position if spawn != null else Vector2(64, 64)
 	objetos.add_child(jugador)
+	Dialogo.anclas["Sami"] = jugador
 	jugador.establecer_limites(Rect2(Vector2.ZERO, tamano_mapa))
 
 

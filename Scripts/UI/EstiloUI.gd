@@ -35,7 +35,14 @@ static var _tema: Theme
 
 static func _cargar(ruta: String) -> Font:
 	if not _fuentes.has(ruta):
-		_fuentes[ruta] = load(ruta) if ResourceLoader.exists(ruta) else null
+		var f: Font = load(ruta) if ResourceLoader.exists(ruta) else null
+		if f != null:
+			# Sin ligaduras: en Pixelify Sans «fi» se dibuja como un solo signo que parece «Aj» («fijar» se lee «Ajar»)
+			var v := FontVariation.new()
+			v.base_font = f
+			v.opentype_features = {"liga": 0, "clig": 0, "dlig": 0}
+			f = v
+		_fuentes[ruta] = f
 	return _fuentes[ruta]
 
 
