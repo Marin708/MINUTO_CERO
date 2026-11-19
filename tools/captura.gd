@@ -55,6 +55,10 @@ func _ready() -> void:
 						await get_tree().process_frame
 					break
 		cuadros = 0
+	elif accion.begins_with("galeria"):
+		Galeria.alternar(get_tree())
+		if accion.length() > 7:
+			Galeria.actual().ir_a_pagina(int(accion.substr(8)) - 1)
 	elif accion == "valoracion":
 		Valoracion.mostrar(get_tree())
 	elif accion == "creditos":

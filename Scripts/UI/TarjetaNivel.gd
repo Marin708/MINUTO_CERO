@@ -11,6 +11,8 @@ const FRASES := {1: "Deja la casa lista.", 2: "Actúa cuando tiembla.", 3: "Revi
 const HORAS := {1: Vector2(7, 30), 2: Vector2(7, 42), 3: Vector2(8, 5)}
 
 var nivel := 1
+## true en la galería de estilo: sin el sonido del reloj.
+var silencioso := false
 var _t := 0.0
 var _ultimo_tic := -1
 
@@ -63,7 +65,7 @@ func _process(delta: float) -> void:
 	var tic := int(_t * 3.0)
 	if tic != _ultimo_tic:
 		_ultimo_tic = tic
-		if _t > 0.1:
+		if _t > 0.1 and not silencioso:
 			Audio.efecto("reloj_tic")
 
 

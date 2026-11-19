@@ -35,12 +35,12 @@ static func de_hablante(personaje: String) -> Texture2D:
 	return obtener(DE_HABLANTE.get(personaje, ""))
 
 
-## Recorte del rostro a 1x (sin escalar) para ponerlo junto a un nombre: 48 x 48 píxeles.
+## Recorte del rostro a 1x (sin escalar) para ponerlo junto a un nombre: 56 x 56 píxeles.
 static func rostro(nombre: String) -> Texture2D:
 	var base := obtener(nombre) as AtlasTexture
 	if base == null:
 		return null
 	var r := AtlasTexture.new()
 	r.atlas = base.atlas
-	r.region = Rect2(base.region.position + Vector2(24, 6), Vector2(48, 48))
+	r.region = Rect2(base.region.position + Vector2(20, 4), Vector2(56, 56))
 	return r

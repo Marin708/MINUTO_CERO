@@ -294,6 +294,8 @@ func _conectar_botones() -> void:
 	for item in items:
 		if item is BaseButton:
 			item.pressed.connect(_on_respuesta_elegida.bind(item.get_meta("response")))
+		if item is Button:
+			item.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	# Con el teclado se llega a "Ahora no" bajando desde la última respuesta (y se vuelve subiendo)
 	if not items.is_empty():
 		var ultimo := items[items.size() - 1] as Control
@@ -452,7 +454,7 @@ func _crear_adornos() -> void:
 	caja_nombre.add_child(fila)
 	etiqueta_nombre.reparent(fila, false)
 	_retrato_nombre = TextureRect.new()
-	_retrato_nombre.custom_minimum_size = Vector2(48, 48)
+	_retrato_nombre.custom_minimum_size = Vector2(56, 56)
 	_retrato_nombre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_retrato_nombre.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_retrato_nombre.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED

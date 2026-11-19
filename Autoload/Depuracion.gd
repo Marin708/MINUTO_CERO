@@ -8,6 +8,7 @@ extends Node
 ##   B      forzar el final PREPARADO   (15 decisiones seguras)
 ##   V      forzar el final EN CAMINO   (10 decisiones seguras)
 ##   X      forzar el final A REFORZAR  (3 decisiones seguras)
+##   G      abre o cierra la galería de estilo (todos los componentes de la interfaz)
 ##
 ## B, V y X dejan las 15 decisiones resueltas y llevan a la pantalla del final. Cada tecla muestra un aviso
 ## de 2 segundos. El recorrido de pantallas lo hace el autoload Flujo (si todavía no existe, solo avisa).
@@ -48,6 +49,8 @@ func _unhandled_input(evento: InputEvent) -> void:
 	if not OS.is_debug_build() or not (evento is InputEventKey) or not evento.pressed or evento.echo:
 		return
 	match evento.keycode:
+		KEY_G:
+			Galeria.alternar(get_tree())
 		KEY_N:
 			siguiente_nivel()
 		KEY_1:

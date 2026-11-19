@@ -85,7 +85,7 @@ func _fila(padre: Control, rotulo: String, valor: String) -> Label:
 	var fila := HBoxContainer.new()
 	fila.add_theme_constant_override("separation", 6)
 	var r := EstiloUI.etiqueta(rotulo + ":", 12, EstiloUI.TINTA_SUAVE)
-	r.custom_minimum_size = Vector2(36, 0)
+	r.custom_minimum_size = Vector2(46, 0)
 	fila.add_child(r)
 	var v := EstiloUI.etiqueta(valor, 12, EstiloUI.TINTA)
 	fila.add_child(v)

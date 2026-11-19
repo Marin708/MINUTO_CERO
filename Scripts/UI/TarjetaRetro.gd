@@ -21,8 +21,26 @@ var _permite_reintento := false
 var _cerrando := false
 var _primer_boton: Button
 var _panel: PanelContainer
+## SOLO la galería de estilo: la tarjeta se coloca y se escala donde se pide, sin pausar, sin sonido y con todo el texto visible.
+var modo_galeria := false
+var _posicion := Vector2(110, 15)
+var _escala := 1.0
 var _fila_botones: HBoxContainer
 var _textos: Array[Label] = []
+
+
+## La tarjeta lista para la galería de estilo (se añade a una escena; no pausa el juego ni suena).
+static func para_galeria(titulo: String, hecho: String, recomendado: String, por_que: String, permite_reintento: bool, posicion: Vector2, escala: float) -> TarjetaRetro:
+	var tarjeta: TarjetaRetro = (load("res://Scenes/UI/TarjetaRetro.tscn") as PackedScene).instantiate()
+	tarjeta._titulo = titulo
+	tarjeta._hecho = hecho
+	tarjeta._recomendado = recomendado
+	tarjeta._por_que = por_que
+	tarjeta._permite_reintento = permite_reintento
+	tarjeta.modo_galeria = true
+	tarjeta._posicion = posicion
+	tarjeta._escala = escala
+	return tarjeta
 
 
 ## Muestra la tarjeta y espera. Devuelve true si el jugador pidió «Intentar de nuevo». En las pruebas sin ventana
@@ -49,15 +67,17 @@ func _ready() -> void:
 	raiz.set_anchors_preset(Control.PRESET_FULL_RECT)
 	raiz.theme = EstiloUI.tema()
 	add_child(raiz)
-	var velo := ColorRect.new()
-	velo.color = Color(EstiloUI.AZUL_NOCHE, 0.7)
-	velo.set_anchors_preset(Control.PRESET_FULL_RECT)
-	raiz.add_child(velo)
+	if not modo_galeria:
+		var velo := ColorRect.new()
+		velo.color = Color(EstiloUI.AZUL_NOCHE, 0.7)
+		velo.set_anchors_preset(Control.PRESET_FULL_RECT)
+		raiz.add_child(velo)
 
 	# La tarjeta es una señal de seguridad: borde del color del resultado, pictograma y título en la cabecera
 	var color: Color = COLOR_TITULO.get(_titulo, EstiloUI.NARANJA)
 	var panel := PanelContainer.new()
-	panel.position = Vector2(110, 15)
+	panel.position = _posicion
+	panel.scale = Vector2(_escala, _escala)
 	panel.custom_minimum_size = Vector2(420, 0)
 	_panel = panel
 	panel.add_theme_stylebox_override("panel", EstiloUI.caja(EstiloUI.PETROLEO, color, 2, 0))
@@ -83,7 +103,7 @@ func _ready() -> void:
 	# Sami: preocupado cuando es «Ojo», neutral en los demás casos
 	var cara := TextureRect.new()
 	cara.texture = Retratos.rostro("sami_preocupado" if _titulo == "Ojo" else "sami_neutral")
-	cara.custom_minimum_size = Vector2(48, 48)
+	cara.custom_minimum_size = Vector2(56, 56)
 	cara.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	cara.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 	cara.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -109,6 +129,11 @@ func _ready() -> void:
 	fila.add_child(_primer_boton)
 	_fila_botones = fila
 	fila.modulate.a = 0.0
+	if modo_galeria:
+		for e in _textos:
+			e.visible_characters = -1
+		fila.modulate.a = 1.0
+		return
 	Audio.efecto("dialogo_opciones")
 	get_tree().paused = true
 	_escribir.call_deferred()
