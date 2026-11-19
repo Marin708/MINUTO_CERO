@@ -31,7 +31,8 @@ RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Los 12 sonidos de interfaz reutilizados de ECOS (ui_*, dialogo_*, guardar, pista, diario_*) NO se procesan ni se tocan:
 # ya están en Assets/Audio/Efectos/. Aquí solo van los nuevos de MINUTO CERO (sección 14 del documento maestro).
 EFECTOS = """sismo_aviso sismo_fin replica objeto_cae estante_cae vidrio_roto escombros radio_estatica radio_aviso
-valvula linterna_on item_recoge correcto ojo silbato ascensor_no puerta_abre paso_piso paso_calle llegada_punto""".split()
+valvula linterna_on item_recoge correcto ojo silbato ascensor_no puerta_abre paso_piso paso_calle llegada_punto
+reloj_tic sello lapiz_marca radio_squelch""".split()
 AMBIENTE = "amb_casa amb_sismo amb_calle".split()
 MUSICA = "musica_titulo musica_antes musica_despues final_preparado final_encamino final_reforzar".split()
 FINALES = {"final_preparado", "final_encamino", "final_reforzar"}

@@ -26,7 +26,7 @@ Los sonidos de interfaz y de diálogo vienen del proyecto ECOS
 # Herramientas y licencias
 Godot Engine, licencia MIT
 Dialogue Manager, complemento para Godot, licencia MIT
-Pixelify Sans, fuente tipográfica con licencia abierta (SIL Open Font License)
+Silkscreen (títulos y etiquetas), VT323 (radio y transmisiones) y Pixelify Sans (lectura), fuentes de Google Fonts con licencia abierta (SIL Open Font License)
 
 # Fuentes de contenido
 Unidad Nacional para la Gestión del Riesgo de Desastres (UNGRD)

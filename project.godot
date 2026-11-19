@@ -59,6 +59,10 @@ window/stretch/scale_mode.web="fractional"
 
 enabled=PackedStringArray("res://addons/dialogue_manager/plugin.cfg")
 
+[gui]
+
+theme/custom="res://Resources/tema_minutocero.tres"
+
 [input]
 
 ARRIBA={
