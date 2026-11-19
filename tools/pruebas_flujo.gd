@@ -26,6 +26,7 @@ func _ready() -> void:
 	KitUI.seleccion_de_prueba = ["agua", "alimentos", "linterna", "pilas", "silbato", "botiquin", "medicinas", "documentos"]
 
 	await _prueba_tarjeta()
+	await _prueba_tarjeta_contenido()
 	await _recorrido_completo()
 	await _teclas_de_depuracion()
 	await _sismo_en_tiempo_real()
@@ -114,12 +115,42 @@ func _prueba_tarjeta() -> void:
 	await get_tree().process_frame
 	_ok(is_instance_valid(tarjeta) and not tarjeta._cerrando, "ESC no cierra la tarjeta")
 	tarjeta._mostrar_botones()
-	_ok(tarjeta._textos[0].visible_characters == -1 and tarjeta._fila_botones.get_child_count() == 2, "botones Intentar de nuevo y Entendido tras escribir el texto")
-	(tarjeta._fila_botones.get_child(0) as Button).pressed.emit()
+	var botones: Array[Button] = []
+	for h in tarjeta._fila_botones.get_children():
+		if h is Button:
+			botones.append(h)
+	_ok(tarjeta._textos[0].visible_characters == -1 and botones.size() == 2, "botones Intentar de nuevo y Entendido tras escribir el texto")
+	_ok(tarjeta._modal.boton_principal == botones[1] and tarjeta._modal.pie.is_visible_in_tree(), "el pie fijo tiene «Entendido» como botón principal")
+	botones[0].pressed.emit()
 	await _hasta(func() -> bool: return resultado[0] != null, 3.0)
 	_ok(resultado[0] == true, "«Intentar de nuevo» devuelve true")
 	Estado.nueva_partida()
 	Dialogo.respuesta_de_prueba = 0
+
+
+## Reglas de contenido de la tarjeta: una sola sección si «hiciste» y «recomendado» son iguales; el kit lista ✔ y ✖ y solo lo que faltó.
+func _prueba_tarjeta_contenido() -> void:
+	print("Tarjeta: contenido")
+	var igual := TarjetaRetro.para_galeria("Muy bien", "Fijar el estante.", "Fijar el estante.", "Porque se puede caer.", false, Vector2.ZERO, 1.0)
+	get_tree().root.add_child(igual)
+	await get_tree().process_frame
+	_ok(igual._textos.size() == 2, "«hiciste» igual a «recomendado»: una sola sección (+ «Por qué»), sin «Lo recomendado» ni nota repetida")
+	igual.queue_free()
+	var completo := ["agua", "alimentos", "linterna", "pilas", "silbato", "botiquin", "medicinas", "documentos"]
+	var kit := TarjetaRetro.para_galeria("Muy bien", "", KitUI._faltaron(completo), "Por qué del kit.", false, Vector2.ZERO, 1.0, KitUI.lista_elegidos(completo))
+	get_tree().root.add_child(kit)
+	await get_tree().process_frame
+	_ok(KitUI._faltaron(completo) == "" and kit._textos.size() == 9, "kit completo: 8 objetos con ✔ y «Por qué», sin «Lo recomendado»")
+	kit.queue_free()
+	var parcial := ["agua", "alimentos", "linterna", "pilas", "silbato", "botiquin", "vela", "televisor"]
+	var lista := KitUI.lista_elegidos(parcial)
+	var cuenta_ok := 0
+	for i in lista:
+		if i["ok"]:
+			cuenta_ok += 1
+	_ok(lista.size() == 8 and cuenta_ok == 6 and KitUI._faltaron(parcial) == "Medicinas de uso diario, Documentos en bolsa impermeable", "kit con 2 distractores: 6 ✔, 2 ✖ y solo faltaron medicinas y documentos")
+	_ok(not str(Estado.datos_decision("D5")["retro"]).contains("al menos 7"), "el «Por qué» del kit no muestra la regla interna de 7 correctos")
+	await get_tree().process_frame
 
 
 func _buscar_tarjeta() -> TarjetaRetro:

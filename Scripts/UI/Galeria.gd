@@ -5,7 +5,7 @@ extends CanvasLayer
 ##   1 Diálogo y avisos   2 Radio y retratos   3 Retroalimentación   4 Libreta   5 HUD y pausa
 ##   6 Tablilla, carné y botones   7 Título   8 Transiciones, señales y sellos
 ## Vista general (por defecto): las 8 páginas juntas en 4 x 2. Flechas izquierda y derecha: una página a tamaño real.
-## V: vuelve a la vista general. G o Esc: cerrar. No es parte del juego: no se usa fuera de OS.is_debug_build().
+## V: vuelve a la vista general. K: abre la prueba de modales (GaleriaModales). G o Esc: cerrar. No es parte del juego: no se usa fuera de OS.is_debug_build().
 
 const ESCENA := "res://Scenes/UI/Galeria.tscn"
 const PAGINAS := ["1 · Diálogo y avisos", "2 · Radio y retratos", "3 · Retroalimentación", "4 · Libreta",
@@ -83,6 +83,10 @@ func _input(evento: InputEvent) -> void:
 		KEY_G, KEY_ESCAPE:
 			get_viewport().set_input_as_handled()
 			cerrar()
+		KEY_K:
+			get_viewport().set_input_as_handled()
+			cerrar()
+			GaleriaModales.abrir(get_tree())
 		KEY_V:
 			get_viewport().set_input_as_handled()
 			ir_a_pagina(-1)

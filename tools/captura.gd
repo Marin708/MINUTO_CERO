@@ -59,6 +59,12 @@ func _ready() -> void:
 		Galeria.alternar(get_tree())
 		if accion.length() > 7:
 			Galeria.actual().ir_a_pagina(int(accion.substr(8)) - 1)
+	elif accion == "kit":
+		KitUI.mostrar(get_tree())
+	elif accion == "retro_kit":
+		var ids := ["agua", "alimentos", "linterna", "pilas", "silbato", "botiquin", "vela", "televisor"]
+		Estado.registrar_decision("D5", false)
+		Retroalimentacion.tarjeta("Ojo", "", "Medicinas de uso diario, Documentos en bolsa impermeable", str(Estado.datos_decision("D5")["retro"]), true, KitUI.lista_elegidos(ids))
 	elif accion == "valoracion":
 		Valoracion.mostrar(get_tree())
 	elif accion == "creditos":
