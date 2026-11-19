@@ -10,9 +10,9 @@ extends CanvasLayer
 signal abierta_cambiada(abierta: bool)
 
 const CARPETA := "res://Resources/contenido/"
-const PESTANAS := ["Lecciones", "Mitos y realidades", "Memoria de 1999", "Mi plan"]
+const PESTANAS := ["Lecciones", "Mitos y realidades", "Memoria de 1999", "Mi plan", "Avisos"]
 ## Color del separador de cada pestaña y color de su texto (contraste alto sobre cada uno).
-const COLOR_PESTANA := [EstiloUI.NARANJA, EstiloUI.AMBAR, EstiloUI.TURQUESA, Color("7fbfd0")]
+const COLOR_PESTANA := [EstiloUI.NARANJA, EstiloUI.AMBAR, EstiloUI.TURQUESA, Color("7fbfd0"), Color("e8957f")]
 const PAPEL := Color("fbf5e4")
 
 var abierto := false
@@ -150,6 +150,8 @@ func _elegir(indice: int) -> void:
 			_memoria()
 		3:
 			_plan()
+		4:
+			_avisos()
 	_scroll.scroll_vertical = 0
 
 
@@ -212,3 +214,18 @@ func _plan() -> void:
 	var d := _leer("plan.json")
 	for p in d.get("pasos", []):
 		_contenido.add_child(_tarjeta("%d. %s" % [int(p["numero"]), str(p["texto"])], []))
+
+
+## Historial de avisos: los últimos 30, del más nuevo al más viejo, con su hora de juego.
+func _avisos() -> void:
+	_contenido.add_child(_texto("Aquí quedan los últimos %d avisos por si se te pasó alguno." % Estado.MAX_AVISOS, 10, EstiloUI.TINTA_SUAVE))
+	if Estado.avisos.is_empty():
+		_contenido.add_child(_texto("Todavía no hay avisos.", 13, EstiloUI.TINTA_SUAVE))
+		return
+	for i in range(Estado.avisos.size() - 1, -1, -1):
+		var a: Dictionary = Estado.avisos[i]
+		var cuerpo: Array = []
+		if str(a.get("texto", "")) != "":
+			cuerpo.append(str(a["texto"]))
+		cuerpo.append("Hora de juego: %s" % Estado.formato_hora(float(a.get("hora", 0.0))))
+		_contenido.add_child(_tarjeta(str(a.get("titulo", "")), cuerpo))

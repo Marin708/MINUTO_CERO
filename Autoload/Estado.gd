@@ -29,10 +29,32 @@ var logradas: Array[String] = []
 var nivel_actual: int = 1
 ## ids de las tarjetas de memoria desbloqueadas ("mem1"...).
 var tarjetas: Array[String] = []
+## Historial de avisos (los últimos 30): {titulo, texto, hora} con la hora en segundos de juego. Se guarda con la partida.
+var avisos: Array[Dictionary] = []
+## Segundos de juego de esta partida (no avanzan con el juego en pausa).
+var segundos_juego := 0.0
+const MAX_AVISOS := 30
 
 var _decisiones_datos: Dictionary = {}
 var _finales: Array = []
 var _tarjetas_datos: Array = []
+
+
+func _process(delta: float) -> void:
+	segundos_juego += delta
+
+
+## Anota un aviso en el historial (máximo 30; el más viejo se descarta).
+func registrar_aviso(titulo: String, texto: String) -> void:
+	avisos.append({"titulo": titulo, "texto": texto, "hora": segundos_juego})
+	while avisos.size() > MAX_AVISOS:
+		avisos.pop_front()
+
+
+## «mm:ss» de unos segundos de juego.
+static func formato_hora(segundos: float) -> String:
+	var s := int(segundos)
+	return "%02d:%02d" % [s / 60, s % 60]
 
 
 func _ready() -> void:
@@ -207,6 +229,8 @@ func nueva_partida() -> void:
 	lecciones.clear()
 	logradas.clear()
 	tarjetas.clear()
+	avisos.clear()
+	segundos_juego = 0.0
 	nivel_actual = 1
 	partida_reiniciada.emit()
 
@@ -221,6 +245,8 @@ func guardar() -> bool:
 		"lecciones": lecciones,
 		"logradas": logradas,
 		"tarjetas": tarjetas,
+		"avisos": avisos,
+		"segundos_juego": segundos_juego,
 		"evaluacion": Evaluacion.a_diccionario(),
 	}
 	# En la web se escribe directo al archivo final: el almacenamiento del navegador (IndexedDB) se sincroniza al
@@ -295,6 +321,12 @@ func cargar() -> bool:
 	for t in _tarjetas_datos:
 		if _lista(lectura, "tarjetas").has(t["id"]) and not tarjetas.has(str(t["id"])):
 			tarjetas.append(str(t["id"]))
+	# Historial de avisos (solo entradas con la forma esperada)
+	for a in _lista(lectura, "avisos"):
+		if typeof(a) == TYPE_DICTIONARY and a.has("titulo") and avisos.size() < MAX_AVISOS:
+			avisos.append({"titulo": str(a["titulo"]), "texto": str(a.get("texto", "")), "hora": float(a.get("hora", 0.0))})
+	var sj: Variant = lectura.get("segundos_juego", 0.0)
+	segundos_juego = float(sj) if typeof(sj) in [TYPE_INT, TYPE_FLOAT] else 0.0
 	# La evaluación (pre, consentimiento...) vuelve a su sitio; el "pre" ya hecho no se repite
 	Evaluacion.desde_diccionario(lectura.get("evaluacion", null))
 	nivel_cambiado.emit(nivel_actual)

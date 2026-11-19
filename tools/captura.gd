@@ -28,6 +28,17 @@ func _ready() -> void:
 		Menus.abrir_pausa()
 	elif accion == "banner":
 		Notificacion.mostrar("Tarjeta de memoria desbloqueada", "Mira tu libreta para leerla.")
+	elif accion == "banner3":
+		Notificacion.mostrar("Memoria de 1999", "Nueva tarjeta en tu libreta (Tab). Cada nivel desbloquea una tarjeta en homenaje al terremoto del Eje Cafetero.")
+		Notificacion.mostrar("Listo", "Zapatos cerrados, mochila y linterna contigo.")
+		Notificacion.mostrar("Tarjeta de memoria desbloqueada", "Mira tu libreta para leerla.")
+	elif accion == "libreta_avisos":
+		Estado.segundos_juego = 125.0
+		Estado.registrar_aviso("Memoria de 1999", "Nueva tarjeta en tu libreta (Tab).")
+		Estado.segundos_juego = 301.0
+		Estado.registrar_aviso("Listo", "Zapatos cerrados, mochila y linterna contigo.")
+		Menus.libreta.abrir()
+		Menus.libreta._elegir(4)
 	elif accion == "acuerdo":
 		Consentimiento.mostrar(get_tree())
 	elif accion == "evaluacion":

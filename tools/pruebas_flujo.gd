@@ -27,6 +27,7 @@ func _ready() -> void:
 
 	await _prueba_tarjeta()
 	await _prueba_tarjeta_contenido()
+	await _prueba_avisos()
 	await _recorrido_completo()
 	await _teclas_de_depuracion()
 	await _sismo_en_tiempo_real()
@@ -151,6 +152,69 @@ func _prueba_tarjeta_contenido() -> void:
 	_ok(lista.size() == 8 and cuenta_ok == 6 and KitUI._faltaron(parcial) == "Medicinas de uso diario, Documentos en bolsa impermeable", "kit con 2 distractores: 6 ✔, 2 ✖ y solo faltaron medicinas y documentos")
 	_ok(not str(Estado.datos_decision("D5")["retro"]).contains("al menos 7"), "el «Por qué» del kit no muestra la regla interna de 7 correctos")
 	await get_tree().process_frame
+
+
+## Avisos: duración por texto, cola con contador, pausa con un modal abierto, cierre con la acción y historial.
+func _prueba_avisos() -> void:
+	print("Avisos")
+	var N := Notificacion
+	# Duración: 4 s + 0.07 s por carácter, entre 6 y 14; los importantes esperan hasta 20 s
+	var normal := Opciones.DuracionAvisos.NORMAL
+	_ok(is_equal_approx(N.duracion_para(10, false, normal), 6.0), "duración: texto corto = mínimo de 6 s")
+	_ok(is_equal_approx(N.duracion_para(100, false, normal), 11.0), "duración: 100 caracteres = 4 + 7 = 11 s")
+	_ok(is_equal_approx(N.duracion_para(400, false, normal), 14.0), "duración: texto largo = máximo de 14 s")
+	_ok(is_equal_approx(N.duracion_para(10, true, normal), 20.0), "duración: aviso importante = tope de 20 s")
+	_ok(is_equal_approx(N.duracion_para(100, false, Opciones.DuracionAvisos.LARGA), 22.0), "duración «Larga»: el doble")
+	_ok(N.duracion_para(10, false, Opciones.DuracionAvisos.HASTA_CERRAR) == INF, "duración «Hasta cerrar»: sin tope")
+	_ok(N.es_importante("Memoria de 1999") and N.es_importante("Lección aprendida") and not N.es_importante("Listo"), "importantes: memoria y lección")
+	# Se limpia lo que haya quedado de otras pruebas
+	Opciones.duracion_avisos = normal
+	var espera := 0.0
+	while N.mostrando and espera < 30.0:
+		N.cerrar()
+		await get_tree().process_frame
+		espera += get_process_delta_time()
+	Estado.avisos.clear()
+	# Cola de tres avisos: uno a la vez, con «1 de 3»
+	N.mostrar("Primero", "Uno")
+	N.mostrar("Segundo", "Dos")
+	N.mostrar("Tercero", "Tres")
+	_ok(N.pendientes() >= 1 and Estado.avisos.size() == 3, "tres avisos: nada se pierde y quedan en el historial")
+	await _hasta(func() -> bool: return N.visible_listo)
+	_ok(N._contador.text == "1 de 3" and N._titulo.text == "Primero", "cola: se muestra «Primero» con el contador «1 de 3»")
+	var antes: float = N.restante
+	await get_tree().create_timer(0.3).timeout
+	_ok(N.restante < antes, "la cuenta atrás avanza con el aviso a la vista")
+	# Un modal abierto (el árbol en pausa) congela la cuenta atrás
+	get_tree().paused = true
+	await get_tree().process_frame
+	var congelado: float = N.restante
+	await get_tree().create_timer(0.3).timeout
+	_ok(N.hay_modal() and is_equal_approx(N.restante, congelado), "con un modal abierto la cuenta atrás se pausa")
+	get_tree().paused = false
+	# Cerrar con la acción CERRAR_AVISO: fundido, pausa de 0.4 s y entra el siguiente
+	var tecla := InputEventAction.new()
+	tecla.action = "CERRAR_AVISO"
+	tecla.pressed = true
+	Input.parse_input_event(tecla)
+	await _hasta(func() -> bool: return N._titulo.text == "Segundo" and N.visible_listo)
+	_ok(N._titulo.text == "Segundo" and N._contador.text == "2 de 3", "la tecla C cierra el aviso y entra «Segundo» («2 de 3»)")
+	# Un aviso nuevo espera mientras hay un modal abierto
+	get_tree().paused = true
+	N.cerrar()
+	await get_tree().create_timer(1.2).timeout
+	_ok(N._titulo.text == "Segundo" or not N._tarjeta.visible, "con un modal abierto el siguiente aviso espera en la cola")
+	get_tree().paused = false
+	await _hasta(func() -> bool: return N._titulo.text == "Tercero" and N.visible_listo)
+	_ok(N._contador.text == "3 de 3", "al cerrarse el modal sigue la cola: «3 de 3»")
+	N.cerrar()
+	await _hasta(func() -> bool: return not N.mostrando)
+	_ok(not N.mostrando and N.pendientes() == 0, "cola vacía al terminar")
+	# Historial: máximo 30
+	for i in 35:
+		Estado.registrar_aviso("Aviso %d" % i, "")
+	_ok(Estado.avisos.size() == Estado.MAX_AVISOS and Estado.avisos[0]["titulo"] == "Aviso 5", "historial: solo los últimos 30")
+	Estado.avisos.clear()
 
 
 func _buscar_tarjeta() -> TarjetaRetro:

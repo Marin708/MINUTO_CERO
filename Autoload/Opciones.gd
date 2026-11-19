@@ -16,6 +16,10 @@ var volumen_efectos := VOLUMEN_POR_DEFECTO
 var pantalla_completa := false
 ## Aviso suave junto a una compuerta cerrada ("Quizás Culpa pueda ayudar con esto").
 var avisos_pistas := true
+## Cuánto duran los avisos: 0 normal, 1 larga (el doble), 2 hasta que el jugador los cierre.
+enum DuracionAvisos { NORMAL, LARGA, HASTA_CERRAR }
+const NOMBRES_DURACION := ["Normal", "Larga", "Hasta cerrar"]
+var duracion_avisos: int = DuracionAvisos.NORMAL
 
 
 func _ready() -> void:
@@ -58,6 +62,11 @@ func poner_pantalla_completa(activa: bool) -> void:
 	guardar()
 
 
+func poner_duracion_avisos(modo: int) -> void:
+	duracion_avisos = clampi(modo, 0, NOMBRES_DURACION.size() - 1)
+	guardar()
+
+
 func poner_avisos_pistas(activos: bool) -> void:
 	avisos_pistas = activos
 	guardar()
@@ -96,6 +105,7 @@ func guardar() -> void:
 	config.set_value("audio", "efectos", volumen_efectos)
 	config.set_value("pantalla", "completa", pantalla_completa)
 	config.set_value("ayuda", "avisos_pistas", avisos_pistas)
+	config.set_value("ayuda", "duracion_avisos", duracion_avisos)
 	var error := config.save(RUTA)
 	if error != OK:
 		push_warning("Opciones: no se pudieron guardar (error %d)." % error)
@@ -110,3 +120,5 @@ func cargar() -> void:
 	volumen_efectos = clampf(float(config.get_value("audio", "efectos", VOLUMEN_POR_DEFECTO)), 0.0, 1.0)
 	pantalla_completa = bool(config.get_value("pantalla", "completa", false)) and not OS.has_feature("web")
 	avisos_pistas = bool(config.get_value("ayuda", "avisos_pistas", true))
+	var modo: Variant = config.get_value("ayuda", "duracion_avisos", 0)
+	duracion_avisos = clampi(int(modo), 0, NOMBRES_DURACION.size() - 1) if typeof(modo) in [TYPE_INT, TYPE_FLOAT] else 0
