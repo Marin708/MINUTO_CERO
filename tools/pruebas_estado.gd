@@ -21,6 +21,7 @@ func _ready() -> void:
 	_prueba_evaluacion()
 	_prueba_codigo()
 	_prueba_audio()
+	_prueba_identidad()
 
 	# Deja todo como estaba
 	Estado.nueva_partida()
@@ -34,6 +35,28 @@ func _ready() -> void:
 
 	print("Pruebas: %d comprobaciones, %d fallos." % [_pruebas, _fallos])
 	get_tree().quit(1 if _fallos > 0 else 0)
+
+
+## Identidad visual: retratos (8, de 96 x 96 con filtro Nearest), fuentes con tildes y contraste mínimo de 4.5 en los textos.
+func _prueba_identidad() -> void:
+	for nombre in Retratos.NOMBRES:
+		var r := Retratos.obtener(nombre) as AtlasTexture
+		_comprobar(r != null and r.region.size == Vector2(96, 96), "retrato %s: AtlasTexture de 96 x 96" % nombre)
+	_comprobar(Retratos.rostro("rosa").get_size() == Vector2(56, 56), "el rostro pequeño mide 56 x 56 (1x, sin escalar)")
+	_comprobar(Retratos.de_hablante("Doña Rosa") == Retratos.obtener("rosa") and Retratos.de_hablante("Narrador") == null, "los hablantes se asocian con su retrato")
+	_comprobar(EstiloUI.fuente_titulo() != null and EstiloUI.fuente_radio() != null and EstiloUI.fuente_texto() != null, "las tres fuentes cargan (Silkscreen, VT323, Pixelify Sans)")
+	_comprobar(EstiloUI.tema() != null and ResourceLoader.exists(EstiloUI.RUTA_TEMA), "existe Resources/tema_minutocero.tres")
+	var pares := [
+		["crema sobre petróleo", EstiloUI.CREMA, EstiloUI.PETROLEO], ["crema sobre azul noche", EstiloUI.CREMA, EstiloUI.AZUL_NOCHE],
+		["naranja sobre azul noche", EstiloUI.NARANJA, EstiloUI.AZUL_NOCHE], ["naranja sobre petróleo", EstiloUI.NARANJA, EstiloUI.PETROLEO],
+		["gris sobre petróleo", EstiloUI.GRIS, EstiloUI.PETROLEO], ["tinta sobre crema", EstiloUI.TINTA, EstiloUI.CREMA],
+		["tinta sobre papel", EstiloUI.TINTA, EstiloUI.PAPEL], ["nota a lápiz sobre papel", EstiloUI.TINTA_SUAVE, EstiloUI.PAPEL],
+		["tinta sobre naranja", EstiloUI.TINTA, EstiloUI.NARANJA], ["turquesa oscuro sobre papel", EstiloUI.TURQUESA_TINTA, EstiloUI.PAPEL],
+		["ámbar oscuro sobre papel", EstiloUI.AMBAR_TINTA, EstiloUI.PAPEL], ["rojo oscuro sobre papel", EstiloUI.ROJO_TINTA, EstiloUI.PAPEL],
+		["naranja oscuro sobre papel", EstiloUI.NARANJA_TINTA, EstiloUI.PAPEL],
+	]
+	for par in pares:
+		_comprobar(EstiloUI.contraste(par[1], par[2]) >= 4.5, "contraste mínimo 4.5: %s (%.1f)" % [par[0], EstiloUI.contraste(par[1], par[2])])
 
 
 func _comprobar(condicion: bool, descripcion: String) -> void:
