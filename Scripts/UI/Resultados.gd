@@ -1,6 +1,7 @@
 class_name Resultados
 extends CanvasLayer
-## Pantalla de resultados, al terminar la fase "post" (capa 12). Muestra "Tu viaje en números":
+## Pantalla de resultados, al terminar la fase "post" (capa 12), presentada como el carné de brigadista actualizado y el
+## informe de la brigada, sobre papel. Muestra "Tu viaje en números":
 ##   - tres bloques con barras animadas ANTES (gris azulado) y DESPUÉS (naranja): Conocimiento (trivia, 0 a 7),
 ##     Cómo reaccionas (situaciones, 0 a 5) y Tu confianza para prepararte (escala, 2 a 10), con un texto
 ##     cálido según el cambio (nunca un reproche);
@@ -15,8 +16,8 @@ extends CanvasLayer
 
 const ESCENA := "res://Scenes/UI/Resultados.tscn"
 const ESCENA_TITULO := "res://Scenes/UI/PantallaTitulo.tscn"
-const GRIS_VIOLACEO := Color("9db0b8")
-const NARANJA := Color("ff8a2a")
+const GRIS_VIOLACEO := EstiloUI.TINTA_SUAVE
+const NARANJA := EstiloUI.NARANJA
 ## Qué bloques hay: clave, título, mínimo y máximo del puntaje.
 const BLOQUES := [
 	["trivia", "Conocimiento", 0, 7],
@@ -58,7 +59,7 @@ class BarraRes extends Control:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	func _draw() -> void:
-		draw_rect(Rect2(Vector2(0, 1), Vector2(size.x, 8)), Color("14414f"))
+		draw_rect(Rect2(Vector2(0, 1), Vector2(size.x, 8)), Color("d9ccaa"))
 		draw_rect(Rect2(Vector2(0, 1), Vector2(size.x * clampf(fraccion, 0.0, 1.0), 8)), color)
 		draw_rect(Rect2(Vector2(0, 1), Vector2(size.x, 8)), Color(color, 0.35), false, 1.0)
 
@@ -113,17 +114,17 @@ func _construir() -> void:
 	var panel := PanelContainer.new()
 	panel.position = Vector2(16, 10)
 	panel.size = Vector2(608, 340)
-	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("0f2d38", 0.97), EstiloUI.NARANJA, 2, 12, 5))
+	panel.add_theme_stylebox_override("panel", EstiloUI.caja(EstiloUI.PAPEL, EstiloUI.TINTA, 2, 12))
 	_raiz.add_child(panel)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 5)
 	panel.add_child(v)
-	var titulo := EstiloUI.etiqueta("Tu viaje en números", 18, EstiloUI.NARANJA)
+	var titulo := EstiloUI.titulo("Tu viaje en números", 14, EstiloUI.TINTA)
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(titulo)
 
 	_scroll = ScrollContainer.new()
-	_scroll.custom_minimum_size = Vector2(580, 232)
+	_scroll.custom_minimum_size = Vector2(580, 200)
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_scroll.focus_mode = Control.FOCUS_NONE
 	_scroll.follow_focus = true   # al navegar con el teclado, el desplazamiento sigue al botón enfocado
@@ -133,22 +134,23 @@ func _construir() -> void:
 	contenido.custom_minimum_size = Vector2(560, 0)
 	_scroll.add_child(contenido)
 
+	contenido.add_child(_carne_actualizado())
 	if not c["hay_pre"]:
 		contenido.add_child(_texto("No tengo tus respuestas del principio (jugaste sin guardarlas), pero estas son las de ahora.", 10, GRIS_VIOLACEO))
 	for b in BLOQUES:
 		contenido.add_child(_bloque(b, c))
-	contenido.add_child(EstiloUI.etiqueta("Tus respuestas", 14, EstiloUI.NARANJA))
+	contenido.add_child(EstiloUI.titulo("Tus respuestas", 10, EstiloUI.PETROLEO))
 	for bloque in ["trivia", "situaciones"]:
 		for p in Evaluacion.banco.get(bloque, []):
 			contenido.add_child(_fila_pregunta(p, bloque))
-	contenido.add_child(EstiloUI.etiqueta("Tu partida", 14, EstiloUI.NARANJA))
+	contenido.add_child(EstiloUI.titulo("Tu partida", 10, EstiloUI.PETROLEO))
 	contenido.add_child(_resumen(c))
-	contenido.add_child(EstiloUI.etiqueta("Tus 15 decisiones", 14, EstiloUI.NARANJA))
+	contenido.add_child(EstiloUI.titulo("Tus 15 decisiones", 10, EstiloUI.PETROLEO))
 	contenido.add_child(_decisiones())
-	contenido.add_child(EstiloUI.etiqueta("Tu código de resultados", 14, EstiloUI.NARANJA))
+	contenido.add_child(EstiloUI.titulo("Tu código de resultados", 10, EstiloUI.PETROLEO))
 	contenido.add_child(_seccion_codigo())
 
-	_estado = _texto("", 10, EstiloUI.CREMA)
+	_estado = _texto("", 10, EstiloUI.TINTA)
 	_estado.custom_minimum_size = Vector2(580, 0)
 	v.add_child(_estado)
 	var recordatorio := _texto("Esto no es un examen oficial: solo te muestra cómo te fue en este juego.", 9, GRIS_VIOLACEO)
@@ -171,6 +173,25 @@ func _construir() -> void:
 		_boton(fila, "Salir", _salir)
 
 
+## El carné de brigadista actualizado (con el final y el sello) junto al informe de la brigada.
+func _carne_actualizado() -> Control:
+	var fila := HBoxContainer.new()
+	fila.add_theme_constant_override("separation", 14)
+	var carne := Carne.new()
+	carne.poner_nivel("3 · completo")
+	fila.add_child(carne)
+	carne.sellar.call_deferred("BRIGADISTA", EstiloUI.TURQUESA_TINTA)
+	var informe := VBoxContainer.new()
+	informe.add_theme_constant_override("separation", 4)
+	informe.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	informe.add_child(EstiloUI.titulo("INFORME DE LA BRIGADA", 10, EstiloUI.PETROLEO))
+	var detalle := _texto("Este es tu carné actualizado. Abajo está el antes y el después de tus respuestas, y lo que hiciste en cada decisión.", 11, EstiloUI.TINTA)
+	detalle.custom_minimum_size = Vector2(190, 0)
+	informe.add_child(detalle)
+	fila.add_child(informe)
+	return fila
+
+
 func _texto(texto: String, tamano: int, color: Color) -> Label:
 	var e := EstiloUI.etiqueta(texto, tamano, color)
 	e.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -181,7 +202,8 @@ func _texto(texto: String, tamano: int, color: Color) -> Label:
 func _boton(padre: Control, texto: String, accion: Callable) -> Button:
 	var b := Button.new()
 	b.text = texto
-	b.add_theme_font_size_override("font_size", 11)
+	b.add_theme_font_override("font", EstiloUI.fuente_texto())   # etiquetas largas: Pixelify se lee mejor que Silkscreen
+	b.add_theme_font_size_override("font_size", 12)
 	b.custom_minimum_size = Vector2(0, 26)
 	b.pressed.connect(func() -> void:
 		Audio.efecto("ui_elegir")
@@ -200,25 +222,25 @@ func _bloque(b: Array, c: Dictionary) -> Control:
 	var datos: Dictionary = c["por_bloque"][clave]
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 3)
-	v.add_child(EstiloUI.etiqueta(b[1], 13, EstiloUI.CREMA))
+	v.add_child(EstiloUI.etiqueta(b[1], 13, EstiloUI.TINTA))
 	if c["hay_pre"]:
 		v.add_child(_fila_barra("Antes", int(datos["pre"]), minimo, maximo, GRIS_VIOLACEO))
 	v.add_child(_fila_barra("Después", int(datos["post"]), minimo, maximo, NARANJA))
-	v.add_child(_texto(_mensaje(clave, int(datos["dif"]), c["hay_pre"]), 11, Color("d6e2e7")))
+	v.add_child(_texto(_mensaje(clave, int(datos["dif"]), c["hay_pre"]), 11, EstiloUI.TINTA))
 	return v
 
 
 func _fila_barra(nombre: String, valor: int, minimo: int, maximo: int, color: Color) -> Control:
 	var fila := HBoxContainer.new()
 	fila.add_theme_constant_override("separation", 8)
-	var e := EstiloUI.etiqueta(nombre, 11, color)
+	var e := EstiloUI.etiqueta(nombre, 11, EstiloUI.TINTA_SUAVE if color == GRIS_VIOLACEO else EstiloUI.NARANJA_TINTA)
 	e.custom_minimum_size = Vector2(58, 0)
 	fila.add_child(e)
 	var barra := BarraRes.new(color)
 	barra.set_meta("destino", clampf(float(valor - minimo) / float(maximo - minimo), 0.0, 1.0))
 	fila.add_child(barra)
 	_barras.append(barra)
-	var cifra := EstiloUI.etiqueta("%d de %d" % [valor, maximo] if minimo == 0 else "%d (de %d a %d)" % [valor, minimo, maximo], 11, EstiloUI.CREMA)
+	var cifra := EstiloUI.etiqueta("%d de %d" % [valor, maximo] if minimo == 0 else "%d (de %d a %d)" % [valor, minimo, maximo], 11, EstiloUI.TINTA)
 	cifra.custom_minimum_size = Vector2(88, 0)
 	fila.add_child(cifra)
 	return fila
@@ -246,27 +268,37 @@ func _fila_pregunta(p: Dictionary, bloque: String) -> Control:
 	var id := str(p["id"])
 	var hay_pre: bool = Evaluacion.pre_completo() and not Evaluacion.pre["respuestas"].is_empty()
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("0b222b"), Color(EstiloUI.NARANJA, 0.5), 1, 7, 3))
+	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("efe6cf"), EstiloUI.TINTA_SUAVE, 2, 7))
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 2)
 	panel.add_child(col)
-	col.add_child(_texto(str(p.get("tema", "")), 12, EstiloUI.NARANJA))
-	col.add_child(_texto(str(p["texto"]), 10, EstiloUI.GRIS))
+	col.add_child(_texto(str(p.get("tema", "")), 12, EstiloUI.NARANJA_TINTA))
+	col.add_child(_texto(str(p["texto"]), 10, EstiloUI.TINTA_SUAVE))
 	var marcas := HBoxContainer.new()
 	marcas.add_theme_constant_override("separation", 6)
 	if hay_pre:
 		marcas.add_child(EstiloUI.etiqueta("antes", 10, GRIS_VIOLACEO))
 		marcas.add_child(_marca(Evaluacion.puntaje_de("pre", id)))
-	marcas.add_child(EstiloUI.etiqueta("después", 10, NARANJA))
+	marcas.add_child(EstiloUI.etiqueta("después", 10, EstiloUI.NARANJA_TINTA))
 	marcas.add_child(_marca(Evaluacion.puntaje_de("post", id)))
 	col.add_child(marcas)
 	# En situaciones se muestra además la opción que eligió al final
 	var respuestas: Dictionary = Evaluacion._fase("post")["respuestas"]
 	if bloque == "situaciones" and respuestas.has(id):
 		col.add_child(_texto("Elegiste: %s" % str(p["opciones"][int(respuestas[id])]), 10, GRIS_VIOLACEO))
-	col.add_child(_texto("Lo recomendado: %s" % str(p["opciones"][int(p["correcta"])]), 10, EstiloUI.CREMA))
+	col.add_child(_texto("Lo recomendado: %s" % str(p["opciones"][int(p["correcta"])]), 10, EstiloUI.TINTA))
 	if str(p.get("explicacion", "")) != "":
-		col.add_child(_texto(str(p["explicacion"]), 10, Color("d6e2e7")))
+		# Una nota a lápiz: raya de grafito a la izquierda y letra de lápiz
+		var nota := HBoxContainer.new()
+		nota.add_theme_constant_override("separation", 6)
+		var raya := ColorRect.new()
+		raya.color = Color("6a7b82")
+		raya.custom_minimum_size = Vector2(2, 0)
+		nota.add_child(raya)
+		var texto_nota := _texto(str(p["explicacion"]), 11, Color("33444b"))
+		texto_nota.custom_minimum_size = Vector2(500, 0)
+		nota.add_child(texto_nota)
+		col.add_child(nota)
 	return panel
 
 
@@ -279,10 +311,10 @@ func _marca(valor: int) -> Control:
 		if valor < 0:
 			m.draw_line(Vector2(3, 8), Vector2(12, 8), GRIS_VIOLACEO, 2.0)
 		elif valor == 1:
-			m.draw_polyline(PackedVector2Array([Vector2(2, 8), Vector2(6, 12), Vector2(14, 3)]), Color("8fd19e"), 2.5, true)
+			m.draw_polyline(PackedVector2Array([Vector2(2, 8), Vector2(6, 12), Vector2(14, 3)]), EstiloUI.TURQUESA_TINTA, 2.5, true)
 		else:
-			m.draw_line(Vector2(3, 3), Vector2(13, 13), Color("e0a070"), 2.5, true)
-			m.draw_line(Vector2(13, 3), Vector2(3, 13), Color("e0a070"), 2.5, true))
+			m.draw_line(Vector2(3, 3), Vector2(13, 13), EstiloUI.ROJO_TINTA, 2.5, true)
+			m.draw_line(Vector2(13, 3), Vector2(3, 13), EstiloUI.ROJO_TINTA, 2.5, true))
 	return m
 
 
@@ -293,14 +325,14 @@ func _resumen(c: Dictionary) -> Control:
 	lineas.append("Decisiones seguras al primer intento: %d de %d" % [Estado.cantidad_seguras(), Estado.TOTAL_DECISIONES])
 	lineas.append("Lecciones aprendidas: %d" % Estado.cantidad_lecciones())
 	lineas.append("Tu final: %s" % str(Estado.datos_final().get("nombre", "")))
-	return _texto("\n".join(lineas), 12, EstiloUI.CREMA)
+	return _texto("\n".join(lineas), 12, EstiloUI.TINTA)
 
 
 ## Las 15 decisiones del juego: cuáles fueron seguras al primer intento y cuántos intentos llevó cada una.
 func _decisiones() -> Control:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 2)
-	v.add_child(_texto("Seguras al primer intento: %d de %d. Los reintentos no suman, pero te enseñan." % [Estado.cantidad_seguras(), Estado.TOTAL_DECISIONES], 11, EstiloUI.CREMA))
+	v.add_child(_texto("Seguras al primer intento: %d de %d. Los reintentos no suman, pero te enseñan." % [Estado.cantidad_seguras(), Estado.TOTAL_DECISIONES], 11, EstiloUI.TINTA))
 	for id in Estado.ids_decisiones():
 		var d := Estado.datos_decision(id)
 		var estado := "Sin resolver"
@@ -308,16 +340,16 @@ func _decisiones() -> Control:
 		if Estado.decision_resuelta(id):
 			if Estado.primer_intento_de(id):
 				estado = "Segura al primer intento"
-				color = Color("8fd19e")
+				color = EstiloUI.TURQUESA_TINTA
 			else:
 				estado = "Para reforzar (%d intento%s)" % [Estado.intentos_de(id), "" if Estado.intentos_de(id) == 1 else "s"]
-				color = Color("ffd166")
+				color = EstiloUI.AMBAR_TINTA
 		var fila := HBoxContainer.new()
 		fila.add_theme_constant_override("separation", 6)
-		var etiqueta_id := EstiloUI.etiqueta(id, 10, EstiloUI.NARANJA)
+		var etiqueta_id := EstiloUI.etiqueta(id, 10, EstiloUI.NARANJA_TINTA)
 		etiqueta_id.custom_minimum_size = Vector2(26, 0)
 		fila.add_child(etiqueta_id)
-		var situacion := _texto(str(d.get("situacion", "")), 10, EstiloUI.CREMA)
+		var situacion := _texto(str(d.get("situacion", "")), 10, EstiloUI.TINTA)
 		situacion.custom_minimum_size = Vector2(300, 0)
 		fila.add_child(situacion)
 		fila.add_child(EstiloUI.etiqueta(estado, 10, color))
@@ -337,9 +369,12 @@ func _seccion_codigo() -> Control:
 	_campo_codigo.editable = false
 	_campo_codigo.selecting_enabled = true
 	_campo_codigo.custom_minimum_size = Vector2(540, 28)
-	_campo_codigo.add_theme_font_size_override("font_size", 10)
+	_campo_codigo.add_theme_font_size_override("font_size", 11)
+	_campo_codigo.add_theme_color_override("font_color", EstiloUI.CREMA)
+	_campo_codigo.add_theme_stylebox_override("normal", EstiloUI.caja(EstiloUI.PETROLEO_OSCURO, EstiloUI.TINTA, 2, 4))
+	_campo_codigo.add_theme_stylebox_override("read_only", EstiloUI.caja(EstiloUI.PETROLEO_OSCURO, EstiloUI.TINTA, 2, 4))
 	v.add_child(_campo_codigo)
-	v.add_child(_texto("Copia este código y pégalo en la última pregunta del formulario. Solo se comparte si tú lo pegas. No contiene tu nombre ni datos personales.", 10, Color("d6e2e7")))
+	v.add_child(_texto("Copia este código y pégalo en la última pregunta del formulario. Solo se comparte si tú lo pegas. No contiene tu nombre ni datos personales.", 10, EstiloUI.TINTA))
 	var fila := HFlowContainer.new()
 	fila.add_theme_constant_override("h_separation", 8)
 	_boton(fila, "Copiar código", _copiar_codigo)

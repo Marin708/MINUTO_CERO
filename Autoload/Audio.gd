@@ -24,7 +24,7 @@ const EFECTOS := [
 	"sismo_aviso", "sismo_fin", "replica", "objeto_cae", "estante_cae", "vidrio_roto", "escombros",
 	"radio_estatica", "radio_aviso", "valvula", "linterna_on", "item_recoge", "correcto", "ojo", "silbato",
 	"ascensor_no", "puerta_abre", "paso_piso", "paso_calle", "llegada_punto",
-	"reloj_tic", "sello", "lapiz_marca", "radio_squelch",
+	"reloj_tic", "sello", "lapiz_marca", "radio_squelch", "despertador",
 ]
 const AMBIENTES := ["amb_casa", "amb_sismo", "amb_calle"]
 const MUSICAS := ["musica_titulo", "musica_antes", "musica_despues", "final_preparado", "final_encamino", "final_reforzar"]
@@ -37,7 +37,7 @@ const VOLUMEN_DB := {
 	"paso_piso": -9.0, "paso_calle": -9.0,
 	# La retroalimentación suena muy suave: nada de sonidos de error agresivos
 	"correcto": -17.0, "ojo": -17.0, "silbato": -10.0,
-	"reloj_tic": -12.0, "sello": -8.0, "lapiz_marca": -10.0, "radio_squelch": -12.0,
+	"despertador": -10.0, "reloj_tic": -12.0, "sello": -8.0, "lapiz_marca": -10.0, "radio_squelch": -12.0,
 	"ui_mover": -9.0, "ui_aceptar": -6.0, "ui_elegir": -6.0, "ui_cancelar": -6.0,
 }
 const VOLUMEN_MUSICA_DB := -2.0

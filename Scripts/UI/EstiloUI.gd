@@ -21,6 +21,12 @@ const TURQUESA := Color("2a9d8f")      # acierto
 const GRIS := Color("a9bcc4")          # texto secundario sobre petróleo (contraste > 4.5)
 const TINTA := Color("14232b")         # texto oscuro sobre papel crema
 const TINTA_SUAVE := Color("4a5a60")   # nota a lápiz
+const PAPEL := Color("fbf5e4")         # hoja más clara que la crema (tablilla, carné, acuerdo)
+# Versiones oscuras de los colores de señal, para texto sobre papel crema (contraste mínimo 4.5)
+const TURQUESA_TINTA := Color("1a6b61")
+const AMBAR_TINTA := Color("85560a")
+const ROJO_TINTA := Color("a3341a")
+const NARANJA_TINTA := Color("a84400")
 
 # --- Fuentes (Google Fonts, licencia OFL) ---
 const RUTA_TITULO := "res://Assets/Fuentes/Silkscreen-Regular.ttf"
@@ -101,6 +107,27 @@ static func _etiqueta_con(f: Font, texto: String, tamano: int, color: Color) -> 
 	e.add_theme_font_size_override("font_size", tamano)
 	e.add_theme_color_override("font_color", color)
 	return e
+
+
+## Botón tipo señal de seguridad: rectángulo naranja con franjas de precaución arriba y abajo y texto oscuro en Silkscreen.
+## Sirve para las pantallas de introducción (acuerdo, resultados). Foco: borde crema.
+static func boton_senal(texto: String, ancho: float = 0.0, alto: float = 30.0, tamano: int = 10) -> Button:
+	var b := Button.new()
+	b.text = texto
+	b.custom_minimum_size = Vector2(ancho, alto)
+	b.add_theme_font_override("font", fuente_titulo())
+	b.add_theme_font_size_override("font_size", tamano)
+	for c in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color", "font_disabled_color"]:
+		b.add_theme_color_override(c, TINTA)
+	b.add_theme_stylebox_override("normal", caja(NARANJA.darkened(0.12), TINTA, 2, 6))
+	for e in ["hover", "pressed", "focus"]:
+		b.add_theme_stylebox_override(e, caja(NARANJA, CREMA if e == "focus" else TINTA, 2, 6))
+	b.add_theme_stylebox_override("disabled", caja(NARANJA.darkened(0.45), TINTA, 2, 6))
+	b.draw.connect(func() -> void:
+		var ancho_franja: float = b.size.x - 8.0
+		Franjas.pintar(b, Rect2(4, 3, ancho_franja, 3), TINTA, NARANJA, 6.0)
+		Franjas.pintar(b, Rect2(4, b.size.y - 6, ancho_franja, 3), TINTA, NARANJA, 6.0))
+	return b
 
 
 ## Relación de contraste (WCAG) entre dos colores: la identidad pide al menos 4.5 en texto.

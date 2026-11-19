@@ -10,7 +10,7 @@ func _ready() -> void:
 		push_error("Uso: captura.tscn -- ESCENA SALIDA.png [cuadros] [accion]")
 		get_tree().quit(1)
 		return
-	var cuadros := int(args[2]) if args.size() > 2 else 60
+	var cuadros: int = int(args[2]) if args.size() > 2 else 60
 	var accion := args[3] if args.size() > 3 else ""
 	var escena: Node = (load(args[0]) as PackedScene).instantiate()
 	get_tree().root.add_child.call_deferred(escena)
@@ -28,6 +28,40 @@ func _ready() -> void:
 		Menus.abrir_pausa()
 	elif accion == "banner":
 		Notificacion.mostrar("Tarjeta de memoria desbloqueada", "Mira tu libreta para leerla.")
+	elif accion == "acuerdo":
+		Consentimiento.mostrar(get_tree())
+	elif accion == "evaluacion":
+		Cuestionario.mostrar(get_tree(), "pre")
+	elif accion == "pregunta":
+		Cuestionario.mostrar(get_tree(), "pre")
+		var respondidas := 0
+		for i in 4000:
+			await get_tree().process_frame
+			var c := get_tree().root.get_node_or_null("Cuestionario") as Cuestionario
+			if c == null:
+				for h in get_tree().root.get_children():
+					if h is Cuestionario:
+						c = h
+			if c == null:
+				continue
+			if c._panel_intro.visible and not c._boton_seguir.disabled:
+				c._boton_seguir.pressed.emit()
+			elif c._panel_pregunta.visible and not c._respondida and c._panel_pregunta.modulate.a > 0.9:
+				if respondidas < 3:
+					c._botones[0].pressed.emit()
+					respondidas += 1
+				else:
+					for k in 20:
+						await get_tree().process_frame
+					break
+		cuadros = 0
+	elif accion == "valoracion":
+		Valoracion.mostrar(get_tree())
+	elif accion == "creditos":
+		Creditos.mostrar(get_tree())
+	elif accion == "resultados":
+		Estado.forzar_resultado(12)
+		Resultados.mostrar(get_tree())
 	elif accion == "indicador":
 		Estado.nivel_actual = 1
 	for i in cuadros:
