@@ -14,14 +14,14 @@ Generada por `tools/revisar_proyecto.py`. Ordenada por gravedad: **Bloqueante** 
 
 ### Posible falta de ortografía
 
-- `Autoload/Audio.gd línea 412`: doble espacio: Música: %s    Ambiente: %s
-- `Autoload/Audio.gd línea 413`: doble espacio: Volumen   Música %d%%   Efectos %d%%
+- `Autoload/Audio.gd línea 414`: doble espacio: Música: %s    Ambiente: %s
+- `Autoload/Audio.gd línea 415`: doble espacio: Volumen   Música %d%%   Efectos %d%%
 
 ## Informativa (10)
 
 ### Sonidos
 
-- `Assets/Audio`: 41 archivos, 41 en el catálogo, 41 pedidos por el código; faltan: 0
+- `Assets/Audio`: 46 archivos, 46 en el catálogo, 46 pedidos por el código; faltan: 0
 
 ### Tecla F8
 
