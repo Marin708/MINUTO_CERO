@@ -42,3 +42,8 @@ Textos que escribió o adaptó el equipo de desarrollo y **no están literalment
 | 36 | `Scripts/UI/IndicadorTecla.gd`, `Prop.gd`, `Npc.gd`, `ObjetoSuelo.gd` | Verbos junto a la tecla E: «Revisar», «Hablar», «Abrir», «Tomar», «Mantén» | Nuevos |
 | 37 | `Scripts/UI/MenuPausa.gd` | Descripciones de los controles («Moverte», «Hablar, revisar y recoger…») | Reescritas con voz de brigada |
 | 38 | `Assets/Audio/Efectos/despertador.wav` | Sonido de despertador **sintetizado por nosotros** (provisional) | Reemplazar por un sonido de ElevenLabs si se prefiere |
+| 39 | `Resources/contenido/decisiones.json`, D5 | «Por qué» del kit: «Un kit de emergencia lleva agua potable, alimentos no perecederos, linterna con pilas de repuesto, silbato, botiquín, medicinas de uso diario y documentos importantes en una bolsa impermeable. Guárdalo en un lugar de fácil acceso.» (ya no dice «Sí cuenta si hay al menos 7 correctos…»: esa regla es interna, en `kit.json` y en el código) | Texto pedido por el equipo |
+| 40 | `Scripts/UI/TarjetaRetro.gd`, `KitUI.gd` | Tarjeta del kit: «Lo que hiciste» lista lo elegido con ✔ (correcto) y ✖ (distractor); «Lo recomendado» solo trae lo que faltó y no aparece si no faltó nada; sin la nota «Para recordar» | Nuevo |
+| 41 | `Scripts/UI/TarjetaRetro.gd` | Regla general: si «Lo que hiciste» y «Lo recomendado» son iguales, una sola sección con ✔ y sin la nota «Para recordar» repetida | Nuevo |
+| 42 | `Scripts/UI/IndicadorScroll.gd` | Aviso «Sigue leyendo» sobre el pie de los modales que se desplazan | Nuevo |
+
