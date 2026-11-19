@@ -1,22 +1,26 @@
 extends Node2D
 ## Pantalla de título de MINUTO CERO (escena principal del proyecto).
 ##
-## Secuencia: negro -> aparece la ilustración -> el título "MINUTO CERO" letra por letra -> subtítulo -> menú
+## Secuencia: negro -> aparece la ilustración (con una línea de sismógrafo que la cruza y se agita) -> cuenta regresiva
+## 00:59 a 00:00 -> temblor breve y aparece «MINUTO CERO» -> subtítulo -> menú de botones tipo señal de seguridad
 ## (Comenzar, Continuar, Salir). Se puede saltar la entrada con INTERACTUAR o Enter.
 ## "Comenzar": nueva partida y fundido a negro hacia el consentimiento. "Continuar": carga la partida guardada
 ## y va al nivel donde se quedó. El recorrido de pantallas lo hace el autoload Flujo.
 
 const ESCENA_CONSENTIMIENTO := "res://Scenes/UI/Consentimiento.tscn"
-const RUTA_FUENTE := "res://Assets/PixelifySans-VariableFont_wght.ttf"
 const RUTA_FONDO := "res://Assets/UI/fondo_titulo.png"
 
 const PANTALLA := Vector2(640, 360)
-const NARANJA := Color("ff8a2a")
-const CREMA := Color("fff4dc")
-const PETROLEO_OSCURO := Color("0f2d38")
+const NARANJA := EstiloUI.NARANJA
+const CREMA := EstiloUI.CREMA
+const PETROLEO_OSCURO := EstiloUI.AZUL_NOCHE
 const LETRAS_TITULO := "MINUTO CERO"
-const SUBTITULO := "Prepararte hoy puede cambiar el minuto cero."
+const SUBTITULO := "Aprende a actuar ante un sismo"
+## La frase central va pequeña al pie.
+const FRASE_CENTRAL := "Prepararte hoy puede cambiar el minuto cero."
 const SEGUNDOS_APARICION := 1.5
+## Cuánto dura la cuenta regresiva de 00:59 a 00:00.
+const SEGUNDOS_CUENTA := 2.6
 const SEGUNDOS_POR_LETRA_TITULO := 0.12
 
 @onready var mundo: Node2D = $Mundo
@@ -37,17 +41,31 @@ var _eligiendo := false
 var _tween_intro: Tween
 var _tweens_letras: Array[Tween] = []
 var _fuente: Font
+var _sismografo: Sismografo
+var _cuenta: Label
+var _flecha: Control
+var _contando := false
+var _t_cuenta := 0.0
+var _ultimo_segundo := 60
+var _sacudida := 0.0
 
 
 func _ready() -> void:
 	musica.bus = Opciones.BUS_MUSICA          # los volúmenes de Opciones valen también aquí
 	sonido_seleccion.bus = Opciones.BUS_EFECTOS
 	Audio.musica("musica_titulo", 1.0)
-	Audio.detener_ambiente(0.5)
-	if ResourceLoader.exists(RUTA_FUENTE):
-		_fuente = load(RUTA_FUENTE)
+	_fuente = EstiloUI.fuente_titulo()
+	# Sin brillos: el título usa colores planos (se quita el glow del entorno de la escena)
+	var entorno := get_node_or_null("WorldEnvironment")
+	if entorno != null:
+		entorno.queue_free()
 	_crear_fondo()
+	_crear_sismografo()
 	_crear_titulo()
+	_crear_flecha()
+	# Un murmullo suave de fondo, solo si existe el sonido
+	if ResourceLoader.exists(Audio.RAIZ + "Ambiente/amb_casa.ogg"):
+		Audio.ambiente("amb_casa", 2.0, -18.0)
 	_aplicar_estilo_menu()
 	_preparar_menu()
 	_iniciar_respiracion()
@@ -58,6 +76,34 @@ func _ready() -> void:
 	menu.modulate.a = 0.0
 	menu.visible = false
 	_iniciar_intro()
+
+
+func _process(delta: float) -> void:
+	# Cuenta regresiva
+	if _contando:
+		_t_cuenta += delta
+		var restante := int(ceil(maxf(59.0 * (1.0 - _t_cuenta / SEGUNDOS_CUENTA), 0.0)))
+		_cuenta.text = "00:%02d" % restante
+		if restante != _ultimo_segundo and restante % 6 == 0 and restante > 0:
+			Audio.efecto("reloj_tic")
+		_ultimo_segundo = restante
+		if _t_cuenta >= SEGUNDOS_CUENTA:
+			_llegar_a_cero()
+	# Temblor breve de toda la imagen al llegar a cero
+	if _sacudida > 0.0:
+		_sacudida = maxf(_sacudida - delta, 0.0)
+		var fuerza := _sacudida * 22.0
+		var desvio := Vector2(randf_range(-fuerza, fuerza), randf_range(-fuerza, fuerza))
+		if _sacudida <= 0.0:
+			desvio = Vector2.ZERO
+		mundo.position = PANTALLA / 2.0 + desvio
+		$Interfaz.offset = desvio
+	# La flecha de foco sigue al botón enfocado
+	var foco := get_viewport().gui_get_focus_owner()
+	_flecha.visible = foco is Button and menu.visible and not _eligiendo and (foco as Button).is_visible_in_tree()
+	if _flecha.visible:
+		var r := (foco as Button).get_global_rect()
+		_flecha.position = Vector2(r.position.x - 18.0 + sin(Time.get_ticks_msec() / 1000.0 * 6.0) * 2.0, r.position.y + r.size.y / 2.0 - 7.0)
 
 
 func _unhandled_input(evento: InputEvent) -> void:
@@ -108,31 +154,68 @@ func _iniciar_respiracion() -> void:
 func _crear_titulo() -> void:
 	for letra in LETRAS_TITULO:
 		var caja := Control.new()
-		caja.custom_minimum_size = Vector2(20 if letra == " " else 42, 60)
+		caja.custom_minimum_size = Vector2(18 if letra == " " else 36, 60)
 		caja.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		contenedor_letras.add_child(caja)
 		if letra == " ":
 			continue
-		var etiqueta := Label.new()
-		etiqueta.text = letra
-		etiqueta.add_theme_font_size_override("font_size", 46)
-		etiqueta.add_theme_color_override("font_color", NARANJA)
+		var etiqueta := EstiloUI.titulo(letra, 44, NARANJA)
 		etiqueta.add_theme_color_override("font_outline_color", PETROLEO_OSCURO)
-		etiqueta.add_theme_constant_override("outline_size", 8)
-		if _fuente != null:
-			etiqueta.add_theme_font_override("font", _fuente)
+		etiqueta.add_theme_constant_override("outline_size", 10)
 		etiqueta.modulate.a = 0.0
-		etiqueta.position = Vector2(0, 12)
+		etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		etiqueta.size = Vector2(36, 56)
+		etiqueta.position = Vector2(0, 8)
 		caja.add_child(etiqueta)
 		_letras.append(etiqueta)
 
 	subtitulo.text = SUBTITULO
-	if _fuente != null:
-		subtitulo.add_theme_font_override("font", _fuente)
-	subtitulo.add_theme_font_size_override("font_size", 14)
+	subtitulo.add_theme_font_override("font", EstiloUI.fuente_texto())
+	subtitulo.add_theme_font_size_override("font_size", 16)
 	subtitulo.add_theme_color_override("font_color", CREMA)
 	subtitulo.add_theme_color_override("font_outline_color", PETROLEO_OSCURO)
-	subtitulo.add_theme_constant_override("outline_size", 5)
+	subtitulo.add_theme_constant_override("outline_size", 6)
+	subtitulo.offset_top = 92.0
+	subtitulo.offset_bottom = 116.0
+
+	# La cuenta regresiva ocupa el lugar del título hasta llegar a cero
+	_cuenta = EstiloUI.radio("00:59", 64, EstiloUI.ROJO)
+	_cuenta.add_theme_color_override("font_outline_color", PETROLEO_OSCURO)
+	_cuenta.add_theme_constant_override("outline_size", 10)
+	_cuenta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_cuenta.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_cuenta.offset_top = 18.0
+	_cuenta.offset_bottom = 90.0
+	_cuenta.visible = false
+	$Interfaz.add_child(_cuenta)
+
+	var frase := EstiloUI.etiqueta(FRASE_CENTRAL, 12, EstiloUI.GRIS)
+	frase.add_theme_color_override("font_outline_color", PETROLEO_OSCURO)
+	frase.add_theme_constant_override("outline_size", 5)
+	frase.position = Vector2(14, 336)
+	$Interfaz.add_child(frase)
+
+
+## La línea de sismógrafo cruza toda la pantalla, por debajo del título.
+func _crear_sismografo() -> void:
+	_sismografo = Sismografo.new()
+	_sismografo.position = Vector2(0, 150)
+	_sismografo.size = Vector2(PANTALLA.x, 50)
+	$Interfaz.add_child(_sismografo)
+
+
+## Triángulo naranja que señala el botón enfocado.
+func _crear_flecha() -> void:
+	_flecha = Control.new()
+	_flecha.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_flecha.size = Vector2(12, 14)
+	_flecha.draw.connect(func() -> void:
+		var tri := PackedVector2Array([Vector2(0, 0), Vector2(12, 7), Vector2(0, 14)])
+		_flecha.draw_colored_polygon(tri, EstiloUI.NARANJA)
+		tri.append(tri[0])
+		_flecha.draw_polyline(tri, EstiloUI.AZUL_NOCHE, 2.0))
+	_flecha.visible = false
+	$Interfaz.add_child(_flecha)
 
 
 # --- Entrada animada ---
@@ -143,14 +226,32 @@ func _iniciar_intro() -> void:
 	_tween_intro.tween_interval(0.4)
 	_tween_intro.tween_property(negro, "color:a", 0.0, SEGUNDOS_APARICION)
 	_tween_intro.tween_interval(0.3)
-	# Letra por letra, con fundido y una pequeña subida
+	# Empieza la cuenta regresiva; al llegar a cero (_llegar_a_cero) tiembla y aparece el título
+	_tween_intro.tween_callback(_empezar_cuenta)
+
+
+func _empezar_cuenta() -> void:
+	_cuenta.visible = true
+	_contando = true
+	_t_cuenta = 0.0
+
+
+## 00:00: un temblor breve, la línea del sismógrafo se dispara y el título aparece de golpe.
+func _llegar_a_cero() -> void:
+	_contando = false
+	_cuenta.text = "00:00"
+	_cuenta.visible = false
+	_sacudida = 0.45
+	_sismografo.sacudir()
+	Audio.efecto("sello")
 	for i in _letras.size():
-		_tween_intro.tween_callback(_animar_letra.bind(i))
-		_tween_intro.tween_interval(SEGUNDOS_POR_LETRA_TITULO)
-	_tween_intro.tween_interval(0.5)
-	_tween_intro.tween_property(subtitulo, "modulate:a", 1.0, 1.0)
-	_tween_intro.tween_interval(0.3)
-	_tween_intro.tween_callback(_mostrar_menu)
+		_animar_letra(i)
+	var t := create_tween()
+	t.tween_interval(0.6)
+	t.tween_property(subtitulo, "modulate:a", 1.0, 0.8)
+	t.tween_interval(0.3)
+	t.tween_callback(_mostrar_menu)
+	_tween_intro = t
 
 
 func _animar_letra(indice: int) -> void:
@@ -175,6 +276,8 @@ func _saltar_intro() -> void:
 		_tween_intro.kill()
 	for t in _tweens_letras:
 		t.kill()
+	_contando = false
+	_cuenta.visible = false
 	negro.color.a = 0.0
 	for letra in _letras:
 		letra.modulate.a = 1.0
@@ -237,31 +340,29 @@ func _sonido_seleccion() -> void:
 		Audio.efecto("ui_mover")
 
 
+## Botones tipo señal de seguridad: rectángulos naranja con franjas de precaución arriba y abajo, texto oscuro.
 func _aplicar_estilo_menu() -> void:
 	var tema := Theme.new()
-	if _fuente != null:
-		tema.set_font("font", "Button", _fuente)
-	tema.set_font_size("font_size", "Button", 16)
-	tema.set_color("font_color", "Button", Color("d6e2e7"))
-	tema.set_color("font_hover_color", "Button", NARANJA)
-	tema.set_color("font_focus_color", "Button", NARANJA)
-	tema.set_stylebox("normal", "Button", _crear_caja(Color("14414f"), Color("14414f"), 1, 4))
-	tema.set_stylebox("hover", "Button", _crear_caja(Color("1d5566"), NARANJA, 2, 4))
-	tema.set_stylebox("pressed", "Button", _crear_caja(Color("2a6c80"), NARANJA, 2, 4))
-	tema.set_stylebox("focus", "Button", _crear_caja(Color("1d5566"), NARANJA, 2, 4))
+	tema.set_font("font", "Button", EstiloUI.fuente_titulo())
+	tema.set_font_size("font_size", "Button", 12)
+	for c in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color"]:
+		tema.set_color(c, "Button", EstiloUI.TINTA)
+	tema.set_stylebox("normal", "Button", _crear_caja(EstiloUI.NARANJA.darkened(0.12), EstiloUI.TINTA, 2, 8))
+	for e in ["hover", "pressed", "focus"]:
+		tema.set_stylebox(e, "Button", _crear_caja(EstiloUI.NARANJA, EstiloUI.CREMA, 2, 8))
 	menu.theme = tema
-	# Caja del menú: azul petróleo semitransparente con borde naranja (se lee sobre la ilustración)
-	menu.add_theme_stylebox_override("panel", _crear_caja(Color(PETROLEO_OSCURO, 0.82), NARANJA, 2, 8))
+	# Sin caja de fondo: los botones solos sobre la ilustración
+	menu.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	for b in [boton_comenzar, boton_continuar, boton_salir]:
+		b.custom_minimum_size = Vector2(150, 30)
+		b.draw.connect(func() -> void:
+			var ancho: float = b.size.x - 8.0
+			Franjas.pintar(b, Rect2(4, 3, ancho, 3), EstiloUI.TINTA, EstiloUI.NARANJA, 6.0)
+			Franjas.pintar(b, Rect2(4, b.size.y - 6, ancho, 3), EstiloUI.TINTA, EstiloUI.NARANJA, 6.0))
 
 
 func _crear_caja(fondo: Color, borde: Color, grosor: int, margen: int) -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.bg_color = fondo
-	s.border_color = borde
-	s.set_border_width_all(grosor)
-	s.set_corner_radius_all(4)
-	s.set_content_margin_all(margen)
-	return s
+	return EstiloUI.caja(fondo, borde, grosor, margen)
 
 
 # --- Acciones del menú ---

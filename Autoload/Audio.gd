@@ -243,8 +243,8 @@ func detener_musica(fundido: float = 1.0) -> void:
 	_detener(_musica, fundido)
 
 
-func ambiente(nombre: String, fundido: float = 1.5) -> void:
-	_reproducir(_ambiente, nombre, fundido, VOLUMEN_AMBIENTE_DB)
+func ambiente(nombre: String, fundido: float = 1.5, volumen_db: float = VOLUMEN_AMBIENTE_DB) -> void:
+	_reproducir(_ambiente, nombre, fundido, volumen_db)
 
 
 func detener_ambiente(fundido: float = 1.0) -> void:

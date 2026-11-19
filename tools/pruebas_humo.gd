@@ -91,7 +91,8 @@ func _titulo() -> void:
 	await get_tree().process_frame
 	var t := _textos(escena)
 	_ok(t.contains("Comenzar") and t.contains("Continuar") and t.contains("Salir"), "el título tiene Comenzar, Continuar y Salir")
-	_ok(t.contains("Prepararte hoy puede cambiar el minuto cero."), "el subtítulo es la frase central")
+	_ok(t.contains("Aprende a actuar ante un sismo"), "el subtítulo es «Aprende a actuar ante un sismo»")
+	_ok(t.contains("Prepararte hoy puede cambiar el minuto cero."), "la frase central va al pie del título")
 	_ok(escena.menu.visible, "el menú se muestra al saltar la entrada")
 	_ok(escena.boton_continuar.visible == Estado.hay_partida_guardada(), "«Continuar» solo aparece si hay partida guardada")
 	escena.queue_free()
