@@ -23,5 +23,5 @@ func mostrar(decision_id: String, indice_opcion: int) -> bool:
 
 
 ## La tarjeta con textos propios (el kit, el sismo y la réplica registran su decisión por su cuenta).
-func tarjeta(titulo: String, hecho: String, recomendado: String, por_que: String, permite_reintento: bool) -> bool:
-	return await TarjetaRetro.mostrar(get_tree(), titulo, hecho, recomendado, por_que, permite_reintento)
+func tarjeta(titulo: String, hecho: String, recomendado: String, por_que: String, permite_reintento: bool, lista_hecho: Array = []) -> bool:
+	return await TarjetaRetro.mostrar(get_tree(), titulo, hecho, recomendado, por_que, permite_reintento, lista_hecho)

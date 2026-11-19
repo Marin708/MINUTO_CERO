@@ -1,8 +1,11 @@
 class_name KitUI
 extends CanvasLayer
-## La pantalla del kit de emergencia (decisión D5): 12 objetos de Assets/UI/kit.png (iconos de 32 x 32, 4 x 3),
+## La pantalla del kit de emergencia (decisión D5), sobre ModalBase (cabecera fija, cuadrícula en el cuerpo y pie fijo con el
+## contador «Elegidos: n de 8» y el botón «Listo», siempre visible): 12 objetos de Assets/UI/kit.png (iconos de 32 x 32, 4 x 3),
 ## de los que hay que elegir 8. Cuenta si hay al menos 7 correctos y 1 distractor como máximo
-## (Resources/contenido/kit.json). Después sale la tarjeta de retroalimentación con la lista completa.
+## (Resources/contenido/kit.json; la regla es interna: el jugador no la lee). Después sale la tarjeta de retroalimentación con
+## lo elegido (✔ correctos, ✖ distractores) y solo lo que faltó.
+## Teclado: flechas para moverse por la cuadrícula, E o Espacio para elegir o quitar un objeto y Enter para «Listo».
 ## Los índices de kit.png son los del JSON: 0 a 7 correctos y 8 a 11 distractores.
 ##
 ## Uso:  var lograda: bool = await KitUI.mostrar(get_tree())
@@ -21,6 +24,7 @@ var _objetos: Array = []
 var _elegidos: Array[String] = []
 var _botones: Dictionary = {}
 var _contador: Label
+var _modal: ModalBase
 var _boton_listo: Button
 var _cerrando := false
 
@@ -43,6 +47,24 @@ static func cumple_regla(ids: Array) -> bool:
 static func _leer() -> Dictionary:
 	var d: Variant = JSON.parse_string(FileAccess.get_file_as_string(RUTA_JSON))
 	return d if typeof(d) == TYPE_DICTIONARY else {}
+
+
+## Lo elegido, en el orden del archivo: [{"texto": nombre, "ok": true si es correcto}].
+static func lista_elegidos(ids: Array) -> Array:
+	var lista: Array = []
+	for o in _leer()["objetos"]:
+		if ids.has(o["id"]):
+			lista.append({"texto": str(o["nombre"]), "ok": bool(o["correcto"])})
+	return lista
+
+
+## Solo los objetos correctos que NO se eligieron, separados por comas ("" si no faltó ninguno).
+static func _faltaron(ids: Array) -> String:
+	var lista: Array[String] = []
+	for o in _leer()["objetos"]:
+		if o["correcto"] and not ids.has(o["id"]):
+			lista.append(str(o["nombre"]))
+	return ", ".join(lista)
 
 
 static func _nombres(ids: Array, solo_correctos: bool = false) -> String:
@@ -70,7 +92,7 @@ static func mostrar(arbol: SceneTree) -> bool:
 		var titulo := "Ojo"
 		if segura:
 			titulo = "Muy bien" if primero else "Casi"
-		var reintentar: bool = await TarjetaRetro.mostrar(arbol, titulo, _nombres(ids), _nombres([], true), str(d["retro"]), not segura)
+		var reintentar: bool = await TarjetaRetro.mostrar(arbol, titulo, "", _faltaron(ids), str(d["retro"]), not segura, lista_elegidos(ids))
 		if segura:
 			return true
 		if not reintentar or not seleccion_de_prueba.is_empty():
@@ -90,40 +112,37 @@ func _ready() -> void:
 	raiz.theme = EstiloUI.tema()
 	add_child(raiz)
 	var velo := ColorRect.new()
-	velo.color = Color(0.03, 0.12, 0.16, 0.75)
+	velo.color = Color(EstiloUI.AZUL_NOCHE, 0.78)
 	velo.set_anchors_preset(Control.PRESET_FULL_RECT)
 	raiz.add_child(velo)
-	var panel := PanelContainer.new()
-	panel.position = Vector2(60, 20)
-	panel.size = Vector2(520, 320)
-	panel.add_theme_stylebox_override("panel", EstiloUI.caja(Color("0f2d38", 0.97), EstiloUI.NARANJA, 2, 12, 5))
-	raiz.add_child(panel)
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 6)
-	panel.add_child(v)
-	v.add_child(EstiloUI.etiqueta("Arma tu kit de emergencia", 16, EstiloUI.NARANJA))
-	var ayuda := EstiloUI.etiqueta("Elige 8 de los 12 objetos. Piensa en lo que necesitarías en las primeras horas.", 11, EstiloUI.CREMA)
+	_modal = ModalBase.crear()
+	_modal.ancho_deseado = 520.0
+	_modal.confirmar_activo = false   # aquí Enter, E y Espacio tienen su propio uso (ver _input)
+	_modal.configurar(EstiloUI.PETROLEO, EstiloUI.NARANJA, 12)
+	_modal.cabecera.add_child(EstiloUI.titulo("Arma tu kit de emergencia", 14, EstiloUI.NARANJA))
+	var ayuda := EstiloUI.etiqueta("Elige 8 de los 12 objetos. Piensa en lo que necesitarías en las primeras horas.", 12, EstiloUI.CREMA)
 	ayuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	ayuda.custom_minimum_size = Vector2(490, 0)
-	v.add_child(ayuda)
+	ayuda.custom_minimum_size = Vector2(120, 0)
+	_modal.cabecera.add_child(ayuda)
+	# La cuadrícula: celdas bajas (icono a la izquierda) para que quepa sin scroll
 	var rejilla := GridContainer.new()
 	rejilla.columns = 4
-	rejilla.add_theme_constant_override("h_separation", 8)
-	rejilla.add_theme_constant_override("v_separation", 8)
-	v.add_child(rejilla)
+	rejilla.add_theme_constant_override("h_separation", 6)
+	rejilla.add_theme_constant_override("v_separation", 5)
+	rejilla.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_modal.cuerpo.add_child(rejilla)
 	for o in _objetos:
 		rejilla.add_child(_casilla(o))
-	var pie := HBoxContainer.new()
-	pie.add_theme_constant_override("separation", 12)
-	v.add_child(pie)
-	_contador = EstiloUI.etiqueta("", 12, EstiloUI.CREMA)
+	# Pie fijo: contador y «Listo»
+	_contador = EstiloUI.etiqueta("", 13, EstiloUI.CREMA)
 	_contador.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	pie.add_child(_contador)
-	_boton_listo = Button.new()
-	_boton_listo.text = "Listo"
-	_boton_listo.custom_minimum_size = Vector2(110, 28)
+	_contador.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_modal.pie.add_child(_contador)
+	_boton_listo = EstiloUI.boton_senal("Listo", 110, 28, 10)
 	_boton_listo.pressed.connect(_confirmar)
-	pie.add_child(_boton_listo)
+	_modal.pie.add_child(_boton_listo)
+	_modal.boton_principal = _boton_listo
+	raiz.add_child(_modal)
 	_actualizar()
 	get_tree().paused = true
 	(_botones[_objetos[0]["id"]] as Button).grab_focus.call_deferred()
@@ -132,15 +151,17 @@ func _ready() -> void:
 func _casilla(o: Dictionary) -> Control:
 	var b := Button.new()
 	b.toggle_mode = true
-	b.custom_minimum_size = Vector2(118, 62)
+	b.custom_minimum_size = Vector2(120, 44)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.icon = _icono(int(o["icono"]))
 	b.expand_icon = false
 	b.text = str(o["nombre"])
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	b.clip_text = false
-	b.add_theme_font_size_override("font_size", 9)
-	b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	b.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+	b.add_theme_font_override("font", EstiloUI.fuente_texto())
+	b.add_theme_font_size_override("font_size", 11)
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.toggled.connect(_on_alternado.bind(str(o["id"]), b))
 	b.focus_entered.connect(func() -> void: Audio.efecto("ui_mover"))
 	_botones[o["id"]] = b
@@ -183,9 +204,20 @@ func _confirmar() -> void:
 	queue_free()
 
 
-# ESC y TAB no cierran la pantalla: el kit hay que armarlo
+# ESC y TAB no cierran la pantalla: el kit hay que armarlo.
+# Enter confirma («Listo»), y E o Espacio eligen o quitan el objeto enfocado.
 func _input(evento: InputEvent) -> void:
 	for accion in ["PAUSA", "DIARIO", "ui_cancel"]:
 		if evento.is_action_pressed(accion):
 			get_viewport().set_input_as_handled()
 			return
+	if evento is InputEventKey and evento.pressed and not evento.echo and (evento.keycode == KEY_ENTER or evento.keycode == KEY_KP_ENTER):
+		get_viewport().set_input_as_handled()
+		if not _boton_listo.disabled:
+			_boton_listo.pressed.emit()
+		return
+	if evento.is_action_pressed("INTERACTUAR") and not evento.is_echo():
+		var foco := get_viewport().gui_get_focus_owner()
+		if foco is Button and (foco as Button).toggle_mode:
+			get_viewport().set_input_as_handled()
+			(foco as Button).button_pressed = not (foco as Button).button_pressed
