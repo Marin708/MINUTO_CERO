@@ -259,11 +259,17 @@ func _intro(bloque: String) -> void:
 	var texto := "\n\n".join(lineas)
 	if fase == "post" and bloque == "trivia":
 		texto = INTRO_POST + "\n\n" + texto
+	_texto_intro.custom_minimum_size.y = 0.0
 	_texto_intro.text = texto
-	_texto_intro.visible_characters = 0
+	_texto_intro.visible_characters = -1   # se mide con el texto completo
 	_boton_seguir.disabled = true
 	_panel_intro.show()
 	_retrato_intro.texture = Retratos.obtener("lucia_hablando")
+	# Se mide el texto COMPLETO con el modal invisible; la escritura solo revela letras (no cambia ningún tamaño)
+	_modal_intro.medir_oculto()
+	await _modal_intro.reajustado
+	Dialogo.reservar_alto(_texto_intro)
+	_texto_intro.visible_characters = 0
 	await Dialogo.escribir_etiqueta(_texto_intro, texto)   # mismo blip que todo el texto del juego
 	_retrato_intro.texture = Retratos.obtener("lucia_neutral")
 	_boton_seguir.disabled = false
@@ -315,6 +321,7 @@ func _mostrar_pregunta(indice: int) -> void:
 	_panel_pregunta.modulate.a = 0.0
 	_panel_pregunta.show()
 	_clip.show()
+	_modal_pregunta.medir_oculto()   # otra pregunta: el cambio de tamaño ocurre con el panel invisible
 	create_tween().tween_property(_panel_pregunta, "modulate:a", 1.0, 0.2)
 
 

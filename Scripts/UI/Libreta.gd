@@ -110,6 +110,7 @@ func abrir() -> void:
 	visible = true
 	Audio.efecto("diario_abrir")
 	_elegir(pestana)
+	_modal.medir_oculto()   # el contenido cambió: se mide con el panel invisible
 	_botones[pestana].grab_focus()
 	abierta_cambiada.emit(true)
 

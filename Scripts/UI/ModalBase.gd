@@ -14,7 +14,12 @@ extends Control
 ##   m.ancho_deseado = 440
 ##   m.cabecera.add_child(...); m.cuerpo.add_child(...); m.pie.add_child(boton)
 ##   m.boton_principal = boton
-##   capa.add_child(m)                # (se ajusta solo; `await m.reajustado` si hace falta medirlo)
+##   capa.add_child(m)                # (se mide solo; `await m.reajustado` si hace falta saber cuándo está listo)
+##
+## SIN SALTOS DE TAMAÑO: el modal se mide con el panel invisible (modulate.a = 0) y recién entonces se muestra con un fundido
+## corto de opacidad; nunca se ve el cuadro creciendo. Si más tarde cambia el contenido, `reajustar()` mide sin volver a
+## ensanchar el cuadro y anima el cambio de alto con un tween suave de 0.15 s. Quien cambia el contenido de golpe (otra pregunta,
+## otro mensaje) llama a `medir_oculto()` para que ese cambio ocurra con el panel invisible.
 
 signal reajustado
 
@@ -26,6 +31,11 @@ const LINEA := 18.0
 const CUERPO_MINIMO := 60.0
 const TAMANO_MINIMO_CUERPO := 8
 const TAMANO_MINIMO_ETIQUETA := 7
+const SEGUNDOS_ENTRADA := 0.12
+const SEGUNDOS_CAMBIO := 0.15
+## Fotogramas de espera para medir (mínimo 2; hasta 4 si el tamaño todavía cambia).
+const FOTOGRAMAS_MEDIDA := 2
+const FOTOGRAMAS_MEDIDA_MAXIMO := 4
 
 @export var ancho_deseado := 440.0
 
@@ -47,6 +57,11 @@ var _ajustando := false
 var _pendiente := false
 var _pasos_fuente := 0
 var _arrastrando := false
+## true cuando ya se midió y se mostró una vez; desde ahí los cambios se animan en vez de medirse a ciegas.
+var _medido := false
+var _pendiente_oculto := false
+var _tween_tamano: Tween
+var _tween_entrada: Tween
 
 
 ## Crea el modal (la escena ModalBase.tscn) con las referencias ya enlazadas, listo para llenar antes de añadirlo.
@@ -77,7 +92,7 @@ func _ready() -> void:
 		scroll.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	_estilar_barra()
 	scroll.gui_input.connect(_on_scroll_gui_input)
-	get_viewport().size_changed.connect(reajustar)
+	get_viewport().size_changed.connect(_al_cambiar_ventana)
 	cabecera.minimum_size_changed.connect(reajustar)
 	cuerpo.minimum_size_changed.connect(reajustar)
 	pie.minimum_size_changed.connect(reajustar)
@@ -86,7 +101,7 @@ func _ready() -> void:
 	_separador_cabecera.visible = cabecera.get_child_count() > 0
 	_separador_pie.visible = pie.get_child_count() > 0
 	panel.modulate.a = 0.0   # invisible hasta que se mide (así no se ve el salto de tamaño)
-	reajustar()
+	reajustar()   # la primera medición es siempre con el panel invisible
 
 
 ## Fondo, borde y margen interior del panel.
@@ -118,25 +133,44 @@ func _estilar_barra() -> void:
 		barra.add_theme_stylebox_override(e, g)
 
 
-## Calcula el tamaño del modal: lo que mide su contenido, sin pasar del viewport (y con scroll si no cabe).
+## Mide el modal de nuevo con el panel invisible y lo muestra con un fundido. Para quien cambia el contenido de golpe
+## (otra pregunta, otro mensaje): el salto de tamaño ocurre mientras no se ve.
+func medir_oculto() -> void:
+	_medido = false
+	_pendiente_oculto = _ajustando   # si ya se está midiendo, al terminar se vuelve a medir a oculto
+	if _tween_entrada != null:
+		_tween_entrada.kill()
+	if _tween_tamano != null:
+		_tween_tamano.kill()
+	if panel != null:
+		panel.modulate.a = 0.0
+	reajustar()
+
+
+## Calcula el tamaño del modal: lo que mide su contenido, sin pasar del viewport (y con scroll si no cabe). La primera vez
+## (o tras `medir_oculto`) con el panel invisible; después, sin volver a ensancharlo y con un tween de 0.15 s si cambia el alto.
 func reajustar() -> void:
 	if _ajustando:
 		_pendiente = true
 		return
-	_ajustando = true
-	_pendiente = false
 	if not is_inside_tree():
-		_ajustando = false
 		return
-	var vp := get_viewport().get_visible_rect().size
-	var max_ancho := vp.x - MARGEN_HORIZONTAL * 2.0
-	var max_alto := vp.y - MARGEN_VERTICAL * 2.0
-	var ancho := minf(ancho_deseado, max_ancho)
-	# Primero con todo el alto posible (así el texto se acomoda al ancho), luego se mide
-	panel.size = Vector2(ancho, max_alto)
-	_centrar(vp)
-	await get_tree().process_frame
-	await get_tree().process_frame
+	if _medido:
+		_reajustar_visible(true)
+	else:
+		_reajustar_oculto()
+
+
+## Un cambio de tamaño de la ventana: se recalcula una sola vez y sin animación.
+func _al_cambiar_ventana() -> void:
+	if _medido and not _ajustando:
+		_reajustar_visible(false)
+	else:
+		reajustar()
+
+
+## Alto que pide el contenido (cabecera + cuerpo + pie + separadores + márgenes) con el ancho actual.
+func _alto_natural() -> float:
 	var fijo := cabecera.get_combined_minimum_size().y + pie.get_combined_minimum_size().y
 	fijo += _separador_cabecera.get_combined_minimum_size().y if _separador_cabecera.visible else 0.0
 	fijo += _separador_pie.get_combined_minimum_size().y if _separador_pie.visible else 0.0
@@ -144,7 +178,40 @@ func reajustar() -> void:
 	fijo += estilo.get_margin(SIDE_TOP) + estilo.get_margin(SIDE_BOTTOM)
 	var estilo_cuerpo := scroll.get_theme_stylebox("panel")
 	var cuerpo_alto := cuerpo.get_combined_minimum_size().y + estilo_cuerpo.get_margin(SIDE_TOP) + estilo_cuerpo.get_margin(SIDE_BOTTOM)
-	var natural := fijo + cuerpo_alto
+	return fijo + cuerpo_alto
+
+
+## Espera a que el layout se estabilice: dos fotogramas y, si el tamaño del panel o del cuerpo aún cambia, hasta cuatro.
+func _esperar_layout() -> void:
+	var firma := Vector2.ZERO
+	for i in FOTOGRAMAS_MEDIDA_MAXIMO:
+		await get_tree().process_frame
+		var nueva := Vector2(cuerpo.get_combined_minimum_size().y, panel.size.y)
+		if i + 1 >= FOTOGRAMAS_MEDIDA and nueva.is_equal_approx(firma):
+			return
+		firma = nueva
+
+
+## Primera medición (o tras `medir_oculto`): con el panel invisible, a todo el alto, y al final se muestra con un fundido.
+func _reajustar_oculto() -> void:
+	_ajustando = true
+	_pendiente = false
+	_pendiente_oculto = false
+	if _tween_entrada != null:
+		_tween_entrada.kill()
+	panel.modulate.a = 0.0
+	var vp := get_viewport().get_visible_rect().size
+	var max_ancho := vp.x - MARGEN_HORIZONTAL * 2.0
+	var max_alto := vp.y - MARGEN_VERTICAL * 2.0
+	var ancho := minf(ancho_deseado, max_ancho)
+	# Se mide solo con el ANCHO: sin barra de scroll (que quitaría ancho al texto) y con el cuadro a su alto mínimo, así en
+	# ningún fotograma el alto supera el final
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	panel.size = Vector2(ancho, 0.0)
+	_centrar(vp)
+	await _esperar_layout()
+	var natural := _alto_natural()
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	panel.size = Vector2(ancho, minf(natural, max_alto))
 	_centrar(vp)
 	await get_tree().process_frame
@@ -154,13 +221,61 @@ func reajustar() -> void:
 		_pasos_fuente += 1
 		_bajar_un_paso()
 		_ajustando = false
-		reajustar()
+		_reajustar_oculto()
 		return
-	panel.modulate.a = 1.0
+	# Si el contenido cambió otra vez mientras se medía, se vuelve a medir SIN mostrar todavía (nunca se ve una medida vieja)
+	if _pendiente_oculto:
+		_ajustando = false
+		_reajustar_oculto()
+		return
+	_actualizar_indicador()
+	_medido = true
+	_ajustando = false
+	reajustado.emit()
+	# El panel ya tiene su tamaño final: solo ahora se muestra, con un fundido corto de opacidad
+	_tween_entrada = create_tween()
+	_tween_entrada.tween_property(panel, "modulate:a", 1.0, SEGUNDOS_ENTRADA)
+	if _pendiente:
+		reajustar()
+
+
+## Ya medido y visible: no se vuelve a ensanchar el cuadro. Se espera a que el texto se acomode y, si el alto cambió, se anima.
+func _reajustar_visible(animar: bool) -> void:
+	_ajustando = true
+	_pendiente = false
+	var vp := get_viewport().get_visible_rect().size
+	var max_ancho := vp.x - MARGEN_HORIZONTAL * 2.0
+	var max_alto := vp.y - MARGEN_VERTICAL * 2.0
+	var ancho := minf(ancho_deseado, max_ancho)
+	if _tween_tamano != null:
+		_tween_tamano.kill()
+	if absf(panel.size.x - ancho) > 0.5:
+		panel.size.x = ancho
+	await _esperar_layout()
+	if _pendiente_oculto:   # alguien pidió medir a oculto mientras tanto
+		_ajustando = false
+		_reajustar_oculto()
+		return
+	var natural := _alto_natural()
+	con_scroll = natural > max_alto + 0.5
+	var destino := Vector2(ancho, minf(natural, max_alto))
+	var posicion := ((vp - destino) / 2.0).round()
+	if destino.is_equal_approx(panel.size) and posicion.is_equal_approx(panel.position):
+		pass
+	elif animar and absf(destino.y - panel.size.y) > 0.5 and is_inside_tree():
+		var desde := panel.size.y
+		var desde_y := panel.position.y
+		_tween_tamano = create_tween()
+		_tween_tamano.tween_method(func(k: float) -> void:
+			panel.size = Vector2(ancho, lerpf(desde, destino.y, k))
+			panel.position = Vector2(posicion.x, roundf(lerpf(desde_y, posicion.y, k))), 0.0, 1.0, SEGUNDOS_CAMBIO)
+	else:
+		panel.size = destino
+		panel.position = posicion
 	_actualizar_indicador()
 	_ajustando = false
 	reajustado.emit()
-	if _pendiente:
+	if _pendiente or _pendiente_oculto:
 		reajustar()
 
 

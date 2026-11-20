@@ -165,6 +165,11 @@ func _ready() -> void:
 func _escribir() -> void:
 	# Espera a que el modal se mida (así se sabe qué parte se ve)
 	await _modal.reajustado
+	# Con el cuadro ya medido (texto completo) se reserva el alto de cada texto y recién entonces se ocultan las letras:
+	# la escritura no cambia ningún tamaño
+	for e in _textos:
+		Dialogo.reservar_alto(e)
+		e.visible_characters = 0
 	for e in _textos:
 		if _cerrando or not is_instance_valid(self):
 			return
@@ -216,8 +221,7 @@ func _bloque_lista(padre: Control, rotulo: String, lista: Array) -> Array[Label]
 func _etiqueta_texto(texto: String) -> Label:
 	var e := EstiloUI.etiqueta(texto, 13, EstiloUI.CREMA)
 	e.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	e.custom_minimum_size = Vector2(120, 0)
-	e.visible_characters = 0
+	e.custom_minimum_size = Vector2(120, 0)   # se mide con el texto completo; _escribir reserva el alto y lo oculta
 	return e
 
 
@@ -232,7 +236,6 @@ func _nota(padre: Control, rotulo: String, texto: String) -> Label:
 	var e := EstiloUI.etiqueta(texto, 13, EstiloUI.TINTA)
 	e.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	e.custom_minimum_size = Vector2(120, 0)
-	e.visible_characters = 0
 	v.add_child(e)
 	padre.add_child(caja)
 	return e

@@ -15,7 +15,9 @@ const ESCENA := preload("res://Scenes/UI/Notificacion.tscn")
 
 const ANCHO := 320.0
 const MARGEN := 8.0
-const SEGUNDOS_ENTRADA := 0.4
+const SEGUNDOS_ENTRADA := 0.25
+## Desplazamiento vertical de la entrada (el aviso se mide y se coloca ANTES; solo se anima la opacidad y esto).
+const DESPLAZAMIENTO_ENTRADA := 8.0
 const SEGUNDOS_FUNDIDO := 0.2
 ## Pausa entre un aviso y el siguiente de la cola.
 const SEGUNDOS_ENTRE := 0.4
@@ -146,20 +148,20 @@ func _mostrar_una(aviso: Dictionary) -> void:
 	_texto.text = aviso["texto"]
 	_texto.visible = aviso["texto"] != ""
 	_actualizar_contador()
-	_tarjeta.modulate.a = 1.0
+	# SIN SALTOS: se mide con el aviso invisible (opacidad 0), con el texto completo y el ancho ya fijado
+	_tarjeta.modulate.a = 0.0
 	_tarjeta.visible = true
-	# Un contenedor no encoge solo: se pide el tamaño mínimo para que el alto se ajuste al texto
 	await get_tree().process_frame
 	_tarjeta.reset_size()
 	await get_tree().process_frame
-
+	_tarjeta.reset_size()
+	await get_tree().process_frame
+	# La posición se calcula una sola vez con el tamaño final; la entrada solo anima opacidad y un pequeño desplazamiento vertical
 	var ancho_pantalla := _tarjeta.get_viewport_rect().size.x
-	_tarjeta.position = Vector2((ancho_pantalla - _tarjeta.size.x) / 2.0, -_tarjeta.size.y - 6.0)
-
-	# Baja deslizando desde arriba
-	var entrada := create_tween()
-	entrada.tween_property(_tarjeta, "position:y", MARGEN, SEGUNDOS_ENTRADA) \
-		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_tarjeta.position = Vector2(roundf((ancho_pantalla - _tarjeta.size.x) / 2.0), MARGEN - DESPLAZAMIENTO_ENTRADA)
+	var entrada := create_tween().set_parallel(true)
+	entrada.tween_property(_tarjeta, "modulate:a", 1.0, SEGUNDOS_ENTRADA)
+	entrada.tween_property(_tarjeta, "position:y", MARGEN, SEGUNDOS_ENTRADA).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	await entrada.finished
 
 	# Cuenta atrás (la congela _process con ratón encima o con un modal abierto)

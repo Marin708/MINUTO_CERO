@@ -29,6 +29,10 @@ const COLOR_CANCELAR_FOCO := EstiloUI.CREMA
 ## Quien habla por radio (marco de transmisión con antena) en vez de globo de cómic.
 const HABLANTE_RADIO := "Lucía"
 const TEXTO_CANAL := "CANAL 3 · BRIGADA"
+## Alto mínimo del cuadro (el de la escena) y duración del cambio de alto entre dos mensajes.
+const ALTO_CAJA := 60.0
+const SEGUNDOS_CAMBIO_ALTO := 0.15
+const SEGUNDOS_REVELAR := 0.1
 
 ## Recurso .dialogue y cue inicial (los rellena DialogueManager o Dialogo.mostrar).
 @export var dialogue_resource: DialogueResource
@@ -69,6 +73,9 @@ var _cabecera_radio: HBoxContainer
 var _retrato_nombre: TextureRect
 var _tema_globo: Theme
 var _tema_radio: Theme
+var _tween_alto: Tween
+## true cuando las opciones ya se ven (el hueco se reserva desde la medición, invisible, para que el cuadro no crezca).
+var _opciones_listas := false
 
 ## Línea actual. Al asignar una línea nula, el diálogo terminó.
 var linea: DialogueLine:
@@ -123,7 +130,7 @@ func _input(evento: InputEvent) -> void:
 	if not raiz.visible or linea == null or _cerrando:
 		return
 	# Con las opciones a la vista, una pulsación de ESC cancela. También con INTERACTUAR sobre "Ahora no".
-	if cancelable and respuestas.visible:
+	if cancelable and _opciones_listas:
 		if evento.is_action_pressed(ACCION_CANCELAR) and not evento.is_echo():
 			get_viewport().set_input_as_handled()
 			_cancelar()
@@ -151,7 +158,7 @@ func _input(evento: InputEvent) -> void:
 func _process(delta: float) -> void:
 	_colocar_adornos()
 	# Durante el texto, mantener ESC sale de la conversación
-	if cancelable and raiz.visible and not _cerrando and linea != null and not respuestas.visible:
+	if cancelable and raiz.visible and not _cerrando and linea != null and not _opciones_listas:
 		if Input.is_action_pressed(ACCION_CANCELAR):
 			_tiempo_salida += delta
 			_pista.text = "Saliendo…"
@@ -162,7 +169,7 @@ func _process(delta: float) -> void:
 	_tiempo_salida = 0.0
 	if _pista != null:
 		_pista.text = "Mantén Esc para salir"
-		_pista.modulate.a = 0.6
+		_pista.modulate.a = 0.0 if _opciones_listas else 0.6   # con opciones se queda invisible pero conserva su hueco
 
 
 ## Cierra la conversación sin elegir nada. NO es una decisión del juego: no se ejecuta ninguna
@@ -202,14 +209,19 @@ func _aplicar_linea() -> void:
 	_aplicar_modo(_es_radio)
 	_actualizar_retrato()
 
+	_opciones_listas = false
 	texto.hide()
 	texto.dialogue_line = linea
 	respuestas.hide()
 	respuestas.responses = linea.responses
 	_conectar_botones()
 
+	# SIN SALTOS: primero se mide la línea COMPLETA (y el hueco de las opciones) con todo invisible; recién entonces se muestra.
+	# La escritura solo revela letras con visible_characters: ningún tamaño ni posición cambia mientras se escribe.
+	await _medir_linea(esta_linea)
+	if _cerrando or esta_linea != linea:
+		return
 	_mostrar_balloon()
-	texto.show()
 	if not linea.text.is_empty():
 		escribiendo_iniciado.emit(linea.character)
 		_escribiendo = true
@@ -223,11 +235,11 @@ func _aplicar_linea() -> void:
 			return  # ya cambió la línea (o se canceló) mientras se escribía
 
 	if linea.responses.size() > 0:
-		respuestas.show()
+		_opciones_listas = true   # las opciones ya ocupaban su hueco: solo se hacen visibles
+		respuestas.modulate.a = 1.0
+		_separador.modulate.a = 1.0
+		_boton_cancelar.modulate.a = 1.0
 		Dialogo.opciones_mostradas.emit()
-		_pista.hide()
-		_boton_cancelar.visible = cancelable
-		_separador.visible = cancelable
 		respuestas.focus_first_item()
 	elif linea.time != "":
 		var segundos := linea.text.length() * 0.02 if linea.time == "auto" else linea.time.to_float()
@@ -237,6 +249,58 @@ func _aplicar_linea() -> void:
 	else:
 		esperando_entrada = true
 		indicador.show()
+
+
+## Mide la línea completa con el texto entero y las opciones (invisibles) antes de mostrarla. La primera vez todo el balloon
+## está en opacidad 0; en los mensajes siguientes solo el contenido, y si el nuevo texto exige otro alto el cuadro lo anima
+## con un tween de 0.15 s en vez de saltar.
+func _medir_linea(esta_linea: DialogueLine) -> void:
+	var contenido: Control = caja.get_node("Contenido")
+	var fila_nombre: Control = caja_nombre.get_parent()
+	var estaba_visible := raiz.visible and raiz.modulate.a > 0.01
+	var alto_antes := caja.size.y
+	if _tween_alto != null:
+		_tween_alto.kill()
+	texto.show()
+	if linea.responses.size() > 0:
+		respuestas.modulate.a = 0.0
+		respuestas.show()
+		if cancelable:
+			_separador.modulate.a = 0.0
+			_separador.show()
+			_boton_cancelar.modulate.a = 0.0
+			_boton_cancelar.show()
+	if estaba_visible:
+		contenido.modulate.a = 0.0
+		fila_nombre.modulate.a = 0.0
+		_cola.modulate.a = 0.0
+		_antena.modulate.a = 0.0
+		caja.custom_minimum_size.y = alto_antes   # el cuadro no se encoge a mitad de la medición
+	else:
+		raiz.modulate.a = 0.0
+		raiz.show()   # invisible mientras se mide
+	# Se espera a que el layout se estabilice: dos fotogramas y, si el tamaño aún cambia, hasta cuatro
+	var firma := Vector2.ZERO
+	for i in 4:
+		await get_tree().process_frame
+		if _cerrando or esta_linea != linea:
+			return
+		var nueva := Vector2(contenido.get_combined_minimum_size().y, texto.size.x)
+		if i >= 1 and nueva.is_equal_approx(firma):
+			break
+		firma = nueva
+	var estilo := caja.get_theme_stylebox("panel")
+	var natural := maxf(contenido.get_combined_minimum_size().y + estilo.get_margin(SIDE_TOP) + estilo.get_margin(SIDE_BOTTOM), ALTO_CAJA)
+	if estaba_visible and absf(natural - alto_antes) > 0.5:
+		_tween_alto = create_tween()
+		_tween_alto.tween_property(caja, "custom_minimum_size:y", natural, SEGUNDOS_CAMBIO_ALTO)
+		_tween_alto.finished.connect(func() -> void: caja.custom_minimum_size.y = ALTO_CAJA)
+	else:
+		caja.custom_minimum_size.y = ALTO_CAJA
+	if estaba_visible:
+		var t := create_tween().set_parallel(true)
+		for n in [contenido, fila_nombre, _cola, _antena]:
+			t.tween_property(n, "modulate:a", 1.0, SEGUNDOS_REVELAR)
 
 
 ## Retrato de quien habla. Lucía (radio): hablando mientras se escribe, neutral al esperar y alerta durante el sismo, la

@@ -142,10 +142,19 @@ func mostrar_texto(nombre: String, texto: Variant, opciones: Array = [], retrato
 	return elegida if elegida >= 0 else -1
 
 
+## Un Label con `visible_characters` encoge su alto mínimo (solo cuenta las líneas ya reveladas) y el cuadro que lo contiene
+## crecería mientras se escribe. Esto fija el alto del texto COMPLETO como alto mínimo: llamarlo con la etiqueta ya acomodada
+## a su ancho final y ANTES de poner visible_characters en 0, así la escritura no cambia ningún tamaño.
+func reservar_alto(etiqueta: Label) -> void:
+	etiqueta.visible_characters = -1
+	etiqueta.custom_minimum_size.y = maxf(etiqueta.custom_minimum_size.y, etiqueta.get_minimum_size().y)
+
+
 ## Escribe un texto en una etiqueta letra por letra, con la misma velocidad (SEGUNDOS_POR_LETRA) y el mismo blip que el
 ## balloon. Lo usan las pantallas con texto escrito a mano (cuestionarios, valoración).
 func escribir_etiqueta(etiqueta: Label, texto: String) -> void:
 	etiqueta.text = texto
+	reservar_alto(etiqueta)
 	etiqueta.visible_characters = 0
 	for i in texto.length():
 		if not is_instance_valid(etiqueta):

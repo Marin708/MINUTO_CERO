@@ -66,6 +66,7 @@ func abrir() -> void:
 	_raiz.visible = true
 	_panel.visible = true
 	_ir_a(Pagina.PRINCIPAL)
+	(_panel as ModalBase).medir_oculto()   # otra página: el cambio de tamaño ocurre con el panel invisible
 	_boton_guardar.disabled = not Guardado.puede_guardar()
 	_boton_guardar.tooltip_text = "" if Guardado.puede_guardar() else "Solo se puede guardar dentro del mundo."
 	_aviso.text = ""
@@ -145,7 +146,7 @@ func _construir() -> void:
 
 	# El panel de pausa sobre ModalBase: título con franjas fijo, páginas en el cuerpo (con scroll si no caben) y aviso en el pie
 	var modal := ModalBase.crear()
-	modal.ancho_deseado = 340.0
+	modal.ancho_deseado = 440.0
 	modal.confirmar_activo = false   # el menú maneja sus propias teclas
 	modal.configurar(Color(EstiloUI.PETROLEO_OSCURO, 0.97), EstiloUI.NARANJA, 12)
 	_panel = modal
@@ -217,12 +218,13 @@ func _construir_controles() -> VBoxContainer:
 		var que := EstiloUI.etiqueta(fila[1], 11, EstiloUI.CREMA)
 		que.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		que.custom_minimum_size = Vector2(170, 0)
+		que.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		rejilla.add_child(que)
 	v.add_child(rejilla)
 	# Dónde están los datos del juego (partida, resultados y reportes), con un botón para abrir la carpeta
 	_etiqueta_carpeta = EstiloUI.etiqueta("", 9, EstiloUI.GRIS)
 	_etiqueta_carpeta.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
-	_etiqueta_carpeta.custom_minimum_size = Vector2(330, 0)
+	_etiqueta_carpeta.custom_minimum_size = Vector2(120, 0)
 	var carpeta := _boton("Abrir carpeta de datos", func() -> void:
 		var ruta := ProjectSettings.globalize_path("user://")
 		_etiqueta_carpeta.text = "Carpeta de datos: %s" % ruta
