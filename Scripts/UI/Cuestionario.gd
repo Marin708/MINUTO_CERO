@@ -77,6 +77,9 @@ func _ready() -> void:
 
 # Se tragan ESC (pausa) y TAB (libreta) mientras dura la evaluación
 func _input(evento: InputEvent) -> void:
+	if Dialogo.debe_ignorarse(evento):   # mantener Enter o un doble toque no se come una pregunta
+		get_viewport().set_input_as_handled()
+		return
 	for accion in ["PAUSA", "DIARIO", "ui_cancel"]:
 		if evento.is_action_pressed(accion):
 			get_viewport().set_input_as_handled()

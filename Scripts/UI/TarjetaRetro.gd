@@ -187,6 +187,7 @@ func _mostrar_botones() -> void:
 	_fila_botones.modulate.a = 1.0
 	_modal.confirmar_activo = true
 	_primer_boton.grab_focus()
+	Dialogo.marcar_nuevo()   # completar el texto y elegir un botón necesitan dos pulsaciones separadas
 
 
 func _bloque(padre: Control, rotulo: String, texto: String) -> Label:
@@ -260,13 +261,15 @@ func _cerrar(reintentar: bool) -> void:
 	queue_free()
 
 
-# ESC y TAB no cierran la tarjeta ni abren menús: hay que elegir un botón. E o ENTER completan el texto.
+# ESC y TAB no cierran la tarjeta ni abren menús: hay que elegir un botón. E o ENTER completan el texto (una vez); con los botones a la vista, Enter solo confirma el botón enfocado.
 func _input(evento: InputEvent) -> void:
 	if modo_galeria:
 		return
-	if (evento.is_action_pressed("INTERACTUAR") or evento.is_action_pressed("ui_accept")) and _fila_botones != null and _fila_botones.modulate.a < 1.0:
+	var avanza := evento.is_action_pressed("INTERACTUAR") or evento.is_action_pressed("ui_accept") or evento.is_action_pressed(Dialogo.ACCION_AVANZAR)
+	if avanza and _fila_botones != null and _fila_botones.modulate.a < 1.0:
 		get_viewport().set_input_as_handled()
-		_mostrar_botones()
+		if Dialogo.entrada_lista():   # la primera pulsación completa el texto de golpe (no antes de 0.15 s)
+			_mostrar_botones()
 		return
 	for accion in ["PAUSA", "DIARIO", "ui_cancel"]:
 		if evento.is_action_pressed(accion):

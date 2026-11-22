@@ -92,6 +92,9 @@ func _ready() -> void:
 
 # ESC y TAB no hacen nada (el scroll lo maneja ModalBase: ruedita, flechas, AvPág y RePág)
 func _input(evento: InputEvent) -> void:
+	if Dialogo.debe_ignorarse(evento):
+		get_viewport().set_input_as_handled()
+		return
 	for accion in ["PAUSA", "DIARIO", "ui_cancel"]:
 		if evento.is_action_pressed(accion):
 			get_viewport().set_input_as_handled()

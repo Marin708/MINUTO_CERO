@@ -233,6 +233,7 @@ func _reajustar_oculto() -> void:
 	_ajustando = false
 	reajustado.emit()
 	# El panel ya tiene su tamaño final: solo ahora se muestra, con un fundido corto de opacidad
+	Dialogo.marcar_nuevo()   # durante 0.15 s Enter y E no hacen nada (no se come una decisión)
 	_tween_entrada = create_tween()
 	_tween_entrada.tween_property(panel, "modulate:a", 1.0, SEGUNDOS_ENTRADA)
 	if _pendiente:
@@ -304,6 +305,10 @@ func _process(_delta: float) -> void:
 	_actualizar_indicador()
 
 
+func _exit_tree() -> void:
+	Dialogo.marcar_cierre()   # el mundo no responde a E durante 0.2 s después de cerrar un modal
+
+
 ## «Sigue leyendo» solo si queda contenido por debajo del que se ve.
 func _actualizar_indicador() -> void:
 	if scroll == null:
@@ -322,6 +327,10 @@ func _foco_en_cuerpo() -> Control:
 
 func _input(evento: InputEvent) -> void:
 	if not is_visible_in_tree() or panel.modulate.a < 0.5:
+		return
+	# Mantener Enter o E pulsado, o un doble toque justo al abrirse, no pasa nada ni se come una decisión
+	if Dialogo.debe_ignorarse(evento):
+		get_viewport().set_input_as_handled()
 		return
 	if evento is InputEventKey and evento.pressed:
 		match evento.keycode:

@@ -19,7 +19,9 @@ signal escribiendo_terminado()
 const TAM_FUENTE := 16
 const FUNDIDO_ENTRADA := 0.2
 const FUNDIDO_SALIDA := 0.15
-const ACCION_SIGUIENTE := &"INTERACTUAR"
+const ACCION_SIGUIENTE := &"INTERACTUAR"   # el menú de respuestas la usa para elegir la opción enfocada
+## Recordatorio junto a la caja.
+const TEXTO_PISTA := "Enter · continuar   |   Mantén Esc · salir"
 ## ESC: cancela la conversación (una pulsación con opciones visibles; mantenida durante el texto).
 const ACCION_CANCELAR := &"PAUSA"
 const SEGUNDOS_PARA_SALIR := 0.7
@@ -129,27 +131,41 @@ func start(recurso: DialogueResource = null, cue: String = "", estados_extra: Ar
 func _input(evento: InputEvent) -> void:
 	if not raiz.visible or linea == null or _cerrando:
 		return
-	# Con las opciones a la vista, una pulsación de ESC cancela. También con INTERACTUAR sobre "Ahora no".
-	if cancelable and _opciones_listas:
-		if evento.is_action_pressed(ACCION_CANCELAR) and not evento.is_echo():
+	# Con otra pantalla encima (pausa, libreta) el diálogo no escucha
+	if Menus.pausa.abierta or Menus.libreta.abierto:
+		return
+	# Con las opciones a la vista Enter NO avanza nada: solo confirma la opción enfocada (ui_accept lo hace el propio botón).
+	# Lo que se repite o llega en los primeros 0.15 s se ignora para no comerse una decisión.
+	if _opciones_listas:
+		if Dialogo.debe_ignorarse(evento):
 			get_viewport().set_input_as_handled()
-			_cancelar()
 			return
-		if evento.is_action_pressed(ACCION_SIGUIENTE) and _boton_cancelar.has_focus():
-			get_viewport().set_input_as_handled()
-			_cancelar()
-			return
-	var presionado := evento.is_action_pressed(ACCION_SIGUIENTE)
-	var clic: bool = evento is InputEventMouseButton and evento.pressed \
-		and evento.button_index == MOUSE_BUTTON_LEFT
-	if not (presionado or clic):
+		# ESC cancela (una pulsación). También con INTERACTUAR sobre "Ahora no".
+		if cancelable:
+			if evento.is_action_pressed(ACCION_CANCELAR) and not evento.is_echo():
+				get_viewport().set_input_as_handled()
+				_cancelar()
+				return
+			if evento.is_action_pressed(ACCION_SIGUIENTE) and _boton_cancelar.has_focus():
+				get_viewport().set_input_as_handled()
+				_cancelar()
+				return
+	var clic: bool = evento is InputEventMouseButton and evento.pressed and evento.button_index == MOUSE_BUTTON_LEFT
+	var tecla: bool = evento is InputEventKey and evento.pressed 			and (evento.is_action(Dialogo.ACCION_AVANZAR) or evento.is_action(ACCION_SIGUIENTE))
+	if not (tecla or clic):
+		return
+	# Tecla repetida o demasiado pronto: se ignora (y se consume, para que no llegue a nadie más)
+	if tecla and Dialogo.debe_ignorarse(evento):
+		get_viewport().set_input_as_handled()
+		return
+	if not Dialogo.es_avance(evento):
 		return
 
-	# Con INTERACTUAR (o clic) se completa el texto al instante
+	# Primera pulsación: completa el texto de golpe
 	if texto.is_typing:
 		get_viewport().set_input_as_handled()
 		texto.skip_typing()
-	# Si no hay respuestas, la misma tecla pasa a la siguiente línea
+	# Segunda: pasa a la siguiente línea (solo si no hay respuestas: con respuestas hay que elegir una)
 	elif esperando_entrada and linea.responses.is_empty():
 		get_viewport().set_input_as_handled()
 		_siguiente(linea.next_id)
@@ -168,7 +184,7 @@ func _process(delta: float) -> void:
 			return
 	_tiempo_salida = 0.0
 	if _pista != null:
-		_pista.text = "Mantén Esc para salir"
+		_pista.text = TEXTO_PISTA
 		_pista.modulate.a = 0.0 if _opciones_listas else 0.6   # con opciones se queda invisible pero conserva su hueco
 
 
@@ -222,12 +238,14 @@ func _aplicar_linea() -> void:
 	if _cerrando or esta_linea != linea:
 		return
 	_mostrar_balloon()
+	Dialogo.marcar_nuevo()   # durante 0.15 s las pulsaciones no avanzan nada
 	if not linea.text.is_empty():
 		escribiendo_iniciado.emit(linea.character)
 		_escribiendo = true
 		_actualizar_retrato()
 		texto.type_out()
 		await texto.finished_typing
+		Dialogo.marcar_nuevo()   # completar de golpe y avanzar necesitan dos pulsaciones separadas
 		_escribiendo = false
 		_actualizar_retrato()
 		escribiendo_terminado.emit()
@@ -392,7 +410,7 @@ func _crear_cancelacion() -> void:
 	contenedor.add_child(_boton_cancelar)
 
 	_pista = Label.new()
-	_pista.text = "Mantén Esc para salir"
+	_pista.text = TEXTO_PISTA
 	_pista.size_flags_horizontal = Control.SIZE_SHRINK_END
 	_pista.add_theme_font_size_override("font_size", 10)
 	_pista.add_theme_color_override("font_color", COLOR_CANCELAR)

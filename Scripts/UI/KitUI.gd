@@ -211,7 +211,10 @@ func _input(evento: InputEvent) -> void:
 		if evento.is_action_pressed(accion):
 			get_viewport().set_input_as_handled()
 			return
-	if evento is InputEventKey and evento.pressed and not evento.echo and (evento.keycode == KEY_ENTER or evento.keycode == KEY_KP_ENTER):
+	if Dialogo.debe_ignorarse(evento):   # tecla repetida o demasiado pronto: nada
+		get_viewport().set_input_as_handled()
+		return
+	if evento.is_action_pressed(Dialogo.ACCION_AVANZAR):
 		get_viewport().set_input_as_handled()
 		if not _boton_listo.disabled:
 			_boton_listo.pressed.emit()

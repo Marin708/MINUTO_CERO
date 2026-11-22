@@ -28,6 +28,14 @@ signal cancelado_por_jugador
 
 const BALLOON := preload("res://Scenes/UI/DialogoBalloon.tscn")
 
+## Acción del Input Map para avanzar una conversación: Enter y Enter del teclado numérico. También avanzan E (INTERACTUAR) y el
+## clic sobre la caja. Con opciones en pantalla NO avanza nada: Enter solo confirma la opción enfocada (ui_accept).
+const ACCION_AVANZAR := &"AVANZAR_DIALOGO"
+## Ignora toda pulsación de avance/confirmación durante este tiempo desde que aparece una línea, unas opciones o un modal.
+const SEGUNDOS_ENTRADA_LISTA := 0.15
+## Tras cerrar una conversación o un modal, el mundo no responde a E durante este tiempo (la misma pulsación no abre otra cosa).
+const SEGUNDOS_BLOQUEO_MUNDO := 0.2
+
 ## Segundos que tarda en escribirse cada letra: UNA sola velocidad para todo el juego (el balloon la usa).
 const SEGUNDOS_POR_LETRA := 0.03
 
@@ -50,6 +58,10 @@ var anclas: Dictionary = {}
 ## Durante el sismo y la réplica Lucía se ve en alerta sola (Sismo.esta_activo()).
 var alerta_radio := false
 
+## Cuándo (ms del reloj) apareció lo último que espera una pulsación y cuándo se cerró la última conversación o modal.
+var _ms_nuevo := -100000
+var _ms_cierre := -100000
+
 ## Cuántos diálogos hay abiertos ahora mismo.
 var _abiertos := 0
 ## Cuántos de los abiertos NO se pueden cancelar (el cuestionario de entrada y el de salida).
@@ -59,6 +71,50 @@ var _sin_cancelar := 0
 ## true mientras haya algún diálogo en pantalla.
 func hay_dialogo() -> bool:
 	return _abiertos > 0
+
+
+# --- Entrada común (la usan el balloon, ModalBase y las tarjetas: un solo lugar) ---
+
+## Marca que acaba de aparecer una línea nueva, unas opciones o un modal: durante 0.15 s las pulsaciones se ignoran.
+func marcar_nuevo() -> void:
+	_ms_nuevo = Time.get_ticks_msec()
+
+
+## Marca que se cerró una conversación o un modal: durante 0.2 s el mundo no responde a E.
+func marcar_cierre() -> void:
+	_ms_cierre = Time.get_ticks_msec()
+
+
+## false durante los primeros 0.15 s después de que aparece algo que espera una pulsación.
+func entrada_lista() -> bool:
+	return Time.get_ticks_msec() - _ms_nuevo >= int(SEGUNDOS_ENTRADA_LISTA * 1000.0)
+
+
+## true mientras el mundo no debe reaccionar a E: hay una conversación abierta o se cerró hace menos de 0.2 s.
+func mundo_bloqueado() -> bool:
+	return _abiertos > 0 or Time.get_ticks_msec() - _ms_cierre < int(SEGUNDOS_BLOQUEO_MUNDO * 1000.0)
+
+
+## ¿Es una tecla de avanzar o confirmar (Enter, E, Enter numérico o la tecla de aceptar)? Con o sin repetición.
+func es_tecla_confirmar(evento: InputEvent) -> bool:
+	return evento is InputEventKey and evento.pressed \
+			and (evento.is_action(ACCION_AVANZAR) or evento.is_action("INTERACTUAR") or evento.is_action("ui_accept"))
+
+
+## true si hay que tragarse este evento: es una tecla de confirmar que se repite (mantener pulsada) o llegó antes de
+## 0.15 s. Quien lo reciba debe llamar set_input_as_handled(): así mantener Enter o un doble toque no pasa varios mensajes
+## ni se come una decisión.
+func debe_ignorarse(evento: InputEvent) -> bool:
+	return es_tecla_confirmar(evento) and (evento.echo or not entrada_lista())
+
+
+## ¿Esta pulsación avanza la conversación? Enter, Enter numérico, E o clic izquierdo; nunca una repetición y nunca antes de 0.15 s.
+func es_avance(evento: InputEvent) -> bool:
+	if not entrada_lista():
+		return false
+	if evento is InputEventMouseButton:
+		return evento.pressed and evento.button_index == MOUSE_BUTTON_LEFT
+	return evento.is_action_pressed(ACCION_AVANZAR) or evento.is_action_pressed("INTERACTUAR")
 
 
 ## false mientras haya un diálogo que no se puede cancelar (cuestionarios). El menú de pausa
@@ -97,12 +153,13 @@ func mostrar(recurso_dialogo: DialogueResource, titulo: String = "start", estado
 		_sin_cancelar -= 1
 	_abiertos -= 1
 	if _abiertos == 0:
+		marcar_cierre()
 		dialogo_cerrado.emit()
 	return elegida
 
 
 ## Muestra un texto con el mismo balloon que todo el juego (misma velocidad de escritura, mismo blip por
-## letra, misma etiqueta de nombre y mismo aviso "Mantén ESC para salir"). Es la forma de mostrar cualquier
+## letra, misma etiqueta de nombre y mismo aviso «Enter · continuar | Mantén Esc · salir»). Es la forma de mostrar cualquier
 ## mensaje que no venga de un archivo .dialogue.
 ##
 ##   await Dialogo.mostrar_texto("Rabia", "Hola.")                          un texto

@@ -112,7 +112,7 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(evento: InputEvent) -> void:
-	if not can_move:
+	if not can_move or Dialogo.mundo_bloqueado():
 		return
 	# Con _unhandled_input, el diálogo puede "comerse" la tecla sin que el jugador la use también
 	if evento.is_action_pressed("INTERACTUAR") and activo != null:
