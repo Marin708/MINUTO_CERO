@@ -20,6 +20,7 @@ const SEGUNDOS_ENTRADA := 0.15
 const CONTROLES := [
 	["W A S D o flechas", "Moverte"],
 	["E", "Hablar, revisar y recoger. En el sismo, mantenla pulsada: agáchate, cúbrete y sujétate."],
+	["Enter", "Avanzar la conversación y confirmar."],
 	["F8", "Reportar un problema (desde el editor de Godot, la tecla Y)"],
 	["Tab", "Libreta"],
 	["C", "Cerrar aviso"],
@@ -212,7 +213,7 @@ func _construir_controles() -> VBoxContainer:
 	var rejilla := GridContainer.new()
 	rejilla.columns = 2
 	rejilla.add_theme_constant_override("h_separation", 14)
-	rejilla.add_theme_constant_override("v_separation", 4)
+	rejilla.add_theme_constant_override("v_separation", 1)
 	for fila in CONTROLES:
 		rejilla.add_child(EstiloUI.etiqueta(fila[0], 11, EstiloUI.NARANJA))
 		var que := EstiloUI.etiqueta(fila[1], 11, EstiloUI.CREMA)
