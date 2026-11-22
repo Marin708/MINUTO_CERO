@@ -3,11 +3,12 @@
 
     python tools/ejecutar_pruebas.py [--godot RUTA_A_GODOT]
 
-Corre tres escenas y suma sus comprobaciones:
+Corre cuatro escenas y suma sus comprobaciones:
   tools/pruebas_estado.tscn  contenido, finales, intentos y lecciones, guardado, evaluación (14 preguntas), código MC1 y audio
   tools/pruebas_flujo.tscn   tarjeta de retroalimentación, recorrido de los tres niveles (Nivel 2 con fallo y reintento y con
                              el sismo en tiempo real, réplica del nivel 3), los tres finales y las teclas de depuración
   tools/pruebas_humo.tscn    título, consentimiento, cuestionarios inicial y final contestados, resultados, código y créditos
+  tools/pruebas_enter.tscn   Enter, Enter numérico, E y clic avanzan las conversaciones (con eventos de teclado simulados)
 Muestra cuántas comprobaciones pasaron y cuántos errores o advertencias salieron en la consola (se ignoran los avisos de
 recursos sin liberar al cerrar Godot sin ventana y los avisos que las pruebas provocan a propósito).
 Termina con código 0 solo si pasó todo y la consola quedó limpia. Tarda unos 3 minutos.
@@ -20,7 +21,7 @@ import sys
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GODOT = os.environ.get("GODOT", r"C:\Users\Usuario\Downloads\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe")
-ESCENAS = ["pruebas_estado", "pruebas_flujo", "pruebas_humo"]
+ESCENAS = ["pruebas_estado", "pruebas_flujo", "pruebas_humo", "pruebas_enter"]
 IGNORAR = (
     # Avisos ESPERADOS: las pruebas dañan el guardado, piden un sonido que no existe y la URL del formulario aún está vacía
     re.compile(r"el archivo de guardado está dañado"),

@@ -19,6 +19,10 @@ func _ready() -> void:
 		Dialogo.mostrar_texto("Lucía", "Aquí Lucía, canal 3. Revisa primero lo que pueda caerse.", ["Entendido", "Repite, por favor"])
 	elif accion == "globo":
 		Dialogo.mostrar_texto("Doña Rosa", "Ay, mijo, ¿me ayudas con la bolsa?", ["Sí, con cuidado", "No puedo ahora"])
+	elif accion == "globo_texto":
+		Dialogo.mostrar_texto("Doña Rosa", "Ay, mijo, ¿me ayudas con la bolsa? Pesa mucho para mí.")
+	elif accion == "radio_texto":
+		Dialogo.mostrar_texto("Lucía", "Aquí Lucía, canal 3. Revisa primero lo que pueda caerse.")
 	elif accion == "retro":
 		Retroalimentacion.tarjeta("Ojo", "Dejaste el estante sin fijar.", "Fijar el estante a la pared.", "Un mueble alto sin fijar puede caerse durante un sismo.", true)
 	elif accion == "libreta":
