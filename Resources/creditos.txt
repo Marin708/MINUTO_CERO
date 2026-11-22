@@ -7,10 +7,10 @@
 MINUTO CERO
 Un proyecto académico: juego educativo sobre qué hacer antes, durante y después de un sismo
 "Prepararte hoy puede cambiar el minuto cero."
-[COMPLETAR: nombre del curso, la universidad y el semestre]
+Asignatura: Programación de videojuegos
 
 # Equipo
-[COMPLETAR: nombres de quienes diseñaron y programaron el juego]
+Gustavo Adolfo Marín: diseño y programación
 [COMPLETAR: nombre del docente o asesor]
 
 # Arte
