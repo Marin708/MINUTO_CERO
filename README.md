@@ -7,6 +7,6 @@ Juego educativo 2D (vista desde arriba, pixel art) hecho con Godot 4.7 y GDScrip
 Villa Cafetal es una ciudad ficticia. El juego es solo educativo y no reemplaza la orientación de las autoridades de gestión del riesgo.
 
 - Diseño completo: `docs/DISENO_MAESTRO.md`
-- Reglas de trabajo y herramientas: `CLAUDE.md`
+- Reglas de trabajo y herramientas: `docs/DISENO_MAESTRO.md` (sección 13)
 - Contenido editable (preguntas, decisiones, kit, mitos, memoria, finales, plan): `Resources/contenido/*.json`
 - Validar el contenido: `python tools/validar_contenido.py`

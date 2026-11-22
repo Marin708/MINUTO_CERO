@@ -219,7 +219,7 @@ Puntajes: trivia 0 a 7; situaciones 0 a 5; escala 2 a 10; total 0 a 12 (sin esca
 3. Un solo sistema de diálogo, un solo efecto de escritura y un solo sonido de letras para todos los personajes.
 4. Zonas libres de props alrededor de puertas, NPC y objetos interactivos; los props altos se vuelven semitransparentes si tapan algo importante.
 5. Todas las teclas de depuración solo existen con `OS.is_debug_build()`. No usar teclas F (chocan con el editor). Depuración: **N** siguiente nivel, **1/2/3** saltar de nivel, **B/V/X** forzar final preparado, en camino o a reforzar.
-6. Después de cada tarea: prueba sin ventana (headless), commit propio y resumen de qué revisar. **Sin ninguna línea de atribución a Claude** en los mensajes de commit.
+6. Después de cada tarea: prueba sin ventana (headless), commit propio y resumen de qué revisar. Los mensajes de commit solo llevan la autoría del equipo, sin líneas de atribución automática.
 7. No editar escenas que puedan estar abiertas en el editor sin avisar.
 8. Web: exportación sin hilos, renderizador Compatibility, `Audio` con `ResourceLoader.exists`, reproducción tipo «Stream», `aspect = keep`, sin `vercel.json`, rama `web` publicada en un proyecto de Vercel **propio**.
 

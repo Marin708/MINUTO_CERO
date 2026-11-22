@@ -25,3 +25,8 @@ build/
 
 # Importaciones de las capturas de las pruebas (las regenera el editor)
 tools/capturas_*/*.import
+
+# Archivos de trabajo locales (no se suben)
+CLAUDE.md
+.claude/
+tools/git_hooks/
