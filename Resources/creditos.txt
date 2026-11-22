@@ -1,7 +1,6 @@
 # Los créditos de MINUTO CERO. Se editan aquí, sin tocar código.
 # Formato: una línea que empieza con "# " es el título de una sección; una línea en blanco es un espacio;
 # una línea que empieza con "> " es la nota final; el resto son líneas de texto.
-# Donde dice [COMPLETAR] faltan nombres o datos.
 
 # Juego
 MINUTO CERO
@@ -10,18 +9,14 @@ Un proyecto académico: juego educativo sobre qué hacer antes, durante y despu�
 Asignatura: Programación de videojuegos
 
 # Equipo
-Gustavo Adolfo Marín: diseño y programación
-[COMPLETAR: nombre del docente o asesor]
+Gustavo Adolfo Marin: diseño y programación
 
 # Arte
 Arte pixel art generado con herramientas de inteligencia artificial y procesado a mano
-[COMPLETAR: herramientas de IA usadas]
-[COMPLETAR: nombre de quien procesó y ajustó el arte]
 
 # Música y sonido
 Sonido y música generados con ElevenLabs (plan gratuito, uso no comercial)
 Los sonidos de interfaz y de diálogo vienen del proyecto ECOS
-[COMPLETAR: nombre de quien eligió y procesó los audios]
 
 # Herramientas y licencias
 Godot Engine, licencia MIT
@@ -33,13 +28,11 @@ Unidad Nacional para la Gestión del Riesgo de Desastres (UNGRD)
 Servicio Geológico Colombiano (SGC)
 Cruz Roja Colombiana
 IDIGER y Alcaldía de Bogotá
-[COMPLETAR: documentos y fechas exactas consultados]
 
 # Homenaje
 A las personas afectadas por el terremoto del Eje Cafetero del 25 de enero de 1999.
 
 # Agradecimientos
-[COMPLETAR: personas e instituciones a quienes agradecer]
 A quienes probaron el juego y respondieron las preguntas.
 
 > MINUTO CERO es un juego educativo; no reemplaza los simulacros ni las instrucciones de las autoridades de gestión del riesgo.
