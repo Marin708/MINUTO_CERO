@@ -22,3 +22,6 @@ docs/analisis/datos_reales/
 
 # Exportación web
 build/
+
+# Importaciones de las capturas de las pruebas (las regenera el editor)
+tools/capturas_*/*.import

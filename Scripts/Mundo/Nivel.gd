@@ -129,6 +129,7 @@ func _colocar_jugador() -> void:
 	objetos.add_child(jugador)
 	Dialogo.anclas["Sami"] = jugador
 	jugador.establecer_limites(Rect2(Vector2.ZERO, tamano_mapa))
+	jugador.sacar_de_colision.call_deferred()
 
 
 # --- Búsquedas ---

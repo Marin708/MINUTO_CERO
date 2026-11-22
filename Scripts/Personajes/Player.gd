@@ -120,6 +120,32 @@ func _unhandled_input(evento: InputEvent) -> void:
 		activo.interactuar()
 
 
+# --- Colisiones ---
+
+## Si Sami aparece dentro de una colisión (un mueble o una pared), lo lleva al punto libre más cercano (búsqueda en espiral,
+## de 4 en 4 px). Espera dos fotogramas de física para que los cuerpos del nivel ya existan en el espacio.
+func sacar_de_colision() -> void:
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	if not is_inside_tree() or not _choca_en(global_position):
+		return
+	for radio in range(4, 161, 4):
+		var pasos := maxi(8, radio / 2)
+		for i in pasos:
+			var punto := global_position + Vector2.from_angle(TAU * float(i) / pasos) * radio
+			if not _choca_en(punto):
+				global_position = punto
+				return
+
+
+## ¿Chocaría la forma de los pies de Sami en este punto del mundo?
+func _choca_en(punto: Vector2) -> bool:
+	var parametros := PhysicsTestMotionParameters2D.new()
+	parametros.from = Transform2D(0.0, punto)
+	parametros.motion = Vector2.ZERO
+	return PhysicsServer2D.body_test_motion(get_rid(), parametros)
+
+
 # --- Bloqueo ---
 
 ## Impide que el jugador se mueva e interactúe (por ejemplo, en una cinemática).

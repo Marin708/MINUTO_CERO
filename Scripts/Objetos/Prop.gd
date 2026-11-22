@@ -30,6 +30,7 @@ const DATOS := {
 	"mueble_tv": {"hoja": "muebles", "cuadro": Vector2i(0, 1), "escala": 0.5, "colision": true},
 	"estufa": {"hoja": "muebles", "cuadro": Vector2i(1, 1), "escala": 0.5, "colision": true},
 	"armario": {"hoja": "muebles", "cuadro": Vector2i(2, 1), "escala": 0.62, "colision": true},
+	# La puerta de salida y el ascensor (con su cartel «No usar») son un solo dibujo empotrado en la pared: los tiles de pared ya son sólidos
 	"puerta_salida": {"hoja": "muebles", "cuadro": Vector2i(3, 1), "escala": 0.82, "colision": false},
 	# riesgos.png (fila 1 = con riesgo, fila 2 = asegurado)
 	"estante": {"hoja": "riesgos", "cuadro": Vector2i(0, 0), "escala": 0.62, "colision": true},
@@ -38,7 +39,7 @@ const DATOS := {
 	"repisa": {"hoja": "riesgos", "cuadro": Vector2i(3, 0), "escala": 0.5, "colision": true},
 	# exterior.png
 	"poste": {"hoja": "exterior", "cuadro": Vector2i(0, 0), "escala": 0.85, "colision": true},
-	"escombros": {"hoja": "exterior", "cuadro": Vector2i(1, 0), "escala": 0.45, "colision": true},
+	"escombros": {"hoja": "exterior", "cuadro": Vector2i(1, 0), "escala": 0.45, "colision": false},   # plano: sin colisión, va en SueloObjetos
 	"carro": {"hoja": "exterior", "cuadro": Vector2i(2, 0), "escala": 0.65, "colision": true},
 	"edificio": {"hoja": "exterior", "cuadro": Vector2i(3, 0), "escala": 1.2, "colision": true},
 	"arbol": {"hoja": "exterior", "cuadro": Vector2i(0, 1), "escala": 1.13, "colision": true},
@@ -54,9 +55,26 @@ const ALTOS: Array[String] = ["arbol", "poste", "edificio", "carpa", "armario", 
 const PLANOS: Array[String] = ["escombros"]
 const ALPHA_TAPANDO := 0.45
 const SEGUNDOS_FUNDIDO := 0.15
-## Alto de la colisión de la base (px del mundo) y fracción del ancho visible que ocupa.
-const ALTO_COLISION := 12.0
-const FRACCION_ANCHO_COLISION := 0.8
+## Colisión de la base: (fracción del ANCHO visible, fracción del ALTO visible) que ocupa, siempre pegada a la base.
+## Por defecto cubre todo el ancho y el 38 % inferior (entre 30 y 45 %) para que Sami no pueda ponerse encima del mueble.
+const COLISION_BASE := Vector2(1.0, 0.38)
+const COLISION_TIPO := {
+	"nevera": Vector2(1.0, 0.35), "armario": Vector2(1.0, 0.35), "estante": Vector2(1.0, 0.35), "repisa": Vector2(1.0, 0.35),
+	"carpa": Vector2(1.0, 0.35), "edificio": Vector2(1.0, 0.30),
+	"cama": Vector2(1.0, 0.40), "sofa": Vector2(1.0, 0.40), "carro": Vector2(1.0, 0.40), "banca": Vector2(1.0, 0.40),
+	"gas_estufa": Vector2(1.0, 0.40), "barrera": Vector2(1.0, 0.40),
+	# solo el tronco y el pie del poste estorban (la copa y el cable quedan por encima de la cabeza de Sami)
+	"arbol": Vector2(0.22, 0.0), "poste": Vector2(0.30, 0.0),
+}
+## Alto fijo (px) de la colisión de los tipos que solo bloquean por el pie.
+const ALTO_COLISION_FIJO := {"arbol": 14.0, "poste": 14.0}
+## La mesa solo es sólida en las patas (ancho en px) y en el fondo (grosor en px): por delante queda la zona segura.
+const ANCHO_PATA := 8.0
+const GROSOR_FONDO := 4.0
+## Cuánto sobresale (px) la zona de interacción del borde de la colisión por cada lado: así se puede usar desde cualquier lado.
+const MARGEN_ZONA := 14.0
+## Capa de física 4 = «zona segura» (nadie la detecta salvo el nivel, que mira el grupo `zonas_seguras`).
+const CAPA_ZONA_SEGURA := 8
 
 static var _medidas: Dictionary = {}
 
@@ -111,25 +129,63 @@ func _ready() -> void:
 	if ALTOS.has(tipo):
 		add_to_group("props_altos")
 
-	# Colisión pequeña solo en la base (capa 1 = mundo)
+	# Colisión en la base (capa 1 = mundo): todo el ancho visible y entre 30 y 45 % del alto, sin huecos en los bordes
+	var ancho_vis := float(medida["ancho"]) * _factor
+	var alto_vis := float(medida["alto"]) * _factor
+	var cfg: Vector2 = COLISION_TIPO.get(tipo, COLISION_BASE)
+	var col_ancho := maxf(ancho_vis * cfg.x, 8.0)
+	var col_alto: float = float(ALTO_COLISION_FIJO[tipo]) if ALTO_COLISION_FIJO.has(tipo) else alto_vis * cfg.y
 	if bool(datos["colision"]):
-		var cuadrado := RectangleShape2D.new()
-		cuadrado.size = Vector2(maxf(float(medida["ancho"]) * _factor * FRACCION_ANCHO_COLISION, 8.0), ALTO_COLISION)
-		_forma.shape = cuadrado
-		_forma.position = Vector2(0, -ALTO_COLISION / 2.0)
+		if tipo == "mesa":
+			_colision_mesa(col_ancho, col_alto)
+		else:
+			_poner_forma(_forma, Vector2(col_ancho, col_alto), Vector2(0, -col_alto / 2.0))
 	else:
 		_cuerpo.queue_free()
 
-	# Zona de interacción (capa 2 = interactuable)
+	# Zona de interacción (capa 2 = interactuable): un rectángulo MÁS GRANDE que la colisión, para usarlo desde cualquier lado
 	if interactuable:
-		var circulo := CircleShape2D.new()
-		circulo.radius = maxf(float(medida["ancho"]) * _factor * 0.5, 24.0)
-		$Zona/Forma.shape = circulo
-		$Zona/Forma.position = Vector2(0, -8)
+		var rect := RectangleShape2D.new()
+		rect.size = Vector2(col_ancho + 2.0 * MARGEN_ZONA, col_alto + 2.0 * MARGEN_ZONA)
+		$Zona/Forma.shape = rect
+		$Zona/Forma.position = Vector2(0, -col_alto / 2.0)
 		add_to_group("interactuables")
 		_crear_interrogacion()
 	else:
 		_zona.queue_free()
+
+
+func _poner_forma(nodo: CollisionShape2D, tamano: Vector2, centro: Vector2) -> void:
+	var cuadrado := RectangleShape2D.new()
+	cuadrado.size = tamano
+	nodo.shape = cuadrado
+	nodo.position = centro
+
+
+## Mesa del comedor: dos patas y un fondo sólidos; por delante queda libre el espacio de abajo (la zona segura donde Sami se
+## agacha y mantiene E). Las patas y el fondo no dejan huecos por los que se cuele Sami hacia atrás.
+func _colision_mesa(ancho: float, alto: float) -> void:
+	var pata_x := ancho / 2.0 - ANCHO_PATA / 2.0
+	_poner_forma(_forma, Vector2(ANCHO_PATA, alto), Vector2(-pata_x, -alto / 2.0))
+	var pata_der := CollisionShape2D.new()
+	pata_der.name = "PataDerecha"
+	_cuerpo.add_child(pata_der)
+	_poner_forma(pata_der, Vector2(ANCHO_PATA, alto), Vector2(pata_x, -alto / 2.0))
+	var fondo := CollisionShape2D.new()
+	fondo.name = "Fondo"
+	_cuerpo.add_child(fondo)
+	_poner_forma(fondo, Vector2(ancho, GROSOR_FONDO), Vector2(0, -alto + GROSOR_FONDO / 2.0))
+	# Zona segura: el hueco entre las patas, por delante del fondo y un poco más allá de la base (se entra por el frente)
+	var segura := Area2D.new()
+	segura.name = "ZonaSegura"
+	segura.collision_layer = CAPA_ZONA_SEGURA
+	segura.collision_mask = 0
+	var forma := CollisionShape2D.new()
+	segura.add_child(forma)
+	add_child(segura)
+	var hueco := Vector2(ancho - 2.0 * ANCHO_PATA, alto - GROSOR_FONDO + 8.0)
+	_poner_forma(forma, hueco, Vector2(0, -alto + GROSOR_FONDO + hueco.y / 2.0))
+	segura.add_to_group("zonas_seguras")
 
 
 ## El ícono «?» flota sobre los riesgos sin resolver y aparece cuando Sami está cerca.
